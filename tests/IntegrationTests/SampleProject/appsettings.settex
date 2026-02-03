@@ -1,0 +1,22 @@
+settings {
+    ApplicationName = "SampleApp"
+    Logging.LogLevel.Default = "Information"
+    Logging.LogLevel.Microsoft = "Warning"
+    AllowedHosts = ["localhost", "*.example.com"]
+    ConnectionStrings.DefaultConnection = "Server=(localdb);Database=SampleDb"
+}
+
+env "Development" {
+    settings {
+        Logging.LogLevel.Default = "Debug"
+        ConnectionStrings.DefaultConnection = "Server=(localdb);Database=SampleDb_Dev"
+    }
+}
+
+env "Production" {
+    settings {
+        Logging.LogLevel.Default = "Error"
+        Logging.LogLevel.Microsoft = "Error"
+        ConnectionStrings.DefaultConnection = "Server=prod-server;Database=SampleDb_Prod"
+    }
+}

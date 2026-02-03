@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- 
+    Settex.Build.props
+    Imported early in the build process to define properties and items.
+  -->
+  
+  <PropertyGroup>
+    <!-- Default output directory for generated appsettings files -->
+    <SettexOutputDirectory Condition="'$(SettexOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SettexOutputDirectory>
+    
+    <!-- Enable/disable Settex compilation (enabled by default) -->
+    <EnableSettexCompilation Condition="'$(EnableSettexCompilation)' == ''">true</EnableSettexCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Auto-discover .settex files in the project directory -->
+    <SettexFile Include="$(MSBuildProjectDirectory)\**\*.settex" Exclude="$(MSBuildProjectDirectory)\bin\**\*.settex;$(MSBuildProjectDirectory)\obj\**\*.settex" />
+  </ItemGroup>
+
+</Project>

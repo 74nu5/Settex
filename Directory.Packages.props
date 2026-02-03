@@ -6,9 +6,9 @@
     <!-- Testing -->
     <PackageVersion Include="TUnit" Version="1.12.125" />
     <PackageVersion Include="TUnit.Assertions" Version="1.12.125" />
-    <!-- MSBuild (for Settex.Build project) -->
-    <PackageVersion Include="Microsoft.Build.Framework" Version="17.10.4" />
-    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.10.4" />
+    <!-- MSBuild (for Settex.Build project) - versions without CVE-2025-55247 -->
+    <PackageVersion Include="Microsoft.Build.Framework" Version="17.12.50" />
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.12.50" />
     <PackageVersion Include="System.Text.Json" Version="10.0.2" />
     <PackageVersion Include="Meziantou.Polyfill" Version="1.0.101" />
   </ItemGroup>

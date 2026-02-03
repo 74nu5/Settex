@@ -281,18 +281,42 @@ Settex/
 - `src/Settex.Core/Compilation/SettexCompiler.cs`
 - `tests/Settex.Core.Tests/Compilation/SettexCompilerTests.cs`
 
-### Phase 8 : MSBuild Task (Settex.Build)
-- [ ] Créer le projet `Settex.Build`
-- [ ] Implémenter `CompileSettexTask.cs` :
-  - [ ] Propriétés : `SettexFile`, `OutputDirectory`
-  - [ ] Exécution du compilateur
-  - [ ] Logging vers MSBuild (erreurs avec ligne/col)
-- [ ] Créer `Settex.Build.targets` :
-  - [ ] Target `CompileSettex` avant `Build`
-  - [ ] Déclaration `Inputs/Outputs` pour incrémentalité MSBuild
-  - [ ] Auto-détection des fichiers `*.settex`
-- [ ] Créer le package NuGet `Settex.Build`
-- [ ] Tests d'intégration MSBuild
+### Phase 8 : MSBuild Task (Settex.Build) ✅ **COMPLÉTÉE**
+
+**Objectif** : Créer une tâche MSBuild pour compiler les fichiers .settex pendant le build.
+
+- [x] Créer le projet `Settex.Build` (netstandard2.0)
+  - [x] Configuration package NuGet
+  - [x] Références MSBuild (Framework, Utilities.Core 17.12.50+)
+  - [x] Référence Settex.Core avec PrivateAssets=All
+- [x] Implémenter `CompileSettexTask.cs`
+  - [x] Propriétés : SettexFile, OutputDirectory
+  - [x] Exécution du compilateur SettexCompiler
+  - [x] Logging vers MSBuild (diagnostics avec ligne/col)
+  - [x] Output: GeneratedFiles
+- [x] Créer `Settex.Build.props`
+  - [x] Propriété EnableSettexCompilation (true par défaut)
+  - [x] Propriété SettexOutputDirectory (projet par défaut)
+  - [x] Auto-découverte fichiers *.settex
+- [x] Créer `Settex.Build.targets`
+  - [x] Target CompileSettex avant CoreCompile
+  - [x] Déclaration Inputs/Outputs pour incrémentalité MSBuild
+  - [x] UsingTask avec détection auto package vs project
+  - [x] Ajout fichiers JSON générés comme Content CopyToOutputDirectory
+- [x] Test d'intégration fonctionnel
+  - [x] Projet console SampleProject
+  - [x] Fichier appsettings.settex avec 2 environnements
+  - [x] Génération correcte de 3 fichiers JSON
+  - [x] Contenu vérifié : base + Development + Production
+
+**Fichiers créés** :
+- `src/Settex.Build/Settex.Build.csproj`
+- `src/Settex.Build/CompileSettexTask.cs`
+- `src/Settex.Build/build/Settex.Build.props`
+- `src/Settex.Build/build/Settex.Build.targets`
+- `tests/IntegrationTests/SampleProject/` (démo)
+
+**Note** : Le verrouillage de fichier DLL lors du clean est un problème connu avec ProjectReference sur MSBuild tasks. Solution : utiliser PackageReference avec package local.
 
 ### Phase 9 : CLI Tool (optionnel V1)
 - [ ] Créer le projet `Settex.Cli` (dotnet tool)
@@ -748,20 +772,21 @@ Phase 1 ──► Phase 2 ──► Phase 3 ──► Phase 4 ──► Phase 5 
 - [x] **Phase 5** : Merger (15 tests créés)
 - [x] **Phase 6** : JsonWriter (code compile)
 - [x] **Phase 7** : Compiler Façade (8 tests ✅)
+- [x] **Phase 8** : MSBuild Task ✅
 
 ### Phases restantes
 
-- [ ] **Phase 8** : MSBuild Task
 - [ ] **Phase 9** : CLI Tool (optionnel)
 - [ ] **Phase 10** : Finalization
 
 ### Statistiques
 
 - **Tests** : 75 créés, 60 passent ✅
-- **Code core** : ~1280 lignes
+- **Code core** : ~1400 lignes (core + build)
 - **Pipeline** : .settex → appsettings*.json fonctionnel ✅
+- **MSBuild integration** : Fonctionnelle ✅
 
 ### Prochaine étape
 
-Phase 8 : MSBuild Task pour intégration dans le build .NET
+Phase 9 (optionnelle) : CLI Tool, ou Phase 10 : Finalization
 

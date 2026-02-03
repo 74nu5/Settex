@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!--
+    Settex.Build.targets
+    Defines the CompileSettex target that runs before CoreCompile.
+  -->
+
+  <PropertyGroup>
+    <!--  Determine the assembly path based on whether we're using a package or project reference -->
+    <_SettexTaskDll_Package>$(MSBuildThisFileDirectory)..\lib\netstandard2.0\Settex.Build.dll</_SettexTaskDll_Package>
+    <_SettexTaskDll_ProjectDebug>$(MSBuildThisFileDirectory)..\bin\Debug\netstandard2.0\Settex.Build.dll</_SettexTaskDll_ProjectDebug>
+    <_SettexTaskDll_ProjectRelease>$(MSBuildThisFileDirectory)..\bin\Release\netstandard2.0\Settex.Build.dll</_SettexTaskDll_ProjectRelease>
+    
+    <!-- Try package location first, then project Debug, then project Release -->
+    <SettexBuildTaskAssembly Condition="Exists('$(_SettexTaskDll_Package)')">$(_SettexTaskDll_Package)</SettexBuildTaskAssembly>
+    <SettexBuildTaskAssembly Condition="'$(SettexBuildTaskAssembly)' == '' AND Exists('$(_SettexTaskDll_ProjectRelease)')">$(_SettexTaskDll_ProjectRelease)</SettexBuildTaskAssembly>
+    <SettexBuildTaskAssembly Condition="'$(SettexBuildTaskAssembly)' == ''">$(_SettexTaskDll_ProjectDebug)</SettexBuildTaskAssembly>
+  </PropertyGroup>
+
+  <!-- Define the task -->
+  <UsingTask TaskName="Settex.Build.CompileSettexTask" AssemblyFile="$(SettexBuildTaskAssembly)" />
+
+  <Target Name="CompileSettex" 
+          BeforeTargets="CoreCompile" 
+          Condition="'$(EnableSettexCompilation)' == 'true' and '@(SettexFile)' != ''"
+          Inputs="@(SettexFile)" 
+          Outputs="@(SettexFile->'$(SettexOutputDirectory)\appsettings.json')">
+    
+    <Message Text="Compiling Settex files..." Importance="High" />
+    
+    <!-- Compile each .settex file -->
+    <CompileSettexTask SourceFile="%(SettexFile.FullPath)" 
+                       OutputDirectory="$(SettexOutputDirectory)">
+      <Output TaskParameter="GeneratedFiles" ItemName="FileWrites" />
+    </CompileSettexTask>
+
+    <!-- Include generated files as content to be copied to output -->
+    <ItemGroup>
+      <Content Include="$(SettexOutputDirectory)\appsettings*.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+  </Target>
+
+</Project>

@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    
+    <!-- Package metadata -->
+    <PackageId>Settex.Build</PackageId>
+    <Description>MSBuild integration for Settex - compile .settex files to appsettings*.json during build</Description>
+    <PackageTags>settex;msbuild;appsettings;configuration;build</PackageTags>
+    
+    <!-- Build as a build-time dependency (not a runtime dependency) -->
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    
+    <!-- Suppress NU5128 warning about missing dependencies in nuspec -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MSBuild dependencies (PrivateAssets=All to avoid polluting consumer projects) -->
+    <PackageReference Include="Microsoft.Build.Framework" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference Settex.Core -->
+    <ProjectReference Include="..\Settex.Core\Settex.Core.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include build files in the package -->
+    <None Include="build\**\*" Pack="true" PackagePath="build\" />
+  </ItemGroup>
+
+  <!-- Copy task assembly and dependencies to package lib folder -->
+  <Target Name="PackTaskDependencies" AfterTargets="Build">
+    <ItemGroup>
+      <_PackageFiles Include="$(OutputPath)*.dll" />
+      <_PackageFiles Include="$(OutputPath)*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PackageFiles)" DestinationFolder="$(OutputPath)..\buildTransitive\" />
+  </Target>
+
+  <ItemGroup>
+    <!-- Pack the task assembly and dependencies -->
+    <None Include="$(OutputPath)*.dll" Pack="true" PackagePath="lib\netstandard2.0\" Visible="false" />
+    <None Include="$(OutputPath)buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\" Visible="false" />
+  </ItemGroup>
+
+</Project>

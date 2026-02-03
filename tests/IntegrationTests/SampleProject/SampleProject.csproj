@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Import Settex.Build manually (when using ProjectReference instead of PackageReference) -->
+  <Import Project="..\..\..\src\Settex.Build\build\Settex.Build.props" />
+  <Import Project="..\..\..\src\Settex.Build\build\Settex.Build.targets" />
+
+  <ItemGroup>
+    <!-- Reference our Settex.Build package using ProjectReference for local testing -->
+    <ProjectReference Include="..\..\..\src\Settex.Build\Settex.Build.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Include the .settex file in the project -->
+    <SettexFile Include="appsettings.settex" />
+  </ItemGroup>
+
+</Project>
