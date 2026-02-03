@@ -9,6 +9,10 @@
     <!-- MSBuild (for Settex.Build project) - versions without CVE-2025-55247 -->
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.12.50" />
     <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.12.50" />
+    <!-- CLI -->
+    <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageVersion Include="Spectre.Console" Version="0.49.1" />
+    <!-- Core -->
     <PackageVersion Include="System.Text.Json" Version="10.0.2" />
     <PackageVersion Include="Meziantou.Polyfill" Version="1.0.101" />
   </ItemGroup>

@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Package as dotnet tool -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>settex</ToolCommandName>
+    <PackageId>Settex.Cli</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Settex Contributors</Authors>
+    <Description>Command-line tool for compiling Settex configuration files to JSON</Description>
+    <PackageProjectUrl>https://github.com/settex/settex</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Settex.Core\Settex.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Spectre.Console" />
+  </ItemGroup>
+
+</Project>

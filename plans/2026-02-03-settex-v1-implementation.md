@@ -318,12 +318,36 @@ Settex/
 
 **Note** : Le verrouillage de fichier DLL lors du clean est un problème connu avec ProjectReference sur MSBuild tasks. Solution : utiliser PackageReference avec package local.
 
-### Phase 9 : CLI Tool (optionnel V1)
-- [ ] Créer le projet `Settex.Cli` (dotnet tool)
-- [ ] Commande `settex build <file> [-o <output>]`
-- [ ] Affichage des diagnostics formatés
-- [ ] Code de sortie : 0 = succès, 1 = erreur
-- [ ] Package NuGet `Settex.Cli` (dotnet tool install)
+### Phase 9 : CLI Tool (optionnel V1) ✅
+- [x] Créer le projet `Settex.Cli` (dotnet tool)
+- [x] Commande `settex build <file> [-o <output>]`
+- [x] Affichage des diagnostics formatés avec Spectre.Console
+- [x] Code de sortie : 0 = succès, 1 = erreur
+- [x] Package NuGet `Settex.Cli` (dotnet tool install)
+
+**Bibliothèques utilisées** :
+- `System.CommandLine` (v2.0.0-beta4) - Parsing des arguments et commandes
+- `Spectre.Console` (v0.49.1) - Affichage formaté avec tableaux et couleurs
+
+**Fonctionnalités** :
+- `settex build <file> [-o <output>]` - Compile un fichier .settex
+- `settex --help` - Aide générale
+- `settex build --help` - Aide de la commande build
+- Spinner de progression pendant la compilation
+- Tableau formaté des diagnostics (erreurs/warnings/info)
+- Liste des fichiers générés avec symboles colorés
+- Gestion des erreurs avec messages clairs
+
+**Fichiers créés** :
+- `src/Settex.Cli/Settex.Cli.csproj` - Configuré comme dotnet tool (PackAsTool=true)
+- `src/Settex.Cli/Program.cs` - Implémentation CLI avec System.CommandLine et Spectre.Console
+
+**Modifications** :
+- `src/Settex.Core/Compilation/CompilationResult.cs` - Ajout de la propriété `GeneratedFiles`
+- `src/Settex.Core/Compilation/SettexCompiler.cs` - Retourne la liste des fichiers générés
+- `src/Settex.Core/Writing/JsonWriter.cs` - Méthode `WriteSettings` retourne les paths des fichiers créés
+- `Directory.Packages.props` - Ajout des packages System.CommandLine et Spectre.Console
+
 
 ### Phase 10 : Finalisation
 - [ ] Créer un sample project fonctionnel

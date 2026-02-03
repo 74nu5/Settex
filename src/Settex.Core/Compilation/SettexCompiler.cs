@@ -96,10 +96,11 @@ public sealed class SettexCompiler
             }
 
             // Phase 4: Writing (includes merging via JsonWriter)
+            List<string> generatedFiles;
             try
             {
                 var writer = new JsonWriter();
-                writer.WriteSettings(model, outputDirectory);
+                generatedFiles = writer.WriteSettings(model, outputDirectory);
             }
             catch (JsonWriterException ex)
             {
@@ -122,7 +123,7 @@ public sealed class SettexCompiler
                 DiagnosticSeverity.Info,
                 $"Successfully compiled {sourceFilePath}"));
 
-            return new CompilationResult(true, diagnostics);
+            return new CompilationResult(true, diagnostics, generatedFiles);
         }
         catch (Exception ex)
         {

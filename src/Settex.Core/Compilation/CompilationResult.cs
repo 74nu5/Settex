@@ -5,10 +5,11 @@ namespace Settex.Compilation;
 /// </summary>
 public sealed class CompilationResult
 {
-    public CompilationResult(bool success, IReadOnlyList<Diagnostic> diagnostics)
+    public CompilationResult(bool success, IReadOnlyList<Diagnostic> diagnostics, IReadOnlyList<string>? generatedFiles = null)
     {
         this.Success = success;
         this.Diagnostics = diagnostics;
+        this.GeneratedFiles = generatedFiles ?? Array.Empty<string>();
     }
 
     /// <summary>
@@ -20,6 +21,11 @@ public sealed class CompilationResult
     ///     All diagnostics (errors, warnings, info).
     /// </summary>
     public IReadOnlyList<Diagnostic> Diagnostics { get; }
+
+    /// <summary>
+    ///     List of generated output files (full paths).
+    /// </summary>
+    public IReadOnlyList<string> GeneratedFiles { get; }
 
     /// <summary>
     ///     Gets only error diagnostics.

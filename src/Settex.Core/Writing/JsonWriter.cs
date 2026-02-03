@@ -28,9 +28,12 @@ public sealed class JsonWriter
     /// </summary>
     /// <param name="model">Settings model to write.</param>
     /// <param name="outputDirectory">Directory where files will be written.</param>
+    /// <returns>List of generated file paths.</returns>
     /// <exception cref="JsonWriterException">Thrown when writing fails.</exception>
-    public void WriteSettings(SettingsModel model, string outputDirectory)
+    public List<string> WriteSettings(SettingsModel model, string outputDirectory)
     {
+        var generatedFiles = new List<string>();
+
         // Ensure output directory exists
         try
         {
@@ -44,7 +47,8 @@ public sealed class JsonWriter
         }
 
         // Write base appsettings.json
-        WriteJsonFile(model.BaseSettings, outputDirectory, "appsettings.json");
+        var basePath = WriteJsonFile(model.BaseSettings, outputDirectory, "appsettings.json");
+        generatedFiles.Add(basePath);
 
         // Write environment-specific files
         foreach (var (envName, overlay) in model.EnvironmentOverlays)
@@ -55,8 +59,11 @@ public sealed class JsonWriter
             var merged = this.merger.Merge(model.BaseSettings, overlay);
 
             var fileName = $"appsettings.{envName}.json";
-            WriteJsonFile(merged, outputDirectory, fileName);
+            var path = WriteJsonFile(merged, outputDirectory, fileName);
+            generatedFiles.Add(path);
         }
+
+        return generatedFiles;
     }
 
     /// <summary>
@@ -82,7 +89,8 @@ public sealed class JsonWriter
     /// <summary>
     ///     Writes a JSON object to a file, only if content differs.
     /// </summary>
-    private static void WriteJsonFile(JsonObject jsonObject, string directory, string fileName)
+    /// <returns>The full path to the written file.</returns>
+    private static string WriteJsonFile(JsonObject jsonObject, string directory, string fileName)
     {
         var filePath = Path.Combine(directory, fileName);
         var jsonContent = SerializeJson(jsonObject);
@@ -97,7 +105,7 @@ public sealed class JsonWriter
                 if (existingContent == jsonContent)
                 {
                     // Content unchanged - skip write
-                    return;
+                    return filePath;
                 }
             }
             catch
@@ -117,6 +125,8 @@ public sealed class JsonWriter
                 $"Failed to write file: {filePath}",
                 ex);
         }
+
+        return filePath;
     }
 
     /// <summary>

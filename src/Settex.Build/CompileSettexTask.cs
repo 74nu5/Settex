@@ -52,19 +52,11 @@ public class CompileSettexTask : Task
                 return false;
             }
 
-            // Collect generated files
+            // Collect generated files from CompilationResult
             var generatedFiles = new List<ITaskItem>();
-            var baseFile = Path.Combine(this.OutputDirectory, "appsettings.json");
-            if (File.Exists(baseFile))
+            foreach (var filePath in result.GeneratedFiles)
             {
-                generatedFiles.Add(new TaskItem(baseFile));
-            }
-
-            // Add environment-specific files
-            var envFiles = Directory.GetFiles(this.OutputDirectory, "appsettings.*.json");
-            foreach (var envFile in envFiles)
-            {
-                generatedFiles.Add(new TaskItem(envFile));
+                generatedFiles.Add(new TaskItem(filePath));
             }
 
             this.GeneratedFiles = generatedFiles.ToArray();
