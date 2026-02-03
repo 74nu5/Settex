@@ -176,34 +176,34 @@ Settex/
   - [x] Gestion des espaces (ignorés) et sauts de ligne (`Newline` token pour tableaux)
 - [x] Tests unitaires Lexer (17 tests - tous passent ✨)
 
-### Phase 3 : Parser + AST
-- [ ] Définir les nœuds AST (avec `SourceLocation` sur chaque nœud) :
-  - [ ] `FileNode` (racine, contient topStmt*)
-  - [ ] `SettingsBlockNode` (settings { ... })
-  - [ ] `EnvBlockNode` (env "Name" { settings { ... } })
-  - [ ] `BlockNode` (contenu d'un bloc { stmt* })
-  - [ ] `AssignmentNode` (path = value)
-  - [ ] `NestedBlockNode` (Ident { ... } comme statement)
-  - [ ] `PathNode` (a.b.c - séquence d'identifiants)
-  - [ ] `ValueNode` (interface/base pour toutes les valeurs)
-  - [ ] `LiteralNode` (string, number, bool, null)
-  - [ ] `ArrayNode` ([ items ])
-  - [ ] `TaggedObjectNode` (ident { ... } comme valeur dans tableau)
-- [ ] Implémenter `Parser.cs` (descente récursive) :
-  - [ ] `ParseFile()` → topStmt* EOF
-  - [ ] `ParseTopStmt()` → settingsBlock | envBlock | comment | ";"
-  - [ ] `ParseSettingsBlock()` → "settings" block
-  - [ ] `ParseEnvBlock()` → "env" string "{" settingsBlock "}"
-  - [ ] `ParseBlock()` → "{" stmt* "}"
-  - [ ] `ParseStmt()` → assignStmt | nestedBlockStmt | ";" | comment
-  - [ ] `ParseAssignStmt()` → path "=" value
-  - [ ] `ParseNestedBlockStmt()` → ident block
-  - [ ] `ParsePath()` → ident ("." ident)*
-  - [ ] `ParseValue()` → literal | array | taggedObjectValue
-  - [ ] `ParseArray()` → "[" arrayItems? "]" (virgules/newlines optionnels)
-  - [ ] `ParseTaggedObjectValue()` → ident block
-  - [ ] Gestion des erreurs avec position ligne/colonne
-- [ ] Tests unitaires Parser (couverture > 90%)
+### Phase 3 : Parser + AST ✅ COMPLÉTÉE
+- [x] Définir les nœuds AST (avec `SourceLocation` sur chaque nœud) :
+  - [x] `FileNode` (racine, contient topStmt*)
+  - [x] `SettingsBlockNode` (settings { ... })
+  - [x] `EnvBlockNode` (env "Name" { settings { ... } })
+  - [x] `BlockNode` (contenu d'un bloc { stmt* })
+  - [x] `AssignmentNode` (path = value)
+  - [x] `NestedBlockNode` (Ident { ... } comme statement)
+  - [x] `PathNode` (a.b.c - séquence d'identifiants)
+  - [x] `IValue` (interface pour toutes les valeurs)
+  - [x] `LiteralNode` (string, number, bool, null)
+  - [x] `ArrayNode` ([ items ])
+  - [x] `TaggedObjectNode` (ident { ... } comme valeur dans tableau)
+- [x] Implémenter `Parser.cs` (descente récursive) :
+  - [x] `ParseFile()` → topStmt* EOF
+  - [x] `ParseTopLevelStatement()` → settingsBlock | envBlock | ";"
+  - [x] `ParseSettingsBlock()` → "settings" block
+  - [x] `ParseEnvBlock()` → "env" string "{" settingsBlock "}"
+  - [x] `ParseBlock()` → "{" stmt* "}" (avec skip newlines)
+  - [x] `ParseStatement()` → assignStmt | nestedBlockStmt | ";"
+  - [x] `ParseAssignmentStatement()` → path "=" value
+  - [x] `ParseNestedBlockStatement()` → ident block
+  - [x] `ParsePath()` → ident ("." ident)*
+  - [x] `ParseValue()` → literal | array | taggedObjectValue
+  - [x] `ParseArray()` → "[" arrayItems? "]" (virgules/newlines optionnels)
+  - [x] `ParseTaggedObjectValue()` → ident block
+  - [x] Gestion des erreurs avec position ligne/colonne
+- [x] Tests unitaires Parser (18 tests - tous passent ✨)
 
 ### Phase 4 : Evaluator
 - [ ] Définir `SettingsModel` :

@@ -1,7 +1,7 @@
 namespace Settex.Core.Lexer;
 
 /// <summary>
-/// Represents the type of a token in Settex source code.
+///     Represents the type of a token in Settex source code.
 /// </summary>
 public enum TokenType
 {
@@ -13,14 +13,14 @@ public enum TokenType
     Null,
 
     // Symbols
-    LeftBrace,      // {
-    RightBrace,     // }
-    LeftBracket,    // [
-    RightBracket,   // ]
-    Equals,         // =
-    Dot,            // .
-    Comma,          // ,
-    Semicolon,      // ;
+    LeftBrace, // {
+    RightBrace, // }
+    LeftBracket, // [
+    RightBracket, // ]
+    Equals, // =
+    Dot, // .
+    Comma, // ,
+    Semicolon, // ;
 
     // Literals
     String,
@@ -29,7 +29,7 @@ public enum TokenType
 
     // Other
     Identifier,
-    Newline,        // Significant only inside arrays
-    Comment,        // Not emitted, but can be tracked for tooling
+    Newline, // Significant only inside arrays
+    Comment, // Not emitted, but can be tracked for tooling
     Eof,
 }

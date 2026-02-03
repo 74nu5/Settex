@@ -12,6 +12,8 @@
     <!-- MSBuild (for Settex.Build project) -->
     <PackageVersion Include="Microsoft.Build.Framework" Version="17.10.4" />
     <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.10.4" />
+
+    <PackageVersion Include="Meziantou.Polyfill" Version="1.0.101" />
   </ItemGroup>
 
 </Project>
