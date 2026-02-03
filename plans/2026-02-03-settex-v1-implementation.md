@@ -228,13 +228,14 @@ Settex/
 - [x] Package System.Text.Json 9.0.1 ajouté pour support netstandard2.0
 
 ### Phase 5 : Merger
-- [ ] Implémenter `Merger.cs` :
-  - [ ] Merge profond objet + objet (récursif)
-  - [ ] Remplacement pour primitives
-  - [ ] Remplacement complet pour tableaux
-  - [ ] Détection et erreur pour type mismatch
-- [ ] Fonction `Merge(base, overlay) → merged`
-- [ ] Tests unitaires Merger (cas normaux + edge cases)
+- [x] Implémenter `Merger.cs` :
+  - [x] Merge profond objet + objet (récursif)
+  - [x] Remplacement pour primitives
+  - [x] Remplacement complet pour tableaux
+  - [x] Détection et erreur pour type mismatch
+- [x] Fonction `Merge(base, overlay) → merged`
+- [x] Tests unitaires Merger (15 tests - cas normaux + edge cases)
+  - Note: Tests non exécutés en raison d'un problème de config TUnit/net10.0
 
 ### Phase 6 : JsonWriter
 - [ ] Implémenter `JsonWriter.cs` :
