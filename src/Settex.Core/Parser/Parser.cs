@@ -48,7 +48,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
     private Token Peek(int offset = 1) => this.position + offset < this.tokens.Count ? this.tokens[this.position + offset] : this.tokens[^1];
 
     /// <summary>
-    ///     Parses a top-level statement: settingsBlock | envBlock | includeStmt | ";"
+    ///     Parses a top-level statement: settingsBlock | envBlock | includeStmt | letStmt | ";"
     /// </summary>
     private ITopLevelStatement? ParseTopLevelStatement()
     {
@@ -63,6 +63,11 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return this.ParseIncludeStatement();
         }
 
+        if (this.Check(TokenType.Let))
+        {
+            return this.ParseLetStatement();
+        }
+
         if (this.Check(TokenType.Settings))
         {
             return this.ParseSettingsBlock();
@@ -74,7 +79,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         }
 
         throw new ParserException(
-            $"Expected 'include', 'settings' or 'env', but got '{this.Current.Text}'",
+            $"Expected 'include', 'let', 'settings' or 'env', but got '{this.Current.Text}'",
             this.Current.Location
         );
     }
@@ -90,6 +95,42 @@ public class Parser(List<Token> tokens, string? filePath = null)
         var includePath = (string)pathToken.Value!;
 
         return new(includePath, includeToken.Location);
+    }
+
+    /// <summary>
+    ///     Parses a let statement: "let" ident "=" expression
+    /// </summary>
+    private LetNode ParseLetStatement()
+    {
+        var letToken = this.Expect(TokenType.Let, "Expected 'let'");
+        var nameToken = this.Expect(TokenType.Identifier, "Expected variable name");
+
+        this.Expect(TokenType.Equals, "Expected '=' after variable name");
+
+        var value = this.ParseExpression();
+
+        return new(nameToken.Text, value, letToken.Location);
+    }
+
+    /// <summary>
+    ///     Parses an expression (for now, just values - will be extended in Phase 3)
+    /// </summary>
+    private IExpression ParseExpression()
+    {
+        // For Phase 2, expressions are just values or variable references
+        // Phase 3 will add binary operators, unary operators, etc.
+        
+        // Check for variable reference
+        if (this.Check(TokenType.Identifier))
+        {
+            var nameToken = this.Current;
+            this.Advance();
+            return new VariableRefNode(nameToken.Text, nameToken.Location);
+        }
+
+        // Otherwise, parse as value
+        var value = this.ParseValue();
+        return value;
     }
 
     /// <summary>
@@ -155,7 +196,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses a statement: assignStmt | nestedBlockStmt | ";"
+    ///     Parses a statement: letStmt | assignStmt | nestedBlockStmt | ";"
     /// </summary>
     private IStatement? ParseStatement()
     {
@@ -163,6 +204,12 @@ public class Parser(List<Token> tokens, string? filePath = null)
         if (this.Match(TokenType.Semicolon))
         {
             return null;
+        }
+
+        // Check for let statement
+        if (this.Check(TokenType.Let))
+        {
+            return this.ParseLetStatement();
         }
 
         // Look ahead to distinguish between assignment and nested block
@@ -183,7 +230,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         }
 
         throw new ParserException(
-            $"Expected identifier for assignment or nested block, but got '{this.Current.Text}'",
+            $"Expected 'let', identifier for assignment or nested block, but got '{this.Current.Text}'",
             this.Current.Location
         );
     }

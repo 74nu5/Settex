@@ -303,6 +303,7 @@ public class Lexer(string source, string? filePath = null)
             "false" => TokenType.False,
             "null" => TokenType.Null,
             "include" => TokenType.Include,
+            "let" => TokenType.Let,
             _ => TokenType.Identifier,
         };
 

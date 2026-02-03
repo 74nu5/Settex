@@ -167,7 +167,7 @@ env "Development" {
 **Objectif** : Déclarer et utiliser des variables avec scopes lexicaux.
 
 #### Tâches
-- [ ] Créer `RuntimeValue` pour typage runtime :
+- [x] Créer `RuntimeValue` pour typage runtime :
   ```csharp
   public abstract record RuntimeValue;
   public sealed record StringValue(string Value) : RuntimeValue;
@@ -177,7 +177,7 @@ env "Development" {
   public sealed record ArrayValue(List<RuntimeValue> Items) : RuntimeValue;
   public sealed record ObjectValue(Dictionary<string, RuntimeValue> Properties) : RuntimeValue;
   ```
-- [ ] Créer `VariableScope` :
+- [x] Créer `VariableScope` :
   ```csharp
   public sealed class VariableScope
   {
@@ -189,16 +189,16 @@ env "Development" {
       public VariableScope CreateChild();
   }
   ```
-- [ ] Ajouter tokens `LET`, opérateurs assignation
-- [ ] Ajouter `LetNode` dans l'AST :
+- [x] Ajouter tokens `LET`
+- [x] Ajouter `LetNode` dans l'AST :
   ```csharp
   public sealed record LetNode(string Name, IExpression Value, SourceLocation Location) : ITopLevelStatement;
   ```
-- [ ] Ajouter `VariableRefNode` pour références :
+- [x] Ajouter `VariableRefNode` pour références :
   ```csharp
   public sealed record VariableRefNode(string Name, SourceLocation Location) : IExpression;
   ```
-- [ ] Parser : `let ident = expr`
+- [x] Parser : `let ident = expr`
 - [ ] Evaluator :
   - [ ] Créer scope global
   - [ ] Évaluer `let` globaux avant `settings`
@@ -211,10 +211,18 @@ env "Development" {
   - [ ] Variable inconnue → erreur
 
 **Critères de succès** :
-- ✅ `let name = value` fonctionne
-- ✅ Scopes global / env / for respectés
-- ✅ Erreur si variable inconnue
-- ✅ Masquage env sur global fonctionne
+- ✅ `let name = value` parse correctement
+- ⏳ Scopes global / env / for respectés
+- ⏳ Erreur si variable inconnue
+- ⏳ Masquage env sur global fonctionne
+
+**Notes d'implémentation** :
+- RuntimeValue créé dans `src/Settex.Core/Runtime/`
+- VariableScope implémenté avec lookup récursif dans parent
+- IExpression interface créée, IValue en hérite
+- Parser.ParseExpression() supporte valeurs et références de variables
+- 96/96 tests passent (parsing fonctionnel)
+- **EN COURS** : Modification de l'Evaluator nécessaire pour gérer les scopes
 
 ---
 

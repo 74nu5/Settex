@@ -12,6 +12,7 @@ public enum TokenType
     False,
     Null,
     Include,
+    Let,
 
     // Symbols
     LeftBrace, // {

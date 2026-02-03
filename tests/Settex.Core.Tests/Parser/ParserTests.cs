@@ -570,4 +570,68 @@ public sealed class ParserTests
         await Assert.That(fileNode.Statements[2]).IsTypeOf<SettingsBlockNode>();
         await Assert.That(fileNode.Statements[3]).IsTypeOf<EnvBlockNode>();
     }
+
+    [Test]
+    public async Task ParseFile_LetStatement_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     let port = 5000
+                     
+                     settings {
+                       Server.Port = 8080
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(2);
+        await Assert.That(fileNode.Statements[0]).IsTypeOf<LetNode>();
+        await Assert.That(fileNode.Statements[1]).IsTypeOf<SettingsBlockNode>();
+
+        var letNode = (LetNode)fileNode.Statements[0];
+        await Assert.That(letNode.Name).IsEqualTo("port");
+        await Assert.That(letNode.Value).IsTypeOf<LiteralNode>();
+    }
+
+    [Test]
+    public async Task ParseFile_LetWithVariableReference_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     let basePort = 5000
+                     let apiPort = basePort
+                     
+                     settings {
+                       Server.Port = 8080
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(3);
+        
+        var let1 = (LetNode)fileNode.Statements[0];
+        await Assert.That(let1.Name).IsEqualTo("basePort");
+        await Assert.That(let1.Value).IsTypeOf<LiteralNode>();
+
+        var let2 = (LetNode)fileNode.Statements[1];
+        await Assert.That(let2.Name).IsEqualTo("apiPort");
+        await Assert.That(let2.Value).IsTypeOf<VariableRefNode>();
+        
+        var varRef = (VariableRefNode)let2.Value;
+        await Assert.That(varRef.Name).IsEqualTo("basePort");
+    }
 }
