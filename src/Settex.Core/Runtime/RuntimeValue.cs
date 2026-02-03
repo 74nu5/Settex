@@ -18,7 +18,11 @@ public sealed record NumberValue(decimal Value) : RuntimeValue;
 /// <summary>
 ///     Boolean value.
 /// </summary>
-public sealed record BoolValue(bool Value) : RuntimeValue;
+public sealed record BoolValue(bool Value) : RuntimeValue
+{
+    public static readonly BoolValue True = new(true);
+    public static readonly BoolValue False = new(false);
+}
 
 /// <summary>
 ///     Null value.

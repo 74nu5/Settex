@@ -1,5 +1,6 @@
 namespace Settex.Core.Evaluation;
 
+using Settex.Core.Diagnostics;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Runtime;
 
@@ -24,6 +25,8 @@ public class ExpressionEvaluator
             VariableRefNode varRef => this.EvaluateVariableRef(varRef),
             ArrayNode array => this.EvaluateArray(array),
             TaggedObjectNode obj => this.EvaluateTaggedObject(obj),
+            BinaryOpNode binOp => this.EvaluateBinaryOp(binOp),
+            UnaryOpNode unaryOp => this.EvaluateUnaryOp(unaryOp),
             _ => throw new EvaluatorException($"Unsupported expression type: {expression.GetType().Name}", null),
         };
     }
@@ -91,5 +94,245 @@ public class ExpressionEvaluator
         }
 
         return new ObjectValue(properties);
+    }
+
+    private RuntimeValue EvaluateBinaryOp(BinaryOpNode binOp)
+    {
+        var left = this.Evaluate(binOp.Left);
+        
+        // Short-circuit for logical operators
+        if (binOp.Operator == "and")
+        {
+            if (left is not BoolValue leftBool)
+            {
+                throw new EvaluatorException($"Operator 'and' requires boolean operands, got {left.GetType().Name}", binOp.Location);
+            }
+
+            if (!leftBool.Value)
+            {
+                return BoolValue.False;
+            }
+
+            var right = this.Evaluate(binOp.Right);
+
+            if (right is not BoolValue rightBool)
+            {
+                throw new EvaluatorException($"Operator 'and' requires boolean operands, got {right.GetType().Name}", binOp.Location);
+            }
+
+            return rightBool.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        if (binOp.Operator == "or")
+        {
+            if (left is not BoolValue leftBool)
+            {
+                throw new EvaluatorException($"Operator 'or' requires boolean operands, got {left.GetType().Name}", binOp.Location);
+            }
+
+            if (leftBool.Value)
+            {
+                return BoolValue.True;
+            }
+
+            var right = this.Evaluate(binOp.Right);
+
+            if (right is not BoolValue rightBool)
+            {
+                throw new EvaluatorException($"Operator 'or' requires boolean operands, got {right.GetType().Name}", binOp.Location);
+            }
+
+            return rightBool.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        // Null coalescing: return left if not null, otherwise right
+        if (binOp.Operator == "??")
+        {
+            if (left is not NullValue)
+            {
+                return left;
+            }
+
+            return this.Evaluate(binOp.Right);
+        }
+
+        // For other operators, evaluate both sides
+        var rightValue = this.Evaluate(binOp.Right);
+
+        return binOp.Operator switch
+        {
+            "+" => this.EvaluateAddition(left, rightValue, binOp.Location),
+            "-" => this.EvaluateSubtraction(left, rightValue, binOp.Location),
+            "*" => this.EvaluateMultiplication(left, rightValue, binOp.Location),
+            "/" => this.EvaluateDivision(left, rightValue, binOp.Location),
+            "==" => this.EvaluateEquality(left, rightValue),
+            "!=" => this.EvaluateInequality(left, rightValue),
+            "<" => this.EvaluateLessThan(left, rightValue, binOp.Location),
+            "<=" => this.EvaluateLessThanOrEqual(left, rightValue, binOp.Location),
+            ">" => this.EvaluateGreaterThan(left, rightValue, binOp.Location),
+            ">=" => this.EvaluateGreaterThanOrEqual(left, rightValue, binOp.Location),
+            _ => throw new EvaluatorException($"Unknown binary operator '{binOp.Operator}'", binOp.Location),
+        };
+    }
+
+    private RuntimeValue EvaluateUnaryOp(UnaryOpNode unaryOp)
+    {
+        var operand = this.Evaluate(unaryOp.Operand);
+
+        return unaryOp.Operator switch
+        {
+            "not" => this.EvaluateNot(operand, unaryOp.Location),
+            "-" => this.EvaluateNegation(operand, unaryOp.Location),
+            _ => throw new EvaluatorException($"Unknown unary operator '{unaryOp.Operator}'", unaryOp.Location),
+        };
+    }
+
+    // Arithmetic operators
+    private RuntimeValue EvaluateAddition(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return new NumberValue(leftNum.Value + rightNum.Value);
+        }
+
+        throw new EvaluatorException($"Operator '+' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateSubtraction(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return new NumberValue(leftNum.Value - rightNum.Value);
+        }
+
+        throw new EvaluatorException($"Operator '-' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateMultiplication(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return new NumberValue(leftNum.Value * rightNum.Value);
+        }
+
+        throw new EvaluatorException($"Operator '*' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateDivision(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            if (rightNum.Value == 0)
+            {
+                throw new EvaluatorException("Division by zero", location);
+            }
+
+            return new NumberValue(leftNum.Value / rightNum.Value);
+        }
+
+        throw new EvaluatorException($"Operator '/' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateNegation(RuntimeValue operand, SourceLocation location)
+    {
+        if (operand is NumberValue num)
+        {
+            return new NumberValue(-num.Value);
+        }
+
+        throw new EvaluatorException($"Operator '-' requires numeric operand, got {operand.GetType().Name}", location);
+    }
+
+    // Comparison operators
+    private RuntimeValue EvaluateEquality(RuntimeValue left, RuntimeValue right)
+    {
+        // Null equality
+        if (left is NullValue && right is NullValue)
+        {
+            return BoolValue.True;
+        }
+
+        if (left is NullValue || right is NullValue)
+        {
+            return BoolValue.False;
+        }
+
+        // Number equality
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return leftNum.Value == rightNum.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        // String equality
+        if (left is StringValue leftStr && right is StringValue rightStr)
+        {
+            return leftStr.Value == rightStr.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        // Bool equality
+        if (left is BoolValue leftBool && right is BoolValue rightBool)
+        {
+            return leftBool.Value == rightBool.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        // Different types are not equal
+        return BoolValue.False;
+    }
+
+    private RuntimeValue EvaluateInequality(RuntimeValue left, RuntimeValue right)
+    {
+        var equality = this.EvaluateEquality(left, right);
+        return equality is BoolValue boolVal && boolVal.Value ? BoolValue.False : BoolValue.True;
+    }
+
+    private RuntimeValue EvaluateLessThan(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return leftNum.Value < rightNum.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        throw new EvaluatorException($"Operator '<' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateLessThanOrEqual(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return leftNum.Value <= rightNum.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        throw new EvaluatorException($"Operator '<=' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateGreaterThan(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return leftNum.Value > rightNum.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        throw new EvaluatorException($"Operator '>' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateGreaterThanOrEqual(RuntimeValue left, RuntimeValue right, SourceLocation location)
+    {
+        if (left is NumberValue leftNum && right is NumberValue rightNum)
+        {
+            return leftNum.Value >= rightNum.Value ? BoolValue.True : BoolValue.False;
+        }
+
+        throw new EvaluatorException($"Operator '>=' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    // Logical operators
+    private RuntimeValue EvaluateNot(RuntimeValue operand, SourceLocation location)
+    {
+        if (operand is BoolValue boolVal)
+        {
+            return boolVal.Value ? BoolValue.False : BoolValue.True;
+        }
+
+        throw new EvaluatorException($"Operator 'not' requires boolean operand, got {operand.GetType().Name}", location);
     }
 }

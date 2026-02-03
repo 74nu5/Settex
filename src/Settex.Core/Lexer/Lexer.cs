@@ -81,8 +81,8 @@ public class Lexer(string source, string? filePath = null)
             return this.ScanString(startLine, startColumn);
         }
 
-        // Numbers (including negative)
-        if (char.IsDigit(ch) || (ch == '-' && char.IsDigit(this.Peek())))
+        // Numbers (including negative, but be careful with minus operator)
+        if (char.IsDigit(ch))
         {
             return this.ScanNumber(startLine, startColumn);
         }
@@ -93,17 +93,25 @@ public class Lexer(string source, string? filePath = null)
             return this.ScanIdentifierOrKeyword(startLine, startColumn);
         }
 
-        // Single-character tokens
+        // Multi-character and single-character operators/symbols
         return ch switch
         {
             '{' => this.CreateAndAdvance(TokenType.LeftBrace, "{", startLine, startColumn),
             '}' => this.CreateAndAdvance(TokenType.RightBrace, "}", startLine, startColumn),
             '[' => this.ScanLeftBracket(startLine, startColumn),
             ']' => this.ScanRightBracket(startLine, startColumn),
-            '=' => this.CreateAndAdvance(TokenType.Equals, "=", startLine, startColumn),
             '.' => this.CreateAndAdvance(TokenType.Dot, ".", startLine, startColumn),
             ',' => this.CreateAndAdvance(TokenType.Comma, ",", startLine, startColumn),
             ';' => this.CreateAndAdvance(TokenType.Semicolon, ";", startLine, startColumn),
+            '+' => this.CreateAndAdvance(TokenType.Plus, "+", startLine, startColumn),
+            '-' => this.ScanMinusOrNumber(startLine, startColumn),
+            '*' => this.CreateAndAdvance(TokenType.Star, "*", startLine, startColumn),
+            '/' => this.CreateAndAdvance(TokenType.Slash, "/", startLine, startColumn),
+            '<' => this.ScanLessOrLessEqual(startLine, startColumn),
+            '>' => this.ScanGreaterOrGreaterEqual(startLine, startColumn),
+            '=' => this.ScanEqualsOrEqualEqual(startLine, startColumn),
+            '!' => this.ScanNotEqual(startLine, startColumn),
+            '?' => this.ScanQuestionQuestion(startLine, startColumn),
             _ => throw new LexerException($"Unexpected character '{ch}'", this.CreateLocation(startLine, startColumn, 1)),
         };
     }
@@ -304,6 +312,9 @@ public class Lexer(string source, string? filePath = null)
             "null" => TokenType.Null,
             "include" => TokenType.Include,
             "let" => TokenType.Let,
+            "and" => TokenType.And,
+            "or" => TokenType.Or,
+            "not" => TokenType.Not,
             _ => TokenType.Identifier,
         };
 
@@ -340,6 +351,82 @@ public class Lexer(string source, string? filePath = null)
                 break;
             }
         }
+    }
+
+    private Token ScanMinusOrNumber(int startLine, int startColumn)
+    {
+        // Check if this is a negative number or minus operator
+        if (char.IsDigit(this.Peek()))
+        {
+            return this.ScanNumber(startLine, startColumn);
+        }
+
+        return this.CreateAndAdvance(TokenType.Minus, "-", startLine, startColumn);
+    }
+
+    private Token ScanLessOrLessEqual(int startLine, int startColumn)
+    {
+        this.Advance(); // consume <
+
+        if (this.Current == '=')
+        {
+            this.Advance(); // consume =
+            return this.CreateToken(TokenType.LessEqual, "<=", startLine, startColumn);
+        }
+
+        return this.CreateToken(TokenType.Less, "<", startLine, startColumn);
+    }
+
+    private Token ScanGreaterOrGreaterEqual(int startLine, int startColumn)
+    {
+        this.Advance(); // consume >
+
+        if (this.Current == '=')
+        {
+            this.Advance(); // consume =
+            return this.CreateToken(TokenType.GreaterEqual, ">=", startLine, startColumn);
+        }
+
+        return this.CreateToken(TokenType.Greater, ">", startLine, startColumn);
+    }
+
+    private Token ScanEqualsOrEqualEqual(int startLine, int startColumn)
+    {
+        this.Advance(); // consume =
+
+        if (this.Current == '=')
+        {
+            this.Advance(); // consume second =
+            return this.CreateToken(TokenType.EqualEqual, "==", startLine, startColumn);
+        }
+
+        return this.CreateToken(TokenType.Equals, "=", startLine, startColumn);
+    }
+
+    private Token ScanNotEqual(int startLine, int startColumn)
+    {
+        this.Advance(); // consume !
+
+        if (this.Current == '=')
+        {
+            this.Advance(); // consume =
+            return this.CreateToken(TokenType.NotEqual, "!=", startLine, startColumn);
+        }
+
+        throw new LexerException("Unexpected character '!'. Did you mean '!='?", this.CreateLocation(startLine, startColumn, 1));
+    }
+
+    private Token ScanQuestionQuestion(int startLine, int startColumn)
+    {
+        this.Advance(); // consume first ?
+
+        if (this.Current == '?')
+        {
+            this.Advance(); // consume second ?
+            return this.CreateToken(TokenType.QuestionQuestion, "??", startLine, startColumn);
+        }
+
+        throw new LexerException("Unexpected character '?'. Did you mean '??'?", this.CreateLocation(startLine, startColumn, 1));
     }
 
     private void Advance()

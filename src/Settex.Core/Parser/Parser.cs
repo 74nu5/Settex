@@ -14,6 +14,8 @@ public class Parser(List<Token> tokens, string? filePath = null)
     private int position;
 
     private Token Current => this.position < this.tokens.Count ? this.tokens[this.position] : this.tokens[^1];
+    
+    private Token Previous => this.position > 0 ? this.tokens[this.position - 1] : this.tokens[0];
 
     private bool IsAtEnd => this.Current.Type == TokenType.Eof;
 
@@ -113,13 +115,155 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an expression (for now, just values or variable references - will be extended in Phase 3)
+    ///     Parses an expression with operator precedence (Pratt parser).
+    ///     Entry point for expression parsing.
     /// </summary>
     private IExpression ParseExpression()
     {
-        // For Phase 2, expressions are just values or variable references
-        // Phase 3 will add binary operators, unary operators, etc.
-        
+        return this.ParseLogicalOr();
+    }
+
+    // Precedence levels (lowest to highest):
+    // 1. Logical OR
+    // 2. Logical AND
+    // 3. Null coalescing (??)
+    // 4. Equality (==, !=)
+    // 5. Comparison (<, <=, >, >=)
+    // 6. Term (+, -)
+    // 7. Factor (*, /)
+    // 8. Unary (not, -)
+    // 9. Primary (literals, variables, arrays, objects, parentheses)
+
+    private IExpression ParseLogicalOr()
+    {
+        var left = this.ParseLogicalAnd();
+
+        while (this.Match(TokenType.Or))
+        {
+            var opToken = this.Previous;
+            var right = this.ParseLogicalAnd();
+            left = new BinaryOpNode(left, "or", right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseLogicalAnd()
+    {
+        var left = this.ParseCoalesce();
+
+        while (this.Match(TokenType.And))
+        {
+            var opToken = this.Previous;
+            var right = this.ParseCoalesce();
+            left = new BinaryOpNode(left, "and", right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseCoalesce()
+    {
+        var left = this.ParseEquality();
+
+        while (this.Match(TokenType.QuestionQuestion))
+        {
+            var opToken = this.Previous;
+            var right = this.ParseEquality();
+            left = new BinaryOpNode(left, "??", right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseEquality()
+    {
+        var left = this.ParseComparison();
+
+        while (this.Match(TokenType.EqualEqual, TokenType.NotEqual))
+        {
+            var opToken = this.Previous;
+            var op = opToken.Type == TokenType.EqualEqual ? "==" : "!=";
+            var right = this.ParseComparison();
+            left = new BinaryOpNode(left, op, right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseComparison()
+    {
+        var left = this.ParseTerm();
+
+        while (this.Match(TokenType.Less, TokenType.LessEqual, TokenType.Greater, TokenType.GreaterEqual))
+        {
+            var opToken = this.Previous;
+            var op = opToken.Type switch
+            {
+                TokenType.Less => "<",
+                TokenType.LessEqual => "<=",
+                TokenType.Greater => ">",
+                TokenType.GreaterEqual => ">=",
+                _ => throw new ParserException($"Unexpected comparison operator: {opToken.Type}", opToken.Location),
+            };
+            var right = this.ParseTerm();
+            left = new BinaryOpNode(left, op, right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseTerm()
+    {
+        var left = this.ParseFactor();
+
+        while (this.Match(TokenType.Plus, TokenType.Minus))
+        {
+            var opToken = this.Previous;
+            var op = opToken.Type == TokenType.Plus ? "+" : "-";
+            var right = this.ParseFactor();
+            left = new BinaryOpNode(left, op, right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseFactor()
+    {
+        var left = this.ParseUnary();
+
+        while (this.Match(TokenType.Star, TokenType.Slash))
+        {
+            var opToken = this.Previous;
+            var op = opToken.Type == TokenType.Star ? "*" : "/";
+            var right = this.ParseUnary();
+            left = new BinaryOpNode(left, op, right, opToken.Location);
+        }
+
+        return left;
+    }
+
+    private IExpression ParseUnary()
+    {
+        if (this.Match(TokenType.Not))
+        {
+            var opToken = this.Previous;
+            var operand = this.ParseUnary();
+            return new UnaryOpNode("not", operand, opToken.Location);
+        }
+
+        if (this.Match(TokenType.Minus))
+        {
+            var opToken = this.Previous;
+            var operand = this.ParseUnary();
+            return new UnaryOpNode("-", operand, opToken.Location);
+        }
+
+        return this.ParsePrimary();
+    }
+
+    private IExpression ParsePrimary()
+    {
         // Check for tagged object: identifier followed by '{'
         if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
         {
@@ -467,6 +611,20 @@ public class Parser(List<Token> tokens, string? filePath = null)
         {
             this.Advance();
             return true;
+        }
+
+        return false;
+    }
+
+    private bool Match(params TokenType[] types)
+    {
+        foreach (var type in types)
+        {
+            if (this.Check(type))
+            {
+                this.Advance();
+                return true;
+            }
         }
 
         return false;

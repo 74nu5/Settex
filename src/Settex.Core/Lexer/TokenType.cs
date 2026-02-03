@@ -13,6 +13,9 @@ public enum TokenType
     Null,
     Include,
     Let,
+    And,
+    Or,
+    Not,
 
     // Symbols
     LeftBrace, // {
@@ -23,6 +26,23 @@ public enum TokenType
     Dot, // .
     Comma, // ,
     Semicolon, // ;
+    
+    // Arithmetic operators
+    Plus, // +
+    Minus, // -
+    Star, // *
+    Slash, // /
+    
+    // Comparison operators
+    EqualEqual, // ==
+    NotEqual, // !=
+    Less, // <
+    LessEqual, // <=
+    Greater, // >
+    GreaterEqual, // >=
+    
+    // Null coalescing
+    QuestionQuestion, // ??
 
     // Literals
     String,
