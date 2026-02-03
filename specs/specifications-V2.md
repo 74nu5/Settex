@@ -1,4 +1,4 @@
-# AppSettings++ — Spécification V2 (inline if + set-if-missing)
+# Settex — Spécification V2 (inline if + set-if-missing)
 
 ## 1) Objectif & principes
 
