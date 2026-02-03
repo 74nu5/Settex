@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Settex.Core.Evaluation;
 using Settex.Core.Writing;
 
+[NotInParallel]
 public sealed class JsonWriterTests
 {
     [Test]
@@ -232,7 +233,14 @@ public sealed class JsonWriterTests
         finally
         {
             var rootDir = Path.Combine(Path.GetTempPath(), "SettexTests");
-            this.CleanupDirectory(rootDir);
+
+            try
+            {
+                this.CleanupDirectory(rootDir);
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 
