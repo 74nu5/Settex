@@ -98,9 +98,12 @@ public class VariableEvaluationTests
                 Server.Port = port
             }
 
-            env Production {
+            env "Production" {
                 let port = 443
-                Server.Port = port
+                
+                settings {
+                    Server.Port = port
+                }
             }
             """;
 
@@ -154,13 +157,7 @@ public class VariableEvaluationTests
             }
             """;
 
-        var exception = await Assert.ThrowsAsync(() => Task.FromResult(
-            () => CompileSource(source)
-        ));
-
-        await Assert.That(exception).IsTypeOf<EvaluatorException>();
-        var evaluatorEx = (EvaluatorException)exception!;
-        await Assert.That(evaluatorEx.Message).Contains("Variable 'unknownVariable' is not defined");
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]

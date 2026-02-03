@@ -113,14 +113,20 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an expression (for now, just values - will be extended in Phase 3)
+    ///     Parses an expression (for now, just values or variable references - will be extended in Phase 3)
     /// </summary>
     private IExpression ParseExpression()
     {
         // For Phase 2, expressions are just values or variable references
         // Phase 3 will add binary operators, unary operators, etc.
         
-        // Check for variable reference
+        // Check for tagged object: identifier followed by '{'
+        if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
+        {
+            return this.ParseTaggedObjectValue();
+        }
+
+        // Check for variable reference: identifier NOT followed by '{'
         if (this.Check(TokenType.Identifier))
         {
             var nameToken = this.Current;
@@ -128,7 +134,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return new VariableRefNode(nameToken.Text, nameToken.Location);
         }
 
-        // Otherwise, parse as value
+        // Otherwise, parse as value (literal or array)
         var value = this.ParseValue();
         return value;
     }
@@ -145,9 +151,8 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an env block: "env" string "{" settingsBlock "}"
-    ///     Note: The grammar says env "Name" block, but inside that block
-    ///     there should be a settings block.
+    ///     Parses an env block: "env" string "{" [let]* settingsBlock "}"
+    ///     In V2, env blocks can have let statements before the settings block.
     /// </summary>
     private EnvBlockNode ParseEnvBlock()
     {
@@ -158,10 +163,41 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
         this.Expect(TokenType.LeftBrace, "Expected '{' after environment name");
 
-        // Inside env block, we expect a settings block
+        // Skip newlines
+        while (this.Match(TokenType.Newline))
+        {
+        }
+
+        // Parse let statements (V2 feature)
+        var letStatements = new List<LetNode>();
+        while (this.Check(TokenType.Let))
+        {
+            var letStmt = this.ParseLetStatement();
+            letStatements.Add(letStmt);
+
+            // Skip newlines after let statement
+            while (this.Match(TokenType.Newline))
+            {
+            }
+        }
+
+        // Parse settings block
         var settingsBlock = this.ParseSettingsBlock();
 
         this.Expect(TokenType.RightBrace, "Expected '}' to close env block");
+
+        // For now, we store let statements in the EnvBlockNode's SettingsBlock
+        // This is a simplification - we'll refactor when we implement proper scoping
+        if (letStatements.Count > 0)
+        {
+            // Prepend let statements to the settings block's statements
+            var allStatements = new List<IStatement>();
+            allStatements.AddRange(letStatements);
+            allStatements.AddRange(settingsBlock.Block.Statements);
+
+            var newBlock = new BlockNode(allStatements, settingsBlock.Block.Location);
+            settingsBlock = new SettingsBlockNode(newBlock, settingsBlock.Location);
+        }
 
         return new(envName, settingsBlock, envToken.Location);
     }

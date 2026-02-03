@@ -1,0 +1,67 @@
+Ex├®cuter des tests ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+├®chec Evaluate_EnvVariable_ShadowsGlobal (1ms)
+  ParserException: Expected environment name string
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected environment name string
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:443
+    sur Settex.Core.Parser.Parser.ParseEnvBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:155
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:78
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:30
+    sur Settex.Core.Tests.Evaluation.VariableEvaluationTests.CompileSource(String source) dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\VariableEvaluationTests.cs:21
+    sur Settex.Core.Tests.Evaluation.VariableEvaluationTests.Evaluate_EnvVariable_ShadowsGlobal() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\VariableEvaluationTests.cs:107
+├®chec Evaluate_UndefinedVariable_ThrowsException (3ms)
+  AssertionException: Expected to throw Exception
+but no exception was thrown
+
+at Assert.That(action).Throws<Exception>()
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: AssertionException: Expected to throw Exception
+  but no exception was thrown
+  
+  at Assert.That(action).Throws<Exception>()
+├®chec Evaluate_TaggedObjectAsValue_CreatesObject (5ms)
+  ParserException: Expected 'let', identifier for assignment or nested block, but got '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected 'let', identifier for assignment or nested block, but got '{'
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:232
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:185
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:142
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:73
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:30
+    sur Settex.Core.Parser.Parser.ParseFile() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:46
+    sur Settex.Core.Tests.Evaluation.EvaluatorTests.ParseAndEvaluate(String source) dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\EvaluatorTests.cs:432
+    sur Settex.Core.Tests.Evaluation.EvaluatorTests.Evaluate_TaggedObjectAsValue_CreatesObject() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\EvaluatorTests.cs:158
+├®chec ParseFile_TaggedObjectAsValue_ParsesCorrectly (1ms)
+  ParserException: Expected 'let', identifier for assignment or nested block, but got '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected 'let', identifier for assignment or nested block, but got '{'
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:232
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:185
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:142
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:73
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:30
+    sur Settex.Core.Parser.Parser.ParseFile() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:46
+    sur Settex.Core.Tests.Parser.ParserTests.ParseFile_TaggedObjectAsValue_ParsesCorrectly() dans D:\Perso\Settex\tests\Settex.Core.Tests\Parser\ParserTests.cs:241
+D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64) a ├®chou├® avec 4 erreur(s) (1s 336ms)
+Code de sortie: 2
+  Sortie standard: 
+  ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòùÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔòùÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòù
+  ÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔûêÔûêÔòù  ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòöÔûêÔûêÔòù ÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔûêÔûêÔòùÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔòÜÔûêÔûêÔûêÔûêÔûêÔûêÔòöÔòØÔûêÔûêÔòæ ÔòÜÔûêÔûêÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔòÜÔòÉÔòØ    ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ ÔòÜÔòÉÔòØ  ÔòÜÔòÉÔòÉÔòÉÔòØÔòÜÔòÉÔòØ   ÔòÜÔòÉÔòØ
+  
+     TUnit v1.12.125.0 | 64-bit | Microsoft Windows 10.0.26200 | win-x64 | .NET 10.0.2 | Microsoft Testing Platform v2.0.2
+  
+     Engine Mode: SourceGenerated
+  
+  
+
+R├®sum├® de s├®rie de tests┬á: ├ëchec!
+  total : 104
+  ├®chec : 4
+  r├®ussie : 100
+  ignor├® : 0
+  dur├®e : 1s 698ms
+LÔÇÖex├®cution de tests sÔÇÖest termin├®e avec un code de sortie non r├®ussi┬á: 2 (voir┬á: https://aka.ms/testingplatform/exitcodes)
