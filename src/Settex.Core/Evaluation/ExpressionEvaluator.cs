@@ -1,5 +1,7 @@
 namespace Settex.Core.Evaluation;
 
+using System.Text;
+
 using Settex.Core.Diagnostics;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Runtime;
@@ -27,6 +29,7 @@ public class ExpressionEvaluator
             TaggedObjectNode obj => this.EvaluateTaggedObject(obj),
             BinaryOpNode binOp => this.EvaluateBinaryOp(binOp),
             UnaryOpNode unaryOp => this.EvaluateUnaryOp(unaryOp),
+            InterpolatedStringNode interpolated => this.EvaluateInterpolatedString(interpolated),
             _ => throw new EvaluatorException($"Unsupported expression type: {expression.GetType().Name}", null),
         };
     }
@@ -334,5 +337,41 @@ public class ExpressionEvaluator
         }
 
         throw new EvaluatorException($"Operator 'not' requires boolean operand, got {operand.GetType().Name}", location);
+    }
+
+    private RuntimeValue EvaluateInterpolatedString(InterpolatedStringNode interpolated)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var segment in interpolated.Segments)
+        {
+            switch (segment)
+            {
+                case LiteralSegment literal:
+                    sb.Append(literal.Text);
+                    break;
+
+                case ExpressionSegment exprSeg:
+                    var value = this.Evaluate(exprSeg.Expression);
+
+                    if (value is NullValue)
+                    {
+                        throw new EvaluatorException("Interpolated expression cannot be null", interpolated.Location);
+                    }
+
+                    var strValue = value switch
+                    {
+                        StringValue s => s.Value,
+                        NumberValue n => n.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        BoolValue b => b.Value ? "true" : "false",
+                        _ => throw new EvaluatorException($"Cannot interpolate value of type {value.GetType().Name}", interpolated.Location),
+                    };
+
+                    sb.Append(strValue);
+                    break;
+            }
+        }
+
+        return new StringValue(sb.ToString());
     }
 }

@@ -236,38 +236,48 @@ env "Development" {
 **Objectif** : Évaluer expressions arithmétiques, logiques, comparaisons, coalesce.
 
 #### Tâches
-- [ ] Créer `ExpressionEvaluator` avec Pratt parser
-- [ ] Ajouter tous les tokens d'opérateurs :
-  - [ ] Arithmétique : `+`, `-`, `*`, `/`
-  - [ ] Comparaison : `==`, `!=`, `<`, `<=`, `>`, `>=`
-  - [ ] Logique : `and`, `or`, `not`
-  - [ ] Coalesce : `??`
-- [ ] Créer nœuds d'expressions :
+- [x] Créer `ExpressionEvaluator` avec Pratt parser
+- [x] Ajouter tous les tokens d'opérateurs :
+  - [x] Arithmétique : `+`, `-`, `*`, `/`
+  - [x] Comparaison : `==`, `!=`, `<`, `<=`, `>`, `>=`
+  - [x] Logique : `and`, `or`, `not`
+  - [x] Coalesce : `??`
+- [x] Créer nœuds d'expressions :
   ```csharp
   public sealed record BinaryOpNode(IExpression Left, string Op, IExpression Right, SourceLocation Location) : IExpression;
   public sealed record UnaryOpNode(string Op, IExpression Operand, SourceLocation Location) : IExpression;
   public sealed record LiteralNode(...) : IExpression; // déjà existe
   ```
-- [ ] Parser expressions avec précédence :
-  - [ ] Pratt parser : `logicalOr` → `logicalAnd` → `coalesce` → `equality` → `comparison` → `term` → `factor` → `unary` → `primary`
-- [ ] Evaluator :
-  - [ ] Évaluer expressions récursivement
-  - [ ] Vérifier types compatibles pour chaque opérateur
-  - [ ] Erreur si types incompatibles
-- [ ] Tests :
-  - [ ] Arithmétique : `5 + 3 * 2` = 11
-  - [ ] Comparaison : `10 > 5` = true
-  - [ ] Logique : `true and false` = false
-  - [ ] Coalesce : `null ?? "default"` = "default"
-  - [ ] Précédence : `2 + 3 * 4` = 14
-  - [ ] Erreurs : `"hello" + 5` → erreur
-  - [ ] Bool requis pour `and`/`or`/`not`
+- [x] Parser expressions avec précédence :
+  - [x] Pratt parser : `logicalOr` → `logicalAnd` → `coalesce` → `equality` → `comparison` → `term` → `factor` → `unary` → `primary`
+- [x] Evaluator :
+  - [x] Évaluer expressions récursivement
+  - [x] Vérifier types compatibles pour chaque opérateur
+  - [x] Erreur si types incompatibles
+- [x] Tests :
+  - [x] Arithmétique : `5 + 3 * 2` = 11
+  - [x] Comparaison : `10 > 5` = true
+  - [x] Logique : `true and false` = false
+  - [x] Coalesce : `null ?? "default"` = "default"
+  - [x] Précédence : `2 + 3 * 4` = 14
+  - [x] Erreurs : `"hello" + 5` → erreur
+  - [x] Bool requis pour `and`/`or`/`not`
 
 **Critères de succès** :
 - ✅ Toutes les opérations supportées
 - ✅ Précédence correcte
 - ✅ Erreurs de type détectées
 - ✅ Tests avec combinaisons complexes
+
+**Notes d'implémentation** :
+- Lexer étendu avec tokens pour tous les opérateurs (Plus, Minus, Star, Slash, EqualEqual, etc.)
+- BinaryOpNode et UnaryOpNode créés pour AST
+- Pratt parser implémenté avec 9 niveaux de précédence
+- ExpressionEvaluator étendu avec évaluation d'opérateurs (short-circuit pour and/or)
+- BoolValue.True/False ajoutés comme constantes
+- 26 tests d'expressions ajoutés dans ExpressionEvaluationTests.cs
+- 130/130 tests passent ✅
+- **COMPLÉTÉ** : Commit effectué (feat(v2): Phase 3 - Expressions (Pratt Parser) - complete)
 
 ---
 

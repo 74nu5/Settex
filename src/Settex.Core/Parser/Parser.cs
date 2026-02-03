@@ -1,5 +1,6 @@
 namespace Settex.Core.Parser;
 
+using Settex.Core.Diagnostics;
 using Settex.Core.Lexer;
 using Settex.Core.Parser.Ast;
 
@@ -459,9 +460,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
     /// <summary>
     ///     Parses a value: literal | array | taggedObjectValue
     /// </summary>
-    private IValue ParseValue()
+    private IExpression ParseValue()
     {
-        // Literal values
+        // Literal values (including interpolated strings)
         if (this.Check(TokenType.String) || this.Check(TokenType.Integer) ||
             this.Check(TokenType.Float) || this.Check(TokenType.True) ||
             this.Check(TokenType.False) || this.Check(TokenType.Null))
@@ -492,13 +493,91 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
     /// <summary>
     ///     Parses a literal: string | number | "true" | "false" | "null"
+    ///     For strings, detects interpolation ${...} and creates InterpolatedStringNode if needed.
     /// </summary>
-    private LiteralNode ParseLiteral()
+    private IExpression ParseLiteral()
     {
         var token = this.Current;
         this.Advance();
 
-        return new(token.Value, token.Location);
+        // Check if it's a string with interpolation
+        if (token.Type == TokenType.String && token.Value is string str && str.Contains("${"))
+        {
+            return this.ParseInterpolatedString(str, token.Location);
+        }
+
+        return new LiteralNode(token.Value, token.Location);
+    }
+
+    /// <summary>
+    ///     Parses an interpolated string: "text ${expr} text".
+    ///     The input is the decoded string value with ${...} segments.
+    /// </summary>
+    private InterpolatedStringNode ParseInterpolatedString(string str, SourceLocation location)
+    {
+        var segments = new List<StringSegment>();
+        var currentPos = 0;
+
+        while (currentPos < str.Length)
+        {
+            var dollarPos = str.IndexOf("${", currentPos);
+
+            if (dollarPos == -1)
+            {
+                // No more interpolations, add remaining as literal
+                if (currentPos < str.Length)
+                {
+                    segments.Add(new LiteralSegment(str.Substring(currentPos)));
+                }
+
+                break;
+            }
+
+            // Add literal segment before ${
+            if (dollarPos > currentPos)
+            {
+                segments.Add(new LiteralSegment(str.Substring(currentPos, dollarPos - currentPos)));
+            }
+
+            // Find matching }
+            var braceCount = 1;
+            var exprStart = dollarPos + 2; // Skip ${
+            var exprPos = exprStart;
+
+            while (exprPos < str.Length && braceCount > 0)
+            {
+                if (str[exprPos] == '{')
+                {
+                    braceCount++;
+                }
+                else if (str[exprPos] == '}')
+                {
+                    braceCount--;
+                }
+
+                exprPos++;
+            }
+
+            if (braceCount != 0)
+            {
+                throw new ParserException("Unterminated interpolation expression ${...}", location);
+            }
+
+            // Extract expression source (between ${ and })
+            var exprSource = str.Substring(exprStart, exprPos - exprStart - 1);
+
+            // Parse the expression
+            var exprLexer = new Lexer(exprSource);
+            var exprTokens = exprLexer.Tokenize();
+            var exprParser = new Parser(exprTokens);
+            var expr = exprParser.ParseExpression();
+
+            segments.Add(new ExpressionSegment(expr));
+
+            currentPos = exprPos;
+        }
+
+        return new InterpolatedStringNode(segments, location);
     }
 
     /// <summary>
