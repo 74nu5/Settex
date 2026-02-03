@@ -206,25 +206,26 @@ Settex/
 - [x] Tests unitaires Parser (18 tests - tous passent ✨)
 
 ### Phase 4 : Evaluator
-- [ ] Définir `SettingsModel` :
-  - [ ] `BaseSettings` : JsonObject représentant le bloc settings principal
-  - [ ] `EnvironmentOverlays` : Dictionary<string, JsonObject> pour chaque env
-- [ ] Implémenter `Evaluator.cs` :
-  - [ ] Validation structure :
-    - [ ] Exactement un bloc `settings` au niveau global
-    - [ ] Chaque bloc `env` contient exactement un bloc `settings` interne
-    - [ ] Pas de blocs `env` dupliqués (même nom)
-  - [ ] Conversion AST → modèle JSON intermédiaire :
-    - [ ] `NestedBlockNode` → objet JSON
-    - [ ] `AssignmentNode` → propriété (avec gestion dot-path)
-    - [ ] `ArrayNode` → tableau JSON
-    - [ ] `TaggedObjectNode` → objet dans tableau (le tag est ignoré)
-    - [ ] `LiteralNode` → valeur primitive
-  - [ ] Gestion des assignations par chemin (dot-path) :
-    - [ ] `A.B.C = value` → création automatique d'objets intermédiaires
-    - [ ] Erreur si chemin traverse un non-objet (ex: A est un array)
-  - [ ] Collecte des erreurs sémantiques avec positions
-- [ ] Tests unitaires Evaluator
+- [x] Définir `SettingsModel` :
+  - [x] `BaseSettings` : JsonObject représentant le bloc settings principal
+  - [x] `EnvironmentOverlays` : Dictionary<string, JsonObject> pour chaque env
+- [x] Implémenter `Evaluator.cs` :
+  - [x] Validation structure :
+    - [x] Exactement un bloc `settings` au niveau global
+    - [x] Chaque bloc `env` contient exactement un bloc `settings` interne
+    - [x] Pas de blocs `env` dupliqués (même nom)
+  - [x] Conversion AST → modèle JSON intermédiaire :
+    - [x] `NestedBlockNode` → objet JSON
+    - [x] `AssignmentNode` → propriété (avec gestion dot-path)
+    - [x] `ArrayNode` → tableau JSON
+    - [x] `TaggedObjectNode` → objet dans tableau (le tag est ignoré)
+    - [x] `LiteralNode` → valeur primitive
+  - [x] Gestion des assignations par chemin (dot-path) :
+    - [x] `A.B.C = value` → création automatique d'objets intermédiaires
+    - [x] Erreur si chemin traverse un non-objet (ex: A est un array)
+  - [x] Collecte des erreurs sémantiques avec positions
+- [x] Tests unitaires Evaluator (17 tests - tous passent ✨)
+- [x] Package System.Text.Json 9.0.1 ajouté pour support netstandard2.0
 
 ### Phase 5 : Merger
 - [ ] Implémenter `Merger.cs` :
