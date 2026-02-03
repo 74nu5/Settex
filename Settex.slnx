@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Settex.Core/Settex.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Settex.Core.Tests/Settex.Core.Tests.csproj" />
+  </Folder>
+</Solution>

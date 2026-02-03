@@ -1,0 +1,17 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing -->
+    <PackageVersion Include="TUnit" Version="0.3.0" />
+    <PackageVersion Include="TUnit.Assertions" Version="0.3.0" />
+    
+    <!-- MSBuild (for Settex.Build project) -->
+    <PackageVersion Include="Microsoft.Build.Framework" Version="17.10.4" />
+    <PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.10.4" />
+  </ItemGroup>
+
+</Project>

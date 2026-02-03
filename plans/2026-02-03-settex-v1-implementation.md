@@ -148,12 +148,15 @@ Settex/
 
 ## 3. Plan de travail
 
-### Phase 1 : Infrastructure projet
-- [ ] Créer la solution `Settex.sln`
-- [ ] Créer le projet `Settex.Core` (net8.0, netstandard2.0)
-- [ ] Créer le projet `Settex.Core.Tests` (TUnit)
-- [ ] Configurer `Directory.Build.props` (versions, conventions)
-- [ ] Configurer CI/CD basique (optionnel)
+### Phase 1 : Infrastructure projet ✅ COMPLÉTÉE
+- [x] Créer la solution `Settex.sln`
+- [x] Créer le projet `Settex.Core` (net10.0, netstandard2.0)
+- [x] Créer le projet `Settex.Core.Tests` (TUnit)
+- [x] Configurer `Directory.Build.props` (versions, conventions)
+- [x] Configurer `Directory.Packages.props` (gestion centralisée des packages)
+- [x] Créer `.editorconfig` (conventions de code)
+- [x] Créer structure de dossiers complète
+- [ ] Configurer CI/CD basique (optionnel - reporté)
 
 ### Phase 2 : Lexer
 - [ ] Définir `TokenType` enum :
