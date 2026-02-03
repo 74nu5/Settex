@@ -8,5 +8,5 @@ using Settex.Core.Diagnostics;
 /// </summary>
 public sealed record AssignmentNode(
     PathNode Path,
-    IValue Value,
+    IExpression Value,
     SourceLocation Location) : IStatement;
