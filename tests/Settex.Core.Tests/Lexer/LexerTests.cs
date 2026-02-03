@@ -22,19 +22,20 @@ public sealed class LexerTests
     public async Task Tokenize_Keywords_ReturnsCorrectTokens()
     {
         // Arrange
-        var lexer = new Lexer("settings env true false null");
+        var lexer = new Lexer("settings env true false null include");
 
         // Act
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).Count().IsEqualTo(6); // 5 keywords + EOF
+        await Assert.That(tokens).Count().IsEqualTo(7); // 6 keywords + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Settings);
         await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Env);
         await Assert.That(tokens[2].Type).IsEqualTo(TokenType.True);
         await Assert.That(tokens[3].Type).IsEqualTo(TokenType.False);
         await Assert.That(tokens[4].Type).IsEqualTo(TokenType.Null);
-        await Assert.That(tokens[5].Type).IsEqualTo(TokenType.Eof);
+        await Assert.That(tokens[5].Type).IsEqualTo(TokenType.Include);
+        await Assert.That(tokens[6].Type).IsEqualTo(TokenType.Eof);
     }
 
     [Test]

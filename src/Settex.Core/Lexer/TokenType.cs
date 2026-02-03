@@ -11,6 +11,7 @@ public enum TokenType
     True,
     False,
     Null,
+    Include,
 
     // Symbols
     LeftBrace, // {

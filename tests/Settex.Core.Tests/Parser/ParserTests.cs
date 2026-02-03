@@ -508,4 +508,66 @@ public sealed class ParserTests
         var array = (ArrayNode)assignment.Value;
         await Assert.That(array.Items).Count().IsEqualTo(3);
     }
+
+    [Test]
+    public async Task ParseFile_IncludeStatement_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     include "./common.settex"
+                     
+                     settings {
+                       ApplicationName = "Shop"
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(2);
+        await Assert.That(fileNode.Statements[0]).IsTypeOf<IncludeNode>();
+        await Assert.That(fileNode.Statements[1]).IsTypeOf<SettingsBlockNode>();
+
+        var includeNode = (IncludeNode)fileNode.Statements[0];
+        await Assert.That(includeNode.Path).IsEqualTo("./common.settex");
+    }
+
+    [Test]
+    public async Task ParseFile_MultipleIncludesAndSettings_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     include "./common.settex"
+                     include "./logging.settex"
+                     
+                     settings {
+                       ApplicationName = "Shop"
+                     }
+                     
+                     env "Development" {
+                       settings {
+                         Debug = true
+                       }
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(4);
+        await Assert.That(fileNode.Statements[0]).IsTypeOf<IncludeNode>();
+        await Assert.That(fileNode.Statements[1]).IsTypeOf<IncludeNode>();
+        await Assert.That(fileNode.Statements[2]).IsTypeOf<SettingsBlockNode>();
+        await Assert.That(fileNode.Statements[3]).IsTypeOf<EnvBlockNode>();
+    }
 }

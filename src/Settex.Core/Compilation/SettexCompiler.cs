@@ -4,6 +4,7 @@ using Settex.Core.Diagnostics;
 using Settex.Core.Evaluation;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
+using Settex.Core.Resolution;
 using Settex.Core.Writing;
 
 /// <summary>
@@ -51,7 +52,7 @@ public sealed class SettexCompiler
             List<Token> tokens;
             try
             {
-                var lexer = new Lexer(source);
+                var lexer = new Lexer(source, sourceFilePath);
                 tokens = lexer.Tokenize();
             }
             catch (LexerException ex)
@@ -67,8 +68,8 @@ public sealed class SettexCompiler
             Core.Parser.Ast.FileNode ast;
             try
             {
-                var parser = new Parser(tokens);
-                ast = parser.ParseFile();
+                var parser = new Parser(tokens, sourceFilePath);
+                ast = parser.Parse();
             }
             catch (ParserException ex)
             {
@@ -78,6 +79,25 @@ public sealed class SettexCompiler
                     ex.Location));
                 return new CompilationResult(false, diagnostics);
             }
+
+            // Phase 2.5: Resolve includes
+            List<Core.Parser.Ast.ITopLevelStatement> resolvedStatements;
+            try
+            {
+                var includeResolver = new IncludeResolver();
+                resolvedStatements = includeResolver.ResolveIncludes(ast, sourceFilePath);
+            }
+            catch (IncludeException ex)
+            {
+                diagnostics.Add(new Diagnostic(
+                    DiagnosticSeverity.Error,
+                    ex.Message,
+                    ex.Location));
+                return new CompilationResult(false, diagnostics);
+            }
+
+            // Rebuild AST with resolved includes
+            ast = new Core.Parser.Ast.FileNode(resolvedStatements, ast.Location);
 
             // Phase 3: Evaluation
             SettingsModel model;

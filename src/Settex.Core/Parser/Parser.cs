@@ -7,9 +7,10 @@ using Settex.Core.Parser.Ast;
 ///     Recursive descent parser for Settex source code.
 ///     Converts a stream of tokens into an Abstract Syntax Tree (AST).
 /// </summary>
-public class Parser(List<Token> tokens)
+public class Parser(List<Token> tokens, string? filePath = null)
 {
     private readonly List<Token> tokens = tokens;
+    private readonly string? filePath = filePath;
     private int position;
 
     private Token Current => this.position < this.tokens.Count ? this.tokens[this.position] : this.tokens[^1];
@@ -19,7 +20,7 @@ public class Parser(List<Token> tokens)
     /// <summary>
     ///     Parses the entire file and returns the root FileNode.
     /// </summary>
-    public FileNode ParseFile()
+    public FileNode Parse()
     {
         var startLocation = this.Current.Location;
         var statements = new List<ITopLevelStatement>();
@@ -39,10 +40,15 @@ public class Parser(List<Token> tokens)
         return new(statements, startLocation);
     }
 
+    /// <summary>
+    ///     Alias for Parse() - for backward compatibility.
+    /// </summary>
+    public FileNode ParseFile() => this.Parse();
+
     private Token Peek(int offset = 1) => this.position + offset < this.tokens.Count ? this.tokens[this.position + offset] : this.tokens[^1];
 
     /// <summary>
-    ///     Parses a top-level statement: settingsBlock | envBlock | ";"
+    ///     Parses a top-level statement: settingsBlock | envBlock | includeStmt | ";"
     /// </summary>
     private ITopLevelStatement? ParseTopLevelStatement()
     {
@@ -50,6 +56,11 @@ public class Parser(List<Token> tokens)
         if (this.Match(TokenType.Semicolon))
         {
             return null;
+        }
+
+        if (this.Check(TokenType.Include))
+        {
+            return this.ParseIncludeStatement();
         }
 
         if (this.Check(TokenType.Settings))
@@ -63,9 +74,22 @@ public class Parser(List<Token> tokens)
         }
 
         throw new ParserException(
-            $"Expected 'settings' or 'env', but got '{this.Current.Text}'",
+            $"Expected 'include', 'settings' or 'env', but got '{this.Current.Text}'",
             this.Current.Location
         );
+    }
+
+    /// <summary>
+    ///     Parses an include statement: "include" string
+    /// </summary>
+    private IncludeNode ParseIncludeStatement()
+    {
+        var includeToken = this.Expect(TokenType.Include, "Expected 'include'");
+        var pathToken = this.Expect(TokenType.String, "Expected include path string");
+
+        var includePath = (string)pathToken.Value!;
+
+        return new(includePath, includeToken.Location);
     }
 
     /// <summary>

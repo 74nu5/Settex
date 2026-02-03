@@ -127,32 +127,38 @@ env "Development" {
 **Objectif** : Permettre `include "./file.settex"` avec détection de cycles.
 
 #### Tâches
-- [ ] Créer `IncludeResolver` avec méthodes :
-  - [ ] `ResolveIncludePath(string relativePath, string currentFilePath)` → chemin absolu
-  - [ ] `LoadAndParseFile(string filePath)` → FileNode AST
-  - [ ] `DetectCycle(Stack<string> includeStack, string filePath)` → bool
-- [ ] Ajouter token `INCLUDE` dans le Lexer
-- [ ] Ajouter `IncludeNode` dans l'AST :
+- [x] Créer `IncludeResolver` avec méthodes :
+  - [x] `ResolveIncludePath(string relativePath, string currentFilePath)` → chemin absolu
+  - [x] `LoadAndParseFile(string filePath)` → FileNode AST
+  - [x] `DetectCycle(Stack<string> includeStack, string filePath)` → bool
+- [x] Ajouter token `INCLUDE` dans le Lexer
+- [x] Ajouter `IncludeNode` dans l'AST :
   ```csharp
   public sealed record IncludeNode(string Path, SourceLocation Location) : ITopLevelStatement;
   ```
-- [ ] Parser : reconnaître `include "<path>"`
-- [ ] Compiler :
-  - [ ] Résoudre tous les includes récursivement
-  - [ ] Concaténer les AST (comme copié/collé)
-  - [ ] Erreur si cycle détecté
-- [ ] Tests :
-  - [ ] Include simple (1 fichier)
-  - [ ] Include imbriqué (A includes B, B includes C)
-  - [ ] Détection de cycle (A → B → A)
-  - [ ] Fichier introuvable
-  - [ ] Chemins relatifs corrects
+- [x] Parser : reconnaître `include "<path>"`
+- [x] Compiler :
+  - [x] Résoudre tous les includes récursivement
+  - [x] Concaténer les AST (comme copié/collé)
+  - [x] Erreur si cycle détecté
+- [x] Tests :
+  - [x] Include simple (1 fichier)
+  - [x] Include imbriqué (A includes B, B includes C)
+  - [x] Détection de cycle (A → B → A)
+  - [x] Fichier introuvable
+  - [x] Chemins relatifs corrects
 
 **Critères de succès** :
 - ✅ `include` fonctionne avec chemins relatifs
 - ✅ Cycles détectés et bloqués avec erreur
 - ✅ AST correctement concaténé
 - ✅ Diagnostics avec ligne/colonne précis
+
+**Notes d'implémentation** :
+- IncludeResolver créé dans `src/Settex.Core/Resolution/`
+- IncludeException pour gérer les erreurs d'include
+- Parser.Parse() avec ParseFile() comme alias pour compatibilité
+- Tous les tests passent (94/94)
 
 ---
 
