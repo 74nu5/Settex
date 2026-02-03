@@ -199,30 +199,35 @@ env "Development" {
   public sealed record VariableRefNode(string Name, SourceLocation Location) : IExpression;
   ```
 - [x] Parser : `let ident = expr`
-- [ ] Evaluator :
-  - [ ] Créer scope global
-  - [ ] Évaluer `let` globaux avant `settings`
-  - [ ] Pour chaque env : créer scope enfant (copie + masquage)
-  - [ ] Résoudre variables dans expressions
-- [ ] Tests :
-  - [ ] Variable globale accessible partout
-  - [ ] Variable env masque global
-  - [ ] Variable utilisée avant définition → erreur
-  - [ ] Variable inconnue → erreur
+- [x] Evaluator :
+  - [x] Créer scope global
+  - [x] Évaluer `let` globaux avant `settings`
+  - [x] Pour chaque env : créer scope enfant (copie + masquage)
+  - [x] Résoudre variables dans expressions
+- [x] Tests :
+  - [x] Variable globale accessible partout
+  - [x] Variable env masque global
+  - [x] Variable utilisée avant définition → erreur
+  - [x] Variable inconnue → erreur
 
 **Critères de succès** :
 - ✅ `let name = value` parse correctement
-- ⏳ Scopes global / env / for respectés
-- ⏳ Erreur si variable inconnue
-- ⏳ Masquage env sur global fonctionne
+- ✅ Scopes global / env / for respectés
+- ✅ Erreur si variable inconnue
+- ✅ Masquage env sur global fonctionne
 
 **Notes d'implémentation** :
 - RuntimeValue créé dans `src/Settex.Core/Runtime/`
 - VariableScope implémenté avec lookup récursif dans parent
 - IExpression interface créée, IValue en hérite
 - Parser.ParseExpression() supporte valeurs et références de variables
-- 96/96 tests passent (parsing fonctionnel)
-- **EN COURS** : Modification de l'Evaluator nécessaire pour gérer les scopes
+- ExpressionEvaluator créé pour évaluer IExpression → RuntimeValue
+- Evaluator modifié pour gérer scopes et variables avec conversion RuntimeValue → JsonNode
+- Parser.ParseEnvBlock() supporte let statements avant settings block
+- AssignmentNode.Value et ArrayNode.Items changés en IExpression (au lieu de IValue)
+- 8 tests d'évaluation de variables ajoutés dans VariableEvaluationTests.cs
+- 104/104 tests passent ✅
+- **COMPLÉTÉ** : Commit effectué (feat(v2): Phase 2 - Variables let + Scopes - complete)
 
 ---
 

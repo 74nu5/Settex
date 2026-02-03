@@ -32,11 +32,13 @@ public class SettexCompilerTests
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
-settings {
-    ApplicationName = ""TestApp""
-}
-");
+        await File.WriteAllTextAsync(sourceFile, """
+
+                                                 settings {
+                                                     ApplicationName = "TestApp"
+                                                 }
+
+                                                 """);
 
         try
         {
@@ -47,7 +49,7 @@ settings {
             await Assert.That(result.Success).IsTrue();
             await Assert.That(File.Exists(Path.Combine(outputDir, "appsettings.json"))).IsTrue();
 
-            var content = File.ReadAllText(Path.Combine(outputDir, "appsettings.json"));
+            var content = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json"));
             await Assert.That(content).Contains("ApplicationName");
             await Assert.That(content).Contains("TestApp");
         }
@@ -66,7 +68,7 @@ settings {
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 settings {
     ApplicationName = ""TestApp""
     Logging.LogLevel.Default = ""Information""
@@ -97,15 +99,15 @@ env ""Production"" {
             await Assert.That(File.Exists(Path.Combine(outputDir, "appsettings.Production.json"))).IsTrue();
 
             // Verify base settings
-            var baseContent = File.ReadAllText(Path.Combine(outputDir, "appsettings.json"));
+            var baseContent = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json"));
             await Assert.That(baseContent).Contains("Information");
 
             // Verify Development override
-            var devContent = File.ReadAllText(Path.Combine(outputDir, "appsettings.Development.json"));
+            var devContent = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Development.json"));
             await Assert.That(devContent).Contains("Debug");
 
             // Verify Production override
-            var prodContent = File.ReadAllText(Path.Combine(outputDir, "appsettings.Production.json"));
+            var prodContent = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Production.json"));
             await Assert.That(prodContent).Contains("Warning");
         }
         finally
@@ -147,7 +149,7 @@ env ""Production"" {
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 settings {
     Name = ""Unclosed string
 }
@@ -177,7 +179,7 @@ settings {
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 settings {
     Name = 
 }
@@ -208,7 +210,7 @@ settings {
         var outputDir = Path.Combine(tempDir, "output");
 
         // No settings block - should trigger evaluator error
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 env ""Development"" {
     settings {
         Name = ""Test""
@@ -240,7 +242,7 @@ env ""Development"" {
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 settings {
     ApplicationName = ""MyApp""
     Logging.LogLevel.Default = ""Information""
@@ -257,7 +259,7 @@ settings {
             // Assert
             await Assert.That(result.Success).IsTrue();
 
-            var content = File.ReadAllText(Path.Combine(outputDir, "appsettings.json"));
+            var content = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json"));
             var json = JsonDocument.Parse(content);
 
             await Assert.That(json.RootElement.GetProperty("ApplicationName").GetString()).IsEqualTo("MyApp");
@@ -280,7 +282,7 @@ settings {
         var sourceFile = Path.Combine(tempDir, "test.settex");
         var outputDir = Path.Combine(tempDir, "output");
 
-        File.WriteAllText(sourceFile, @"
+        await File.WriteAllTextAsync(sourceFile, @"
 settings {
     Name = ""Unclosed string
 }

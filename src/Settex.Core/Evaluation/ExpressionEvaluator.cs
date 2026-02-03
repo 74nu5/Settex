@@ -1,6 +1,5 @@
 namespace Settex.Core.Evaluation;
 
-using Settex.Core.Diagnostics;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Runtime;
 
@@ -12,9 +11,7 @@ public class ExpressionEvaluator
     private readonly VariableScope scope;
 
     public ExpressionEvaluator(VariableScope scope)
-    {
-        this.scope = scope;
-    }
+        => this.scope = scope;
 
     /// <summary>
     ///     Evaluates an expression to a runtime value.
@@ -27,7 +24,7 @@ public class ExpressionEvaluator
             VariableRefNode varRef => this.EvaluateVariableRef(varRef),
             ArrayNode array => this.EvaluateArray(array),
             TaggedObjectNode obj => this.EvaluateTaggedObject(obj),
-            _ => throw new EvaluatorException($"Unsupported expression type: {expression.GetType().Name}", location: null)
+            _ => throw new EvaluatorException($"Unsupported expression type: {expression.GetType().Name}", null),
         };
     }
 
@@ -40,14 +37,14 @@ public class ExpressionEvaluator
             double d => new NumberValue((decimal)d),
             bool b => new BoolValue(b),
             null => NullValue.Instance,
-            _ => throw new EvaluatorException($"Unsupported literal type: {literal.Value?.GetType().Name}", literal.Location)
+            _ => throw new EvaluatorException($"Unsupported literal type: {literal.Value?.GetType().Name}", literal.Location),
         };
     }
 
     private RuntimeValue EvaluateVariableRef(VariableRefNode varRef)
     {
         var value = this.scope.Lookup(varRef.Name);
-        
+
         if (value == null)
         {
             throw new EvaluatorException($"Variable '{varRef.Name}' is not defined", varRef.Location);
@@ -79,7 +76,7 @@ public class ExpressionEvaluator
             {
                 var path = string.Join(".", assignment.Path.Segments);
                 var value = this.Evaluate(assignment.Value);
-                
+
                 // For now, simple flat assignment (no nested paths in objects)
                 // This will be enhanced in later phases
                 if (assignment.Path.Segments.Count == 1)

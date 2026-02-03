@@ -1,9 +1,9 @@
 namespace Settex.Compilation;
 
-using Settex.Core.Diagnostics;
 using Settex.Core.Evaluation;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
+using Settex.Core.Parser.Ast;
 using Settex.Core.Resolution;
 using Settex.Core.Writing;
 
@@ -28,28 +28,32 @@ public sealed class SettexCompiler
             // Validate input
             if (!File.Exists(sourceFilePath))
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     $"Source file not found: {sourceFilePath}"));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Read source
             string source;
+
             try
             {
                 source = File.ReadAllText(sourceFilePath);
             }
             catch (Exception ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     $"Failed to read source file: {ex.Message}"));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Phase 1: Lexing
             List<Token> tokens;
+
             try
             {
                 var lexer = new Lexer(source, sourceFilePath);
@@ -57,15 +61,17 @@ public sealed class SettexCompiler
             }
             catch (LexerException ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,
                     ex.Location));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Phase 2: Parsing
-            Core.Parser.Ast.FileNode ast;
+            FileNode ast;
+
             try
             {
                 var parser = new Parser(tokens, sourceFilePath);
@@ -73,15 +79,17 @@ public sealed class SettexCompiler
             }
             catch (ParserException ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,
                     ex.Location));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Phase 2.5: Resolve includes
-            List<Core.Parser.Ast.ITopLevelStatement> resolvedStatements;
+            List<ITopLevelStatement> resolvedStatements;
+
             try
             {
                 var includeResolver = new IncludeResolver();
@@ -89,18 +97,20 @@ public sealed class SettexCompiler
             }
             catch (IncludeException ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,
                     ex.Location));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Rebuild AST with resolved includes
-            ast = new Core.Parser.Ast.FileNode(resolvedStatements, ast.Location);
+            ast = new(resolvedStatements, ast.Location);
 
             // Phase 3: Evaluation
             SettingsModel model;
+
             try
             {
                 var evaluator = new Evaluator();
@@ -108,15 +118,17 @@ public sealed class SettexCompiler
             }
             catch (EvaluatorException ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,
                     ex.Location));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Phase 4: Writing (includes merging via JsonWriter)
             List<string> generatedFiles;
+
             try
             {
                 var writer = new JsonWriter();
@@ -124,34 +136,37 @@ public sealed class SettexCompiler
             }
             catch (JsonWriterException ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,
                     ex.Location));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
             catch (Exception ex)
             {
-                diagnostics.Add(new Diagnostic(
+                diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     $"Failed to write output files: {ex.Message}"));
-                return new CompilationResult(false, diagnostics);
+
+                return new(false, diagnostics);
             }
 
             // Success
-            diagnostics.Add(new Diagnostic(
+            diagnostics.Add(new(
                 DiagnosticSeverity.Info,
                 $"Successfully compiled {sourceFilePath}"));
 
-            return new CompilationResult(true, diagnostics, generatedFiles);
+            return new(true, diagnostics, generatedFiles);
         }
         catch (Exception ex)
         {
             // Catch-all for unexpected errors
-            diagnostics.Add(new Diagnostic(
+            diagnostics.Add(new(
                 DiagnosticSeverity.Error,
                 $"Unexpected error during compilation: {ex.Message}"));
-            return new CompilationResult(false, diagnostics);
+
+            return new(false, diagnostics);
         }
     }
 }

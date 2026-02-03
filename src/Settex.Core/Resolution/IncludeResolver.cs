@@ -1,8 +1,5 @@
 namespace Settex.Core.Resolution;
 
-using System.Collections.Generic;
-
-using Settex.Core.Diagnostics;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
 using Settex.Core.Parser.Ast;
@@ -61,9 +58,7 @@ public class IncludeResolver
     /// <param name="filePath">The file to check</param>
     /// <returns>True if a cycle would be created</returns>
     public bool DetectCycle(string filePath)
-    {
-        return this.includeStack.Contains(filePath);
-    }
+        => this.includeStack.Contains(filePath);
 
     /// <summary>
     ///     Resolves all includes in a file recursively, returning a flattened list of top-level statements.
