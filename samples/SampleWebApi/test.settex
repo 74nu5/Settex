@@ -1,0 +1,10 @@
+settings {
+  Name = "Test"
+  Version = "1.0"
+}
+
+env "Dev" {
+  settings {
+    Name = "TestDev"
+  }
+}

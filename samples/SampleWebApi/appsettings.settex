@@ -1,0 +1,135 @@
+// Sample Web API Configuration
+// This file demonstrates Settex syntax with a realistic ASP.NET Core Web API setup
+
+settings {
+  // Application settings
+  ApplicationName = "Sample Web API"
+  ApplicationVersion = "1.0.0"
+  
+  // Logging configuration
+  Logging {
+    LogLevel {
+      Default = "Information"
+      Microsoft.AspNetCore = "Warning"
+      Microsoft.Hosting.Lifetime = "Information"
+    }
+  }
+  
+  // Allowed hosts (CORS-related)
+  AllowedHosts = "*"
+  
+  // Connection strings
+  ConnectionStrings {
+    DefaultConnection = "Server=(localdb)\\mssqllocaldb;Database=SampleWebApiDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+    CacheConnection = "localhost:6379"
+  }
+  
+  // JWT Authentication settings
+  JwtSettings {
+    SecretKey = "ThisIsADevelopmentSecretKeyDoNotUseInProduction123!"
+    Issuer = "SampleWebApi"
+    Audience = "SampleWebApiClients"
+    ExpirationMinutes = 60
+    RefreshTokenExpirationDays = 7
+  }
+  
+  // API Rate Limiting
+  RateLimiting {
+    Enabled = false
+    RequestsPerMinute = 100
+    RequestsPerHour = 1000
+  }
+  
+  // Feature Flags
+  Features {
+    EnableSwagger = true
+    EnableDetailedErrors = true
+    EnableHealthChecks = true
+    EnableMetrics = false
+  }
+  
+  // External Services
+  ExternalServices {
+    WeatherApi {
+      BaseUrl = "https://api.weatherapi.com/v1"
+      ApiKey = "dev-weather-api-key"
+      TimeoutSeconds = 30
+    }
+    
+    EmailService {
+      Provider = "Console"
+      FromAddress = "noreply@sampleapi.local"
+    }
+  }
+}
+
+// Development Environment
+env "Development" {
+  settings {
+    Logging.LogLevel.Default = "Debug"
+    
+    ConnectionStrings.DefaultConnection = "Server=(localdb)\\mssqllocaldb;Database=SampleWebApiDb_Dev;Trusted_Connection=True"
+    ConnectionStrings.CacheConnection = "localhost:6379"
+    
+    JwtSettings.ExpirationMinutes = 1440
+    
+    Features.EnableDetailedErrors = true
+    Features.EnableSwagger = true
+    
+    ExternalServices.WeatherApi.BaseUrl = "http://localhost:5001/api/weather"
+    ExternalServices.WeatherApi.ApiKey = "dev-mock-key"
+  }
+}
+
+// Staging Environment
+env "Staging" {
+  settings {
+    Logging.LogLevel.Default = "Information"
+    
+    ConnectionStrings.DefaultConnection = "Server=staging-sql.example.com;Database=SampleWebApiDb;User Id=apiuser;Password=StaginPass123;Encrypt=true"
+    ConnectionStrings.CacheConnection = "staging-redis.example.com:6379"
+    
+    JwtSettings.SecretKey = "${JWT_SECRET_STAGING}"
+    JwtSettings.ExpirationMinutes = 120
+    
+    RateLimiting.Enabled = true
+    RateLimiting.RequestsPerMinute = 200
+    
+    Features.EnableDetailedErrors = true
+    Features.EnableMetrics = true
+    
+    ExternalServices.EmailService.Provider = "SendGrid"
+    ExternalServices.EmailService.ApiKey = "${SENDGRID_API_KEY_STAGING}"
+  }
+}
+
+// Production Environment
+env "Production" {
+  settings {
+    Logging.LogLevel.Default = "Warning"
+    Logging.LogLevel.Microsoft.AspNetCore = "Error"
+    
+    ConnectionStrings.DefaultConnection = "${DATABASE_CONNECTION_STRING}"
+    ConnectionStrings.CacheConnection = "${REDIS_CONNECTION_STRING}"
+    
+    JwtSettings.SecretKey = "${JWT_SECRET_KEY}"
+    JwtSettings.ExpirationMinutes = 30
+    JwtSettings.RefreshTokenExpirationDays = 30
+    
+    RateLimiting.Enabled = true
+    RateLimiting.RequestsPerMinute = 100
+    RateLimiting.RequestsPerHour = 5000
+    
+    Features.EnableSwagger = false
+    Features.EnableDetailedErrors = false
+    Features.EnableHealthChecks = true
+    Features.EnableMetrics = true
+    
+    ExternalServices.WeatherApi.ApiKey = "${WEATHER_API_KEY}"
+    ExternalServices.WeatherApi.TimeoutSeconds = 10
+    
+    ExternalServices.EmailService.Provider = "SendGrid"
+    ExternalServices.EmailService.ApiKey = "${SENDGRID_API_KEY}"
+    ExternalServices.EmailService.FromAddress = "noreply@sampleapi.com"
+  }
+}

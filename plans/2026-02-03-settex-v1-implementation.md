@@ -349,19 +349,31 @@ Settex/
 - `Directory.Packages.props` - Ajout des packages System.CommandLine et Spectre.Console
 
 
-### Phase 10 : Finalisation
-- [ ] Créer un sample project fonctionnel
-- [ ] Documentation README.md complète
-- [ ] Validation de tous les critères de succès V1 :
-  - [ ] Parse `settings` + `env`
-  - [ ] Blocs taggés → objets JSON
-  - [ ] Assignations `a.b.c = value`
-  - [ ] Tableaux multi-lignes (virgules optionnelles)
-  - [ ] Merge profond objets
-  - [ ] Listes remplacées
-  - [ ] Diagnostics ligne/col
-  - [ ] Génération `appsettings*.json` sur disque
-  - [ ] Écriture conditionnelle
+### Phase 10 : Finalisation ✅
+- [x] Créer un sample project fonctionnel (ASP.NET Web API)
+- [x] Documentation README.md complète
+- [x] Validation de tous les critères de succès V1 :
+  - [x] Parse `settings` + `env`
+  - [x] Blocs taggés → objets JSON
+  - [x] Assignations `a.b.c = value`
+  - [x] Tableaux multi-lignes (virgules optionnelles)
+  - [x] Merge profond objets
+  - [x] Listes remplacées
+  - [x] Diagnostics ligne/col
+  - [x] Génération `appsettings*.json` sur disque
+  - [x] Écriture conditionnelle
+
+**Sample Project** :
+- `samples/SampleWebApi/` - ASP.NET Web API démontrant une configuration réaliste
+- Configuration complète : Logging, ConnectionStrings, JWT, RateLimiting, Features, External Services
+- 3 environnements : Development, Staging, Production
+- Démonstration de merge profond et remplacement de propriétés
+
+**Documentation** :
+- `README.md` complet avec exemples, syntaxe détaillée, installation et utilisation
+- Explications claires du merging behavior
+- Exemples pratiques (Web API, multi-service)
+- Documentation des types, erreurs et structure de projet
 
 ---
 

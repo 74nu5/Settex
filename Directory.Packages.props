@@ -15,5 +15,7 @@
     <!-- Core -->
     <PackageVersion Include="System.Text.Json" Version="10.0.2" />
     <PackageVersion Include="Meziantou.Polyfill" Version="1.0.101" />
+    <!-- Sample Web API -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
   </ItemGroup>
 </Project>
