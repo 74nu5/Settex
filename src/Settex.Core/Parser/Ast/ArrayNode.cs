@@ -4,8 +4,8 @@ using Settex.Core.Diagnostics;
 
 /// <summary>
 ///     Array: [ items ]
-///     Items can be literals or tagged objects.
+///     Items can be literals, tagged objects, or variable references.
 /// </summary>
 public sealed record ArrayNode(
-    List<IValue> Items,
+    List<IExpression> Items,
     SourceLocation Location) : IValue;

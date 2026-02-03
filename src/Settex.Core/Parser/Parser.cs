@@ -236,13 +236,13 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an assignment statement: path "=" value
+    ///     Parses an assignment statement: path "=" value/expression
     /// </summary>
     private AssignmentNode ParseAssignmentStatement()
     {
         var path = this.ParsePath();
         this.Expect(TokenType.Equals, "Expected '=' after path");
-        var value = this.ParseValue();
+        var value = this.ParseExpression(); // Changed from ParseValue() to support variable refs
 
         return new(path, value, path.Location);
     }
@@ -327,7 +327,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
     private ArrayNode ParseArray()
     {
         var startToken = this.Expect(TokenType.LeftBracket, "Expected '['");
-        var items = new List<IValue>();
+        var items = new List<IExpression>();
 
         // Skip leading newlines
         while (this.Match(TokenType.Newline))
@@ -377,16 +377,16 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an array item: literal | taggedObjectValue
+    ///     Parses an array item: expression (literal, variable ref, or tagged object)
     /// </summary>
-    private IValue ParseArrayItem()
+    private IExpression ParseArrayItem()
     {
-        // Literal
-        if (this.Check(TokenType.String) || this.Check(TokenType.Integer) ||
-            this.Check(TokenType.Float) || this.Check(TokenType.True) ||
-            this.Check(TokenType.False) || this.Check(TokenType.Null))
+        // Variable reference
+        if (this.Check(TokenType.Identifier) && this.Peek().Type != TokenType.LeftBrace)
         {
-            return this.ParseLiteral();
+            var nameToken = this.Current;
+            this.Advance();
+            return new VariableRefNode(nameToken.Text, nameToken.Location);
         }
 
         // Tagged object
@@ -395,8 +395,16 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return this.ParseTaggedObjectValue();
         }
 
+        // Literal
+        if (this.Check(TokenType.String) || this.Check(TokenType.Integer) ||
+            this.Check(TokenType.Float) || this.Check(TokenType.True) ||
+            this.Check(TokenType.False) || this.Check(TokenType.Null))
+        {
+            return this.ParseLiteral();
+        }
+
         throw new ParserException(
-            $"Expected array item (literal or tagged object), but got '{this.Current.Text}'",
+            $"Expected array item (literal, variable, or tagged object), but got '{this.Current.Text}'",
             this.Current.Location
         );
     }
