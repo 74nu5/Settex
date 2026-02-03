@@ -158,23 +158,23 @@ Settex/
 - [x] Créer structure de dossiers complète
 - [ ] Configurer CI/CD basique (optionnel - reporté)
 
-### Phase 2 : Lexer
-- [ ] Définir `TokenType` enum :
-  - [ ] Mots-clés : `Settings`, `Env`, `True`, `False`, `Null`
-  - [ ] Symboles : `LeftBrace`, `RightBrace`, `LeftBracket`, `RightBracket`, `Equals`, `Dot`, `Comma`, `Semicolon`
-  - [ ] Littéraux : `String`, `Integer`, `Float`
-  - [ ] Autres : `Identifier`, `Newline`, `Comment`, `Eof`
-- [ ] Implémenter `Token` record avec position (ligne/colonne)
-- [ ] Implémenter `SourceLocation` pour les diagnostics
-- [ ] Implémenter `Lexer.cs` :
-  - [ ] Tokenisation des mots-clés : `settings`, `env`, `true`, `false`, `null`
-  - [ ] Tokenisation des identifiants : `[A-Za-z_][A-Za-z0-9_]*`
-  - [ ] Tokenisation des chaînes avec échappements : `\"`, `\\`, `\n`, `\r`, `\t`
-  - [ ] Tokenisation des nombres (entiers `-?\d+` et décimaux `-?\d+\.\d+`)
-  - [ ] Tokenisation des symboles : `{`, `}`, `[`, `]`, `=`, `.`, `,`, `;`
-  - [ ] Gestion des commentaires : `#` et `//` (jusqu'à fin de ligne)
-  - [ ] Gestion des espaces (ignorés) et sauts de ligne (`Newline` token pour tableaux)
-- [ ] Tests unitaires Lexer (couverture > 90%)
+### Phase 2 : Lexer ✅ COMPLÉTÉE
+- [x] Définir `TokenType` enum :
+  - [x] Mots-clés : `Settings`, `Env`, `True`, `False`, `Null`
+  - [x] Symboles : `LeftBrace`, `RightBrace`, `LeftBracket`, `RightBracket`, `Equals`, `Dot`, `Comma`, `Semicolon`
+  - [x] Littéraux : `String`, `Integer`, `Float`
+  - [x] Autres : `Identifier`, `Newline`, `Comment`, `Eof`
+- [x] Implémenter `Token` record avec position (ligne/colonne)
+- [x] Implémenter `SourceLocation` pour les diagnostics
+- [x] Implémenter `Lexer.cs` :
+  - [x] Tokenisation des mots-clés : `settings`, `env`, `true`, `false`, `null`
+  - [x] Tokenisation des identifiants : `[A-Za-z_][A-Za-z0-9_]*`
+  - [x] Tokenisation des chaînes avec échappements : `\"`, `\\`, `\n`, `\r`, `\t`
+  - [x] Tokenisation des nombres (entiers `-?\d+` et décimaux `-?\d+\.\d+`)
+  - [x] Tokenisation des symboles : `{`, `}`, `[`, `]`, `=`, `.`, `,`, `;`
+  - [x] Gestion des commentaires : `#` et `//` (jusqu'à fin de ligne)
+  - [x] Gestion des espaces (ignorés) et sauts de ligne (`Newline` token pour tableaux)
+- [x] Tests unitaires Lexer (17 tests - tous passent ✨)
 
 ### Phase 3 : Parser + AST
 - [ ] Définir les nœuds AST (avec `SourceLocation` sur chaque nœud) :
