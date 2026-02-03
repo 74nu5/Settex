@@ -19,7 +19,7 @@ public sealed class EvaluatorTests
 
         // Assert
         await Assert.That(model.BaseSettings.Count).IsEqualTo(0);
-        await Assert.That(model.EnvironmentOverlays).HasCount().EqualTo(0);
+        await Assert.That(model.EnvironmentOverlays).Count().IsEqualTo(0);
     }
 
     [Test]
@@ -101,7 +101,7 @@ public sealed class EvaluatorTests
         // Assert
         var array = model.BaseSettings["AllowedHosts"] as JsonArray;
         await Assert.That(array).IsNotNull();
-        await Assert.That(array).HasCount().EqualTo(2);
+        await Assert.That(array).Count().IsEqualTo(2);
         await Assert.That(array![0]!.GetValue<string>()).IsEqualTo("localhost");
         await Assert.That(array[1]!.GetValue<string>()).IsEqualTo("example.com");
     }
@@ -130,7 +130,7 @@ public sealed class EvaluatorTests
 
         // Assert
         var array = model.BaseSettings["Services"] as JsonArray;
-        await Assert.That(array).HasCount().EqualTo(2);
+        await Assert.That(array).Count().IsEqualTo(2);
 
         var service1 = array![0] as JsonObject;
         await Assert.That(service1!["Name"]!.GetValue<string>()).IsEqualTo("API");
@@ -212,7 +212,7 @@ public sealed class EvaluatorTests
 
         // Assert
         await Assert.That(model.BaseSettings["Port"]!.GetValue<long>()).IsEqualTo(8080L);
-        await Assert.That(model.EnvironmentOverlays).HasCount().EqualTo(1);
+        await Assert.That(model.EnvironmentOverlays).Count().IsEqualTo(1);
         await Assert.That(model.EnvironmentOverlays.ContainsKey("Development")).IsTrue();
         await Assert.That(model.EnvironmentOverlays["Development"]["Port"]!.GetValue<long>()).IsEqualTo(5000L);
     }
@@ -243,7 +243,7 @@ public sealed class EvaluatorTests
         var model = this.ParseAndEvaluate(source);
 
         // Assert
-        await Assert.That(model.EnvironmentOverlays).HasCount().EqualTo(2);
+        await Assert.That(model.EnvironmentOverlays).Count().IsEqualTo(2);
         await Assert.That(model.EnvironmentOverlays["Development"]["Port"]!.GetValue<long>()).IsEqualTo(5000L);
         await Assert.That(model.EnvironmentOverlays["Production"]["Port"]!.GetValue<long>()).IsEqualTo(80L);
     }
@@ -319,7 +319,7 @@ public sealed class EvaluatorTests
         await Assert.That(server!["Port"]!.GetValue<long>()).IsEqualTo(8080L);
 
         var allowedHosts = server["AllowedHosts"] as JsonArray;
-        await Assert.That(allowedHosts).HasCount().EqualTo(2);
+        await Assert.That(allowedHosts).Count().IsEqualTo(2);
 
         // Environment overlay
         var devOverlay = model.EnvironmentOverlays["Development"];

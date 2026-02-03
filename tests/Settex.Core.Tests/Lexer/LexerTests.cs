@@ -14,7 +14,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(1);
+        await Assert.That(tokens).Count().IsEqualTo(1);
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Eof);
     }
 
@@ -28,7 +28,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(6); // 5 keywords + EOF
+        await Assert.That(tokens).Count().IsEqualTo(6); // 5 keywords + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Settings);
         await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Env);
         await Assert.That(tokens[2].Type).IsEqualTo(TokenType.True);
@@ -47,7 +47,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(5); // 4 identifiers + EOF
+        await Assert.That(tokens).Count().IsEqualTo(5); // 4 identifiers + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Identifier);
         await Assert.That(tokens[0].Text).IsEqualTo("foo");
         await Assert.That(tokens[1].Text).IsEqualTo("_bar");
@@ -65,7 +65,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(9); // 8 symbols + EOF
+        await Assert.That(tokens).Count().IsEqualTo(9); // 8 symbols + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.LeftBrace);
         await Assert.That(tokens[1].Type).IsEqualTo(TokenType.RightBrace);
         await Assert.That(tokens[2].Type).IsEqualTo(TokenType.LeftBracket);
@@ -86,7 +86,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(2); // String + EOF
+        await Assert.That(tokens).Count().IsEqualTo(2); // String + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.String);
         await Assert.That(tokens[0].Value).IsEqualTo("hello");
     }
@@ -101,7 +101,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(4); // 3 strings + EOF
+        await Assert.That(tokens).Count().IsEqualTo(4); // 3 strings + EOF
         await Assert.That(tokens[0].Value).IsEqualTo("line\nbreak");
         await Assert.That(tokens[1].Value).IsEqualTo("tab\there");
         await Assert.That(tokens[2].Value).IsEqualTo("quote\"inside");
@@ -141,7 +141,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(4); // 3 integers + EOF
+        await Assert.That(tokens).Count().IsEqualTo(4); // 3 integers + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Integer);
         await Assert.That(tokens[0].Value).IsEqualTo(42L);
         await Assert.That(tokens[1].Value).IsEqualTo(0L);
@@ -173,7 +173,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(4); // 3 floats + EOF
+        await Assert.That(tokens).Count().IsEqualTo(4); // 3 floats + EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Float);
         await Assert.That(tokens[0].Value).IsEqualTo(3.14);
         await Assert.That(tokens[1].Value).IsEqualTo(-0.5);
@@ -190,7 +190,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(3); // foo, bar, EOF (comment skipped)
+        await Assert.That(tokens).Count().IsEqualTo(3); // foo, bar, EOF (comment skipped)
         await Assert.That(tokens[0].Text).IsEqualTo("foo");
         await Assert.That(tokens[1].Text).IsEqualTo("bar");
     }
@@ -205,7 +205,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(3); // foo, bar, EOF
+        await Assert.That(tokens).Count().IsEqualTo(3); // foo, bar, EOF
         await Assert.That(tokens[0].Text).IsEqualTo("foo");
         await Assert.That(tokens[1].Text).IsEqualTo("bar");
     }
@@ -220,7 +220,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert
-        await Assert.That(tokens).HasCount().EqualTo(4); // foo, bar, baz, EOF (no newlines)
+        await Assert.That(tokens).Count().IsEqualTo(4); // foo, bar, baz, EOF (no newlines)
         await Assert.That(tokens.Any(t => t.Type == TokenType.Newline)).IsFalse();
     }
 
@@ -235,7 +235,7 @@ public sealed class LexerTests
 
         // Assert
         // [ 1 \n 2 \n 3 ] EOF
-        await Assert.That(tokens).HasCount().EqualTo(8);
+        await Assert.That(tokens).Count().IsEqualTo(8);
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.LeftBracket);
         await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Integer);
         await Assert.That(tokens[2].Type).IsEqualTo(TokenType.Newline);
@@ -280,7 +280,7 @@ public sealed class LexerTests
         var tokens = lexer.Tokenize();
 
         // Assert - should have: settings { Server . Host = "localhost" Port = 8080 } EOF
-        await Assert.That(tokens).HasCount().EqualTo(12);
+        await Assert.That(tokens).Count().IsEqualTo(12);
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Settings);
         await Assert.That(tokens[1].Type).IsEqualTo(TokenType.LeftBrace);
         await Assert.That(tokens[2].Type).IsEqualTo(TokenType.Identifier); // Server

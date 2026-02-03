@@ -19,11 +19,11 @@ public sealed class ParserTests
         var fileNode = parser.ParseFile();
 
         // Assert
-        await Assert.That(fileNode.Statements).HasCount().EqualTo(1);
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(1);
         await Assert.That(fileNode.Statements[0]).IsTypeOf<SettingsBlockNode>();
 
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(0);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(0);
     }
 
     [Test]
@@ -45,10 +45,10 @@ public sealed class ParserTests
 
         // Assert
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(1);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(1);
 
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
-        await Assert.That(assignment.Path.Segments).HasCount().EqualTo(1);
+        await Assert.That(assignment.Path.Segments).Count().IsEqualTo(1);
         await Assert.That(assignment.Path.Segments[0]).IsEqualTo("ApplicationName");
 
         var literal = (LiteralNode)assignment.Value;
@@ -76,7 +76,7 @@ public sealed class ParserTests
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
-        await Assert.That(assignment.Path.Segments).HasCount().EqualTo(3);
+        await Assert.That(assignment.Path.Segments).Count().IsEqualTo(3);
         await Assert.That(assignment.Path.Segments[0]).IsEqualTo("Logging");
         await Assert.That(assignment.Path.Segments[1]).IsEqualTo("LogLevel");
         await Assert.That(assignment.Path.Segments[2]).IsEqualTo("Default");
@@ -104,11 +104,11 @@ public sealed class ParserTests
 
         // Assert
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(1);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(1);
 
         var nestedBlock = (NestedBlockNode)settingsBlock.Block.Statements[0];
         await Assert.That(nestedBlock.Name).IsEqualTo("Server");
-        await Assert.That(nestedBlock.Block.Statements).HasCount().EqualTo(2);
+        await Assert.That(nestedBlock.Block.Statements).Count().IsEqualTo(2);
 
         var assignment1 = (AssignmentNode)nestedBlock.Block.Statements[0];
         await Assert.That(assignment1.Path.Segments[0]).IsEqualTo("Host");
@@ -141,7 +141,7 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).HasCount().EqualTo(2);
+        await Assert.That(array.Items).Count().IsEqualTo(2);
         await Assert.That(((LiteralNode)array.Items[0]).Value).IsEqualTo("localhost");
         await Assert.That(((LiteralNode)array.Items[1]).Value).IsEqualTo("example.com");
     }
@@ -172,7 +172,7 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).HasCount().EqualTo(3);
+        await Assert.That(array.Items).Count().IsEqualTo(3);
         await Assert.That(((LiteralNode)array.Items[0]).Value).IsEqualTo(8080L);
         await Assert.That(((LiteralNode)array.Items[1]).Value).IsEqualTo(8081L);
         await Assert.That(((LiteralNode)array.Items[2]).Value).IsEqualTo(8082L);
@@ -209,15 +209,15 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).HasCount().EqualTo(2);
+        await Assert.That(array.Items).Count().IsEqualTo(2);
 
         var obj1 = (TaggedObjectNode)array.Items[0];
         await Assert.That(obj1.Tag).IsEqualTo("service");
-        await Assert.That(obj1.Block.Statements).HasCount().EqualTo(2);
+        await Assert.That(obj1.Block.Statements).Count().IsEqualTo(2);
 
         var obj2 = (TaggedObjectNode)array.Items[1];
         await Assert.That(obj2.Tag).IsEqualTo("service");
-        await Assert.That(obj2.Block.Statements).HasCount().EqualTo(2);
+        await Assert.That(obj2.Block.Statements).Count().IsEqualTo(2);
     }
 
     [Test]
@@ -246,7 +246,7 @@ public sealed class ParserTests
 
         var taggedObj = (TaggedObjectNode)assignment.Value;
         await Assert.That(taggedObj.Tag).IsEqualTo("connection");
-        await Assert.That(taggedObj.Block.Statements).HasCount().EqualTo(2);
+        await Assert.That(taggedObj.Block.Statements).Count().IsEqualTo(2);
     }
 
     [Test]
@@ -273,14 +273,14 @@ public sealed class ParserTests
         var fileNode = parser.ParseFile();
 
         // Assert
-        await Assert.That(fileNode.Statements).HasCount().EqualTo(2);
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(2);
 
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(1);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(1);
 
         var envBlock = (EnvBlockNode)fileNode.Statements[1];
         await Assert.That(envBlock.EnvironmentName).IsEqualTo("Development");
-        await Assert.That(envBlock.SettingsBlock.Block.Statements).HasCount().EqualTo(1);
+        await Assert.That(envBlock.SettingsBlock.Block.Statements).Count().IsEqualTo(1);
     }
 
     [Test]
@@ -313,7 +313,7 @@ public sealed class ParserTests
         var fileNode = parser.ParseFile();
 
         // Assert
-        await Assert.That(fileNode.Statements).HasCount().EqualTo(3);
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(3);
 
         var env1 = (EnvBlockNode)fileNode.Statements[1];
         await Assert.That(env1.EnvironmentName).IsEqualTo("Development");
@@ -346,7 +346,7 @@ public sealed class ParserTests
 
         // Assert
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(6);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(6);
 
         var stmt1 = (AssignmentNode)settingsBlock.Block.Statements[0];
         await Assert.That(((LiteralNode)stmt1.Value).Value).IsEqualTo("test");
@@ -405,14 +405,14 @@ public sealed class ParserTests
         var fileNode = parser.ParseFile();
 
         // Assert
-        await Assert.That(fileNode.Statements).HasCount().EqualTo(2);
+        await Assert.That(fileNode.Statements).Count().IsEqualTo(2);
 
         var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
-        await Assert.That(settingsBlock.Block.Statements).HasCount().EqualTo(3);
+        await Assert.That(settingsBlock.Block.Statements).Count().IsEqualTo(3);
 
         var envBlock = (EnvBlockNode)fileNode.Statements[1];
         await Assert.That(envBlock.EnvironmentName).IsEqualTo("Development");
-        await Assert.That(envBlock.SettingsBlock.Block.Statements).HasCount().EqualTo(2);
+        await Assert.That(envBlock.SettingsBlock.Block.Statements).Count().IsEqualTo(2);
     }
 
     [Test]
@@ -481,7 +481,7 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).HasCount().EqualTo(0);
+        await Assert.That(array.Items).Count().IsEqualTo(0);
     }
 
     [Test]
@@ -506,6 +506,6 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).HasCount().EqualTo(3);
+        await Assert.That(array.Items).Count().IsEqualTo(3);
     }
 }
