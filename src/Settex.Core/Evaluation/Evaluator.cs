@@ -28,6 +28,9 @@ public class Evaluator
         var settingsBlock = fileNode.Statements.OfType<SettingsBlockNode>().First();
         var envBlocks = fileNode.Statements.OfType<EnvBlockNode>().ToList();
 
+        // Define implicit 'env' variable for base settings
+        globalScope.Define("env", new StringValue("Base"));
+
         // Evaluate base settings with global scope
         var baseSettings = this.EvaluateBlock(settingsBlock.Block, globalScope);
 
@@ -38,6 +41,9 @@ public class Evaluator
         {
             // Create child scope for this environment
             var envScope = globalScope.CreateChild();
+            
+            // Define implicit 'env' variable with environment name
+            envScope.Define("env", new StringValue(envBlock.EnvironmentName));
             
             // Evaluate let statements in env block (if any in the future)
             // For now, env blocks only contain settings blocks
@@ -150,9 +156,31 @@ public class Evaluator
     /// <summary>
     ///     Evaluates an assignment statement and adds it to the target object.
     ///     Handles dot-path assignments (e.g., A.B.C = value).
+    ///     Supports conditional assignments (e.g., Path = Value if Condition).
     /// </summary>
     private void EvaluateAssignment(JsonObject target, AssignmentNode assignment, VariableScope scope)
     {
+        // Check if there's a condition
+        if (assignment.Condition != null)
+        {
+            var expressionEvaluator = new ExpressionEvaluator(scope);
+            var conditionValue = expressionEvaluator.Evaluate(assignment.Condition);
+
+            if (conditionValue is not BoolValue boolValue)
+            {
+                throw new EvaluatorException(
+                    $"Condition in 'if' must be a boolean, got {conditionValue.GetType().Name}",
+                    assignment.Location
+                );
+            }
+
+            // If condition is false, skip this assignment
+            if (!boolValue.Value)
+            {
+                return;
+            }
+        }
+
         var path = assignment.Path.Segments;
 
         // Navigate to the parent object, creating intermediate objects as needed

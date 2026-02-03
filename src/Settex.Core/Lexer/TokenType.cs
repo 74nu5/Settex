@@ -16,6 +16,7 @@ public enum TokenType
     And,
     Or,
     Not,
+    If,
 
     // Symbols
     LeftBrace, // {

@@ -272,7 +272,8 @@ public class Parser(List<Token> tokens, string? filePath = null)
         }
 
         // Check for variable reference: identifier NOT followed by '{'
-        if (this.Check(TokenType.Identifier))
+        // Also allow certain keywords to be used as variable names (e.g., 'env')
+        if (this.Check(TokenType.Identifier) || this.IsKeywordUsableAsIdentifier())
         {
             var nameToken = this.Current;
             this.Advance();
@@ -282,6 +283,16 @@ public class Parser(List<Token> tokens, string? filePath = null)
         // Otherwise, parse as value (literal or array)
         var value = this.ParseValue();
         return value;
+    }
+
+    /// <summary>
+    ///     Checks if the current token is a keyword that can be used as an identifier in expressions.
+    ///     For example, 'env' is a keyword for env blocks but can also be used as a variable name.
+    /// </summary>
+    private bool IsKeywordUsableAsIdentifier()
+    {
+        // Only 'env' for now - it's used as an implicit variable but is also a keyword
+        return this.Current.Type == TokenType.Env;
     }
 
     /// <summary>
@@ -417,15 +428,23 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an assignment statement: path "=" value/expression
+    ///     Parses an assignment statement: path "=" value/expression ["if" condition]
     /// </summary>
     private AssignmentNode ParseAssignmentStatement()
     {
         var path = this.ParsePath();
         this.Expect(TokenType.Equals, "Expected '=' after path");
-        var value = this.ParseExpression(); // Changed from ParseValue() to support variable refs
+        var value = this.ParseExpression();
 
-        return new(path, value, path.Location);
+        // Check for optional "if" condition
+        IExpression? condition = null;
+
+        if (this.Match(TokenType.If))
+        {
+            condition = this.ParseExpression();
+        }
+
+        return new(path, value, condition, path.Location);
     }
 
     /// <summary>
