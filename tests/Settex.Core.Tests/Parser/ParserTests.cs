@@ -634,4 +634,78 @@ public sealed class ParserTests
         var varRef = (VariableRefNode)let2.Value;
         await Assert.That(varRef.Name).IsEqualTo("basePort");
     }
+
+    [Test]
+    public async Task ParseExpression_MemberAccess_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     settings {
+                       ServiceName = obj.Name
+                       ServicePort = obj.Port
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
+        var assignment1 = (AssignmentNode)settingsBlock.Block.Statements[0];
+        var assignment2 = (AssignmentNode)settingsBlock.Block.Statements[1];
+
+        // First assignment: ServiceName = obj.Name
+        await Assert.That(assignment1.Value).IsTypeOf<MemberAccessNode>();
+        var memberAccess1 = (MemberAccessNode)assignment1.Value;
+        await Assert.That(memberAccess1.Object).IsTypeOf<VariableRefNode>();
+        await Assert.That(((VariableRefNode)memberAccess1.Object).Name).IsEqualTo("obj");
+        await Assert.That(memberAccess1.MemberName).IsEqualTo("Name");
+
+        // Second assignment: ServicePort = obj.Port
+        await Assert.That(assignment2.Value).IsTypeOf<MemberAccessNode>();
+        var memberAccess2 = (MemberAccessNode)assignment2.Value;
+        await Assert.That(memberAccess2.Object).IsTypeOf<VariableRefNode>();
+        await Assert.That(((VariableRefNode)memberAccess2.Object).Name).IsEqualTo("obj");
+        await Assert.That(memberAccess2.MemberName).IsEqualTo("Port");
+    }
+
+    [Test]
+    public async Task ParseExpression_ChainedMemberAccess_ParsesCorrectly()
+    {
+        // Arrange
+        var source = """
+                     settings {
+                       Result = config.inner.value
+                     }
+                     """;
+
+        var lexer = new Lexer(source);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens);
+
+        // Act
+        var fileNode = parser.ParseFile();
+
+        // Assert
+        var settingsBlock = (SettingsBlockNode)fileNode.Statements[0];
+        var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
+
+        // Result = config.inner.value
+        await Assert.That(assignment.Value).IsTypeOf<MemberAccessNode>();
+        var outerAccess = (MemberAccessNode)assignment.Value;
+        await Assert.That(outerAccess.MemberName).IsEqualTo("value");
+        
+        // config.inner
+        await Assert.That(outerAccess.Object).IsTypeOf<MemberAccessNode>();
+        var innerAccess = (MemberAccessNode)outerAccess.Object;
+        await Assert.That(innerAccess.MemberName).IsEqualTo("inner");
+        
+        // config
+        await Assert.That(innerAccess.Object).IsTypeOf<VariableRefNode>();
+        await Assert.That(((VariableRefNode)innerAccess.Object).Name).IsEqualTo("config");
+    }
 }

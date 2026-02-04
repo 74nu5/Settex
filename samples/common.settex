@@ -7,6 +7,12 @@ let maxRetries = 3
 
 # Shared services configuration
 let sharedServices = [
-    service { Name = "auth" Port = 5001 }
-    service { Name = "api" Port = 5002 }
+    service {
+        Name = "auth"
+        Port = 5001
+    }
+    service {
+        Name = "data"
+        Port = 5002
+    }
 ]

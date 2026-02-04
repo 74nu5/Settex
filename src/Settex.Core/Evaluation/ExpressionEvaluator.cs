@@ -25,6 +25,7 @@ public class ExpressionEvaluator
         {
             LiteralNode literal => this.EvaluateLiteral(literal),
             VariableRefNode varRef => this.EvaluateVariableRef(varRef),
+            MemberAccessNode memberAccess => this.EvaluateMemberAccess(memberAccess),
             ArrayNode array => this.EvaluateArray(array),
             TaggedObjectNode obj => this.EvaluateTaggedObject(obj),
             BinaryOpNode binOp => this.EvaluateBinaryOp(binOp),
@@ -57,6 +58,32 @@ public class ExpressionEvaluator
         }
 
         return value;
+    }
+
+    private RuntimeValue EvaluateMemberAccess(MemberAccessNode memberAccess)
+    {
+        // Evaluate the object expression first
+        var objValue = this.Evaluate(memberAccess.Object);
+
+        // Member access only works on objects
+        if (objValue is not ObjectValue obj)
+        {
+            throw new EvaluatorException(
+                $"Cannot access member '{memberAccess.MemberName}' on non-object type {objValue.GetType().Name}",
+                memberAccess.Location
+            );
+        }
+
+        // Get the member value
+        if (!obj.Properties.TryGetValue(memberAccess.MemberName, out var memberValue))
+        {
+            throw new EvaluatorException(
+                $"Object does not have a member '{memberAccess.MemberName}'",
+                memberAccess.Location
+            );
+        }
+
+        return memberValue;
     }
 
     private RuntimeValue EvaluateArray(ArrayNode array)

@@ -442,4 +442,106 @@ public class ExpressionEvaluationTests
 
         await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
     }
+
+    [Test]
+    public async Task Evaluate_MemberAccess_ReturnsCorrectValue()
+    {
+        var source = """
+            let service = svc { Name = "API" Port = 5000 }
+
+            settings {
+                ServiceName = service.Name
+                ServicePort = service.Port
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json).IsNotNull();
+        await Assert.That(json!["ServiceName"]!.GetValue<string>()).IsEqualTo("API");
+        await Assert.That(json!["ServicePort"]!.GetValue<long>()).IsEqualTo(5000L);
+    }
+
+    [Test]
+    public async Task Evaluate_MemberAccessInArrayForLoop_ReturnsCorrectValues()
+    {
+        var source = """
+            let services = [
+                svc { Name = "auth" Port = 5001 }
+                svc { Name = "data" Port = 5002 }
+            ]
+
+            settings {
+                Services = [
+                    for s in services {
+                        item {
+                            Name = s.Name
+                            Port = s.Port
+                            Enabled = true
+                        }
+                    }
+                ]
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json).IsNotNull();
+        
+        var servicesArray = json!["Services"]!.AsArray();
+        await Assert.That(servicesArray).IsNotNull();
+        await Assert.That(servicesArray.Count).IsEqualTo(2);
+
+        var firstService = servicesArray[0]!.AsObject();
+        await Assert.That(firstService["Name"]!.GetValue<string>()).IsEqualTo("auth");
+        await Assert.That(firstService["Port"]!.GetValue<long>()).IsEqualTo(5001L);
+        await Assert.That(firstService["Enabled"]!.GetValue<bool>()).IsEqualTo(true);
+
+        var secondService = servicesArray[1]!.AsObject();
+        await Assert.That(secondService["Name"]!.GetValue<string>()).IsEqualTo("data");
+        await Assert.That(secondService["Port"]!.GetValue<long>()).IsEqualTo(5002L);
+        await Assert.That(secondService["Enabled"]!.GetValue<bool>()).IsEqualTo(true);
+    }
+
+    [Test]
+    public async Task Evaluate_MemberAccessInStringInterpolation_ReturnsCorrectValue()
+    {
+        var source = """
+            let server = srv { Host = "localhost" Port = 8080 }
+
+            settings {
+                Url = "http://${server.Host}:${server.Port}"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json).IsNotNull();
+        await Assert.That(json!["Url"]!.GetValue<string>()).IsEqualTo("http://localhost:8080");
+    }
+
+    [Test]
+    public async Task Evaluate_MemberAccessOnNonObject_ThrowsException()
+    {
+        var source = """
+            let value = 42
+
+            settings {
+                Result = value.Name
+            }
+            """;
+
+        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+    }
+
+    [Test]
+    public async Task Evaluate_MemberAccessOnUndefinedMember_ThrowsException()
+    {
+        var source = """
+            let service = svc { Name = "API" }
+
+            settings {
+                Result = service.Port
+            }
+            """;
+
+        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+    }
 }

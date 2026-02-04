@@ -110,7 +110,16 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
         this.Expect(TokenType.Equals, "Expected '=' after variable name");
 
-        var value = this.ParseExpression();
+        // Check for tagged object value (e.g., let obj = svc { ... })
+        IExpression value;
+        if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
+        {
+            value = this.ParseTaggedObjectValue();
+        }
+        else
+        {
+            value = this.ParseExpression();
+        }
 
         return new(nameToken.Text, value, letToken.Location);
     }
@@ -270,7 +279,17 @@ public class Parser(List<Token> tokens, string? filePath = null)
         {
             var nameToken = this.Current;
             this.Advance();
-            return new VariableRefNode(nameToken.Text, nameToken.Location);
+            IExpression expr = new VariableRefNode(nameToken.Text, nameToken.Location);
+            
+            // Check for member access (e.g., user.Name, server.Port)
+            while (this.Check(TokenType.Dot))
+            {
+                this.Advance(); // consume '.'
+                var memberToken = this.Expect(TokenType.Identifier, "Expected member name after '.'");
+                expr = new MemberAccessNode(expr, memberToken.Text, nameToken.Location);
+            }
+            
+            return expr;
         }
 
         // Literal values (including interpolated strings)

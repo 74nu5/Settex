@@ -26,23 +26,23 @@ Créer une expérience développeur de première classe pour Settex avec :
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Settex Language Server                        │
-│                    (.NET / Settex.LanguageServer)                │
-│                                                                   │
+│                    Settex Language Server                       │
+│                    (.NET / Settex.LanguageServer)               │
+│                                                                 │
 │  ┌─────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────────┐   │
 │  │ Lexer   │→ │ Parser   │→ │Evaluator │→ │ Semantic Model  │   │
 │  │ (V2)    │  │ (V2)     │  │ (V2)     │  │ (Symbols, etc.) │   │
 │  └─────────┘  └──────────┘  └──────────┘  └─────────────────┘   │
-│                           │                                       │
-│  ┌────────────────────────┴──────────────────────────────────┐   │
-│  │              LSP Protocol Handler (JSON-RPC 2.0)          │   │
-│  │  - textDocument/completion                                 │   │
-│  │  - textDocument/hover                                      │   │
-│  │  - textDocument/definition                                 │   │
-│  │  - textDocument/publishDiagnostics                         │   │
-│  │  - textDocument/formatting                                 │   │
-│  │  - workspace/symbol                                        │   │
-│  └───────────────────────────────────────────────────────────┘   │
+│                           │                                     │
+│  ┌────────────────────────┴──────────────────────────────────┐  │
+│  │              LSP Protocol Handler (JSON-RPC 2.0)          │  │
+│  │  - textDocument/completion                                │  │
+│  │  - textDocument/hover                                     │  │
+│  │  - textDocument/definition                                │  │
+│  │  - textDocument/publishDiagnostics                        │  │
+│  │  - textDocument/formatting                                │  │
+│  │  - workspace/symbol                                       │  │
+│  └───────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
          │ Standard I/O / Named Pipes / TCP
          ▼

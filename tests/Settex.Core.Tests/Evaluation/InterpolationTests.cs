@@ -183,8 +183,9 @@ public class InterpolationTests
             }
             """;
 
-        // This test might fail if we don't support property access on objects yet
-        // For now, we'll just test that it doesn't crash during parsing
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        // V2 now supports member access on objects!
+        var json = CompileSource(source);
+        await Assert.That(json).IsNotNull();
+        await Assert.That(json!["Message"]!.GetValue<string>()).IsEqualTo("Object value: 42");
     }
 }
