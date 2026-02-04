@@ -19,7 +19,7 @@
     "json"
   ],
   "activationEvents": [
-    "onLanguage:settex"
+    "*"
   ],
   "main": "./out/extension.js",
   "contributes": {
