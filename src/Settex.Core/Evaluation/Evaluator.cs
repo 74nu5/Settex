@@ -32,7 +32,7 @@ public class Evaluator
         globalScope.Define("env", new StringValue("Base"));
 
         // Evaluate base settings with global scope
-        var baseSettings = this.EvaluateBlock(settingsBlock.Block, globalScope);
+        var baseSettings = this.EvaluateBlock(settingsBlock.Block, globalScope, baseSettings: null);
 
         // Evaluate environment overlays
         var environmentOverlays = new Dictionary<string, JsonObject>();
@@ -48,7 +48,7 @@ public class Evaluator
             // Evaluate let statements in env block (if any in the future)
             // For now, env blocks only contain settings blocks
             
-            var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope);
+            var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope, baseSettings);
             environmentOverlays[envBlock.EnvironmentName] = envSettings;
         }
 
@@ -130,7 +130,10 @@ public class Evaluator
     /// <summary>
     ///     Evaluates a block and returns a JsonObject.
     /// </summary>
-    private JsonObject EvaluateBlock(BlockNode block, VariableScope scope)
+    /// <param name="block">The block to evaluate.</param>
+    /// <param name="scope">The variable scope to use.</param>
+    /// <param name="baseSettings">Base settings object (null when evaluating base settings itself, non-null when evaluating env overlays).</param>
+    private JsonObject EvaluateBlock(BlockNode block, VariableScope scope, JsonObject? baseSettings)
     {
         var result = new JsonObject();
 
@@ -141,11 +144,11 @@ public class Evaluator
         {
             if (statement is AssignmentNode assignment)
             {
-                this.EvaluateAssignment(result, assignment, scope);
+                this.EvaluateAssignment(result, assignment, scope, baseSettings);
             }
             else if (statement is NestedBlockNode nestedBlock)
             {
-                this.EvaluateNestedBlock(result, nestedBlock, scope);
+                this.EvaluateNestedBlock(result, nestedBlock, scope, baseSettings);
             }
             // LetNode is already handled above
         }
@@ -157,8 +160,9 @@ public class Evaluator
     ///     Evaluates an assignment statement and adds it to the target object.
     ///     Handles dot-path assignments (e.g., A.B.C = value).
     ///     Supports conditional assignments (e.g., Path = Value if Condition).
+    ///     Supports set-if-missing operator (:=).
     /// </summary>
-    private void EvaluateAssignment(JsonObject target, AssignmentNode assignment, VariableScope scope)
+    private void EvaluateAssignment(JsonObject target, AssignmentNode assignment, VariableScope scope, JsonObject? baseSettings)
     {
         // Check if there's a condition
         if (assignment.Condition != null)
@@ -182,6 +186,17 @@ public class Evaluator
         }
 
         var path = assignment.Path.Segments;
+
+        // For := operator, check if key already exists
+        if (assignment.Op == AssignmentOp.SetIfMissing)
+        {
+            // Check if the key exists in current overlay or base settings
+            if (this.PathExists(target, path) || (baseSettings != null && this.PathExists(baseSettings, path)))
+            {
+                // Key exists, skip this assignment
+                return;
+            }
+        }
 
         // Navigate to the parent object, creating intermediate objects as needed
         var current = target;
@@ -216,11 +231,56 @@ public class Evaluator
     }
 
     /// <summary>
+    ///     Checks if a path exists in a JsonObject.
+    /// </summary>
+    private bool PathExists(JsonObject obj, IReadOnlyList<string> path)
+    {
+        var current = obj;
+
+        for (var i = 0; i < path.Count; i++)
+        {
+            var segment = path[i];
+
+            if (!current.ContainsKey(segment))
+            {
+                return false;
+            }
+
+            // If this is the last segment, the path exists
+            if (i == path.Count - 1)
+            {
+                return true;
+            }
+
+            // Otherwise, continue navigating
+            var next = current[segment];
+
+            if (next is not JsonObject nextObj)
+            {
+                // Path exists but the value is not an object, so the full path doesn't exist
+                return false;
+            }
+
+            current = nextObj;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     ///     Evaluates a nested block statement and adds it to the target object.
     /// </summary>
-    private void EvaluateNestedBlock(JsonObject target, NestedBlockNode nestedBlock, VariableScope scope)
+    private void EvaluateNestedBlock(JsonObject target, NestedBlockNode nestedBlock, VariableScope scope, JsonObject? baseSettings)
     {
-        var childObject = this.EvaluateBlock(nestedBlock.Block, scope);
+        // For nested blocks, we need to find the corresponding nested object in base settings (if any)
+        JsonObject? baseNestedObject = null;
+        
+        if (baseSettings != null && baseSettings.TryGetPropertyValue(nestedBlock.Name, out var baseValue))
+        {
+            baseNestedObject = baseValue as JsonObject;
+        }
+        
+        var childObject = this.EvaluateBlock(nestedBlock.Block, scope, baseNestedObject);
         target[nestedBlock.Name] = childObject;
     }
 

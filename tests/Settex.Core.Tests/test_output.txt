@@ -1,0 +1,66 @@
+Ex├®cuter des tests ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+├®chec SetIfMissing_NestedPath_ExistingValue_DoesNotOverride (13ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_NestedPath_ExistingValue_DoesNotOverride() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:200
+├®chec SetIfMissing_ExistingValueInBase_DoesNotOverride (7ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_ExistingValueInBase_DoesNotOverride() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:35
+├®chec SetIfMissing_ExistingInEnv_DoesNotOverride (18ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_ExistingInEnv_DoesNotOverride() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:120
+├®chec SetIfMissing_MissingInBothBaseAndEnv_SetsValue (16ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_MissingInBothBaseAndEnv_SetsValue() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:149
+├®chec SetIfMissing_MissingKeyInBase_SetsValue (20ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_MissingKeyInBase_SetsValue() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:58
+├®chec SetIfMissing_ExistingInBase_EnvDoesNotOverride (18ms)
+  InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: InvalidOperationException: A value of type 'System.Int64' cannot be converted to a 'System.Int32'.
+    sur System.Text.Json.ThrowHelper.ThrowInvalidOperationException_NodeUnableToConvert(Type sourceType, Type destinationType)
+    sur System.Text.Json.Nodes.JsonValue`1.GetValue[T]()
+    sur Settex.Core.Tests.Evaluation.SetIfMissingTests.SetIfMissing_ExistingInBase_EnvDoesNotOverride() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\SetIfMissingTests.cs:87
+D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64) a ├®chou├® avec 6 erreur(s) (1s 521ms)
+Code de sortie: 2
+  Sortie standard: 
+  ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòùÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔòùÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòù
+  ÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔûêÔûêÔòù  ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòöÔûêÔûêÔòù ÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔûêÔûêÔòùÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔòÜÔûêÔûêÔûêÔûêÔûêÔûêÔòöÔòØÔûêÔûêÔòæ ÔòÜÔûêÔûêÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔòÜÔòÉÔòØ    ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ ÔòÜÔòÉÔòØ  ÔòÜÔòÉÔòÉÔòÉÔòØÔòÜÔòÉÔòØ   ÔòÜÔòÉÔòØ
+  
+     TUnit v1.12.125.0 | 64-bit | Microsoft Windows 10.0.26200 | win-x64 | .NET 10.0.2 | Microsoft Testing Platform v2.0.2
+  
+     Engine Mode: SourceGenerated
+  
+  
+
+R├®sum├® de s├®rie de tests┬á: ├ëchec!
+  total : 160
+  ├®chec : 6
+  r├®ussie : 154
+  ignor├® : 0
+  dur├®e : 2s 096ms
+LÔÇÖex├®cution de tests sÔÇÖest termin├®e avec un code de sortie non r├®ussi┬á: 2 (voir┬á: https://aka.ms/testingplatform/exitcodes)

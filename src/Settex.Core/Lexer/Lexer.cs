@@ -103,6 +103,7 @@ public class Lexer(string source, string? filePath = null)
             '.' => this.CreateAndAdvance(TokenType.Dot, ".", startLine, startColumn),
             ',' => this.CreateAndAdvance(TokenType.Comma, ",", startLine, startColumn),
             ';' => this.CreateAndAdvance(TokenType.Semicolon, ";", startLine, startColumn),
+            ':' => this.ScanColonEquals(startLine, startColumn),
             '+' => this.CreateAndAdvance(TokenType.Plus, "+", startLine, startColumn),
             '-' => this.ScanMinusOrNumber(startLine, startColumn),
             '*' => this.CreateAndAdvance(TokenType.Star, "*", startLine, startColumn),
@@ -428,6 +429,19 @@ public class Lexer(string source, string? filePath = null)
         }
 
         throw new LexerException("Unexpected character '?'. Did you mean '??'?", this.CreateLocation(startLine, startColumn, 1));
+    }
+
+    private Token ScanColonEquals(int startLine, int startColumn)
+    {
+        this.Advance(); // consume :
+
+        if (this.Current == '=')
+        {
+            this.Advance(); // consume =
+            return this.CreateToken(TokenType.ColonEquals, ":=", startLine, startColumn);
+        }
+
+        throw new LexerException("Unexpected character ':'. Did you mean ':='?", this.CreateLocation(startLine, startColumn, 1));
     }
 
     private void Advance()

@@ -406,11 +406,12 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
         // Look ahead to distinguish between assignment and nested block
         // If we see: Ident "=" → assignment
+        // If we see: Ident ":=" → assignment
         // If we see: Ident "." → assignment (path)
         // If we see: Ident "{" → nested block
         if (this.Check(TokenType.Identifier))
         {
-            if (this.Peek().Type == TokenType.Equals || this.Peek().Type == TokenType.Dot)
+            if (this.Peek().Type == TokenType.Equals || this.Peek().Type == TokenType.ColonEquals || this.Peek().Type == TokenType.Dot)
             {
                 return this.ParseAssignmentStatement();
             }
@@ -428,12 +429,28 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an assignment statement: path "=" value/expression ["if" condition]
+    ///     Parses an assignment statement: path ("=" | ":=") value/expression ["if" condition]
     /// </summary>
     private AssignmentNode ParseAssignmentStatement()
     {
         var path = this.ParsePath();
-        this.Expect(TokenType.Equals, "Expected '=' after path");
+        
+        // Determine assignment operator
+        var op = AssignmentOp.Set;
+        
+        if (this.Match(TokenType.ColonEquals))
+        {
+            op = AssignmentOp.SetIfMissing;
+        }
+        else if (this.Match(TokenType.Equals))
+        {
+            op = AssignmentOp.Set;
+        }
+        else
+        {
+            throw new ParserException($"Expected '=' or ':=' after path, but got '{this.Current.Text}'", this.Current.Location);
+        }
+        
         var value = this.ParseExpression();
 
         // Check for optional "if" condition
@@ -444,7 +461,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
             condition = this.ParseExpression();
         }
 
-        return new(path, value, condition, path.Location);
+        return new(path, op, value, condition, path.Location);
     }
 
     /// <summary>

@@ -24,6 +24,7 @@ public enum TokenType
     LeftBracket, // [
     RightBracket, // ]
     Equals, // =
+    ColonEquals, // :=
     Dot, // .
     Comma, // ,
     Semicolon, // ;
