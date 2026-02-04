@@ -105,7 +105,7 @@ public class SettexDocument
     /// <summary>
     /// Convertit une SourceLocation en LSP Range.
     /// </summary>
-    private static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range LocationToRange(SourceLocation location)
+    public static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range LocationToRange(SourceLocation location)
     {
         // LSP uses 0-based line/column
         var line = location.Line - 1;

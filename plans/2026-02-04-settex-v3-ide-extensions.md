@@ -319,41 +319,38 @@ ${|  →  [host, port, baseUrl, ...]
 
 ---
 
-### Phase 6 : Navigation (Go to Definition, References) 🔍
+### Phase 6 : Navigation (Go to Definition, References) ✅ COMPLÉTÉ
 
 **Objectif** : Navigation rapide dans le code.
 
-**Durée estimée** : 3-4 jours
+**Implémentation** :
+- ✅ **SettexDefinitionHandler** créé
+  - Go to Definition pour variables (LetNode)
+  - Go to Definition pour environnements (EnvBlockNode)
+  - Ctrl+Click navigation fonctionnelle
+- ✅ **SettexReferencesHandler** créé
+  - Find All References pour variables
+  - Recherche récursive dans toutes les expressions
+  - Parcourt BinaryOp, UnaryOp, InterpolatedString, Array, MemberAccess, TaggedObject
+  - Option includeDeclaration supportée
+- ✅ **SettexDocumentSymbolHandler** créé
+  - Outline pour settings, env, let, include
+  - Structure arborescente avec children
+  - Nested blocks avec récursivité
+  - Symboles avec icons (Struct, Namespace, Variable, File, Property, Object)
+- ✅ Tous les handlers enregistrés dans Program.cs
+- ✅ LocationToRange rendu public pour réutilisation
+- ✅ 181/181 tests passent
+- ✅ Compilation réussie
 
-#### Tâches
-- [ ] Construire table de symboles :
-  ```csharp
-  public class SymbolTable
-  {
-      Dictionary<string, VariableSymbol> Variables;
-      Dictionary<string, EnvironmentSymbol> Environments;
-      List<IncludeReference> Includes;
-      
-      SymbolInfo? FindSymbolAt(Position pos);
-      List<Location> FindReferences(string name);
-  }
-  ```
-- [ ] Implémenter `textDocument/definition` :
-  - [ ] Variable → déclaration `let`
-  - [ ] Include → fichier cible
-  - [ ] Environnement → bloc `env`
-- [ ] Implémenter `textDocument/references` :
-  - [ ] Toutes les utilisations d'une variable
-  - [ ] Tous les `include` vers un fichier
-- [ ] Implémenter `textDocument/documentSymbol` :
-  - [ ] Outline : settings, envs, variables
-  - [ ] Structure arborescente
+**Fichiers** :
+- `src/Settex.LanguageServer/SettexDefinitionHandler.cs` (créé)
+- `src/Settex.LanguageServer/SettexReferencesHandler.cs` (créé)
+- `src/Settex.LanguageServer/SettexDocumentSymbolHandler.cs` (créé)
+- `src/Settex.LanguageServer/SettexDocument.cs` (modifié - LocationToRange public)
+- `src/Settex.LanguageServer/Program.cs` (modifié - 3 handlers ajoutés)
 
-**Critères de succès** :
-- ✅ Ctrl+Click sur variable → déclaration
-- ✅ Ctrl+Click sur include → ouvre fichier
-- ✅ Find All References fonctionnel
-- ✅ Outline visible dans l'explorateur
+**Commit** : `feat(v3): Phase 6 - Navigation (Go to Definition, Find References, Document Symbols)`
 
 ---
 

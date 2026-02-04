@@ -1,0 +1,125 @@
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
+namespace Settex.LanguageServer;
+
+/// <summary>
+/// Handler pour "Go to Definition".
+/// Permet de naviguer vers la déclaration des variables et environnements.
+/// </summary>
+public class SettexDefinitionHandler : DefinitionHandlerBase
+{
+    private readonly SettexWorkspace workspace;
+    private readonly TextDocumentSelector documentSelector = new(
+        new TextDocumentFilter { Pattern = "**/*.settex" }
+    );
+
+    public SettexDefinitionHandler(SettexWorkspace workspace)
+    {
+        this.workspace = workspace;
+    }
+
+    public override Task<LocationOrLocationLinks?> Handle(
+        DefinitionParams request,
+        CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToString();
+        var document = this.workspace.GetDocument(uri);
+
+        if (document?.Ast == null || document.Text == null)
+        {
+            return Task.FromResult<LocationOrLocationLinks?>(null);
+        }
+
+        // Extraire le mot à la position
+        var word = GetWordAtPosition(document.Text, request.Position);
+        
+        if (string.IsNullOrEmpty(word))
+        {
+            return Task.FromResult<LocationOrLocationLinks?>(null);
+        }
+
+        // Chercher la définition d'une variable
+        var letNode = document.Ast.Statements
+            .OfType<Core.Parser.Ast.LetNode>()
+            .FirstOrDefault(let => let.Name == word);
+
+        if (letNode != null)
+        {
+            var range = SettexDocument.LocationToRange(letNode.Location);
+            var location = new Location
+            {
+                Uri = request.TextDocument.Uri,
+                Range = range
+            };
+            return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
+        }
+
+        // Chercher la définition d'un environnement
+        var envNode = document.Ast.Statements
+            .OfType<Core.Parser.Ast.EnvBlockNode>()
+            .FirstOrDefault(env => env.EnvironmentName == word);
+
+        if (envNode != null)
+        {
+            var range = SettexDocument.LocationToRange(envNode.Location);
+            var location = new Location
+            {
+                Uri = request.TextDocument.Uri,
+                Range = range
+            };
+            return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
+        }
+
+        return Task.FromResult<LocationOrLocationLinks?>(null);
+    }
+
+    protected override DefinitionRegistrationOptions CreateRegistrationOptions(
+        DefinitionCapability capability,
+        ClientCapabilities clientCapabilities)
+    {
+        return new DefinitionRegistrationOptions
+        {
+            DocumentSelector = this.documentSelector
+        };
+    }
+
+    private static string GetWordAtPosition(string text, Position position)
+    {
+        var lines = text.Split('\n');
+        if (position.Line >= lines.Length)
+        {
+            return string.Empty;
+        }
+
+        var line = lines[position.Line];
+        if (position.Character >= line.Length)
+        {
+            return string.Empty;
+        }
+
+        var start = position.Character;
+        var end = position.Character;
+
+        while (start > 0 && IsWordChar(line[start - 1]))
+        {
+            start--;
+        }
+
+        while (end < line.Length && IsWordChar(line[end]))
+        {
+            end++;
+        }
+
+        return line.Substring(start, end - start);
+    }
+
+    private static bool IsWordChar(char c)
+    {
+        return char.IsLetterOrDigit(c) || c == '_';
+    }
+}

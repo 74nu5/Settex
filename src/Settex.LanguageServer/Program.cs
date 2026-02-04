@@ -24,6 +24,9 @@ internal static class Program
                 .WithHandler<SettexTextDocumentSyncHandler>()
                 .WithHandler<SettexCompletionHandler>()
                 .WithHandler<SettexHoverHandler>()
+                .WithHandler<SettexDefinitionHandler>()
+                .WithHandler<SettexReferencesHandler>()
+                .WithHandler<SettexDocumentSymbolHandler>()
         ).ConfigureAwait(false);
 
         await server.WaitForExit.ConfigureAwait(false);
