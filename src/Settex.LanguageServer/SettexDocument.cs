@@ -87,10 +87,13 @@ public class SettexDocument
         }
         catch (Exception ex)
         {
-            // Erreur inattendue
+            //Range inattendue
             this.diagnostics.Add(new Diagnostic
             {
-                Range = new Range(new Position(0, 0), new Position(0, 0)),
+                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                    new Position(0, 0), 
+                    new Position(0, 0)
+                ),
                 Severity = DiagnosticSeverity.Error,
                 Code = "STX999",
                 Source = "settex",

@@ -5,6 +5,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
 namespace Settex.LanguageServer;
 
@@ -30,12 +31,11 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
         this.logger = logger;
     }
 
-    public override TextDocumentSyncKind Change => TextDocumentSyncKind.Full;
+    public TextDocumentSyncKind Change { get; } = TextDocumentSyncKind.Full;
 
-    public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri)
-    {
-        return new TextDocumentAttributes(uri, "settex");
-    }
+    public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) =>
+        new(uri, "settex");
+
 
     public override Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
     {
@@ -92,21 +92,18 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
     public override Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken cancellationToken)
     {
         this.logger.LogInformation("Saved: {Uri}", request.TextDocument.Uri);
-        // On ne fait rien au save
         return Unit.Task;
     }
 
     protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(
-        SynchronizationCapability capability,
-        ClientCapabilities clientCapabilities)
-    {
-        return new TextDocumentSyncRegistrationOptions
+        TextSynchronizationCapability capability,
+        ClientCapabilities clientCapabilities) =>
+        new()
         {
             DocumentSelector = this.documentSelector,
             Change = this.Change,
-            Save = true
+            Save = new SaveOptions { IncludeText = false }
         };
-    }
 
     /// <summary>
     /// Publie les diagnostics pour un document.
