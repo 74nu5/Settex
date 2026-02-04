@@ -63,10 +63,21 @@ public class ExpressionEvaluator
     {
         var items = new List<RuntimeValue>();
 
-        foreach (var item in array.Items)
+        foreach (var element in array.Elements)
         {
-            var value = this.Evaluate(item);
-            items.Add(value);
+            if (element is IExpression expr)
+            {
+                var value = this.Evaluate(expr);
+                items.Add(value);
+            }
+            else if (element is ForNode forNode)
+            {
+                // For loops should be handled by Evaluator, not ExpressionEvaluator
+                throw new EvaluatorException(
+                    "For loops in arrays should be evaluated in Evaluator context",
+                    forNode.Location
+                );
+            }
         }
 
         return new ArrayValue(items);

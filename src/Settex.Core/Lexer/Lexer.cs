@@ -317,6 +317,8 @@ public class Lexer(string source, string? filePath = null)
             "or" => TokenType.Or,
             "not" => TokenType.Not,
             "if" => TokenType.If,
+            "for" => TokenType.For,
+            "in" => TokenType.In,
             _ => TokenType.Identifier,
         };
 

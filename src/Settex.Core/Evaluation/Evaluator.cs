@@ -289,12 +289,114 @@ public class Evaluator
     /// </summary>
     private JsonNode? EvaluateValue(IExpression expression, VariableScope scope)
     {
+        // Special handling for ArrayNode with ForNode elements
+        if (expression is ArrayNode arrayNode && arrayNode.Elements.Any(e => e is ForNode))
+        {
+            return this.EvaluateArrayWithForLoops(arrayNode, scope);
+        }
+        
         // Use ExpressionEvaluator to convert IExpression → RuntimeValue
         var expressionEvaluator = new ExpressionEvaluator(scope);
         var runtimeValue = expressionEvaluator.Evaluate(expression);
         
         // Then convert RuntimeValue → JsonNode
         return this.ConvertRuntimeValueToJson(runtimeValue);
+    }
+
+    /// <summary>
+    ///     Evaluates an array that contains for loops.
+    /// </summary>
+    private JsonArray EvaluateArrayWithForLoops(ArrayNode arrayNode, VariableScope scope)
+    {
+        var result = new JsonArray();
+        var expressionEvaluator = new ExpressionEvaluator(scope);
+
+        foreach (var element in arrayNode.Elements)
+        {
+            if (element is IExpression expr)
+            {
+                // Regular expression element
+                var value = expressionEvaluator.Evaluate(expr);
+                var jsonValue = this.ConvertRuntimeValueToJson(value);
+                result.Add(jsonValue);
+            }
+            else if (element is ForNode forNode)
+            {
+                // For loop - evaluate and add all generated items
+                var forItems = this.EvaluateForLoop(forNode, scope);
+                foreach (var item in forItems)
+                {
+                    result.Add(item);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    ///     Evaluates a for loop and returns the generated JSON items.
+    /// </summary>
+    private List<JsonNode?> EvaluateForLoop(ForNode forNode, VariableScope scope)
+    {
+        var results = new List<JsonNode?>();
+
+        // Evaluate the collection expression
+        var expressionEvaluator = new ExpressionEvaluator(scope);
+        var collectionValue = expressionEvaluator.Evaluate(forNode.Collection);
+
+        if (collectionValue is not ArrayValue arrayValue)
+        {
+            throw new EvaluatorException(
+                $"For loop collection must be an array, got {collectionValue.GetType().Name}",
+                forNode.Location
+            );
+        }
+
+        // Iterate over each element in the collection
+        foreach (var item in arrayValue.Items)
+        {
+            // Create child scope with iterator variable
+            var forScope = scope.CreateChild();
+            forScope.Define(forNode.IteratorName, item);
+
+            // Evaluate the body and collect results
+            var bodyResult = this.EvaluateForBody(forNode.Body, forScope);
+            results.Add(bodyResult);
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    ///     Evaluates a for loop body and returns the generated JSON object.
+    ///     The body should contain a single nested block (tagged object like "item { ... }").
+    /// </summary>
+    private JsonNode? EvaluateForBody(BlockNode body, VariableScope scope)
+    {
+        // The body should contain exactly one nested block (item { ... })
+        var nestedBlocks = body.Statements.OfType<NestedBlockNode>().ToList();
+
+        if (nestedBlocks.Count == 0)
+        {
+            throw new EvaluatorException(
+                "For loop body must contain a tagged object (e.g., 'item { ... }')",
+                body.Location
+            );
+        }
+
+        if (nestedBlocks.Count > 1)
+        {
+            throw new EvaluatorException(
+                "For loop body can only contain one tagged object",
+                body.Location
+            );
+        }
+
+        // Evaluate the nested block
+        var nestedBlock = nestedBlocks[0];
+        var obj = this.EvaluateBlock(nestedBlock.Block, scope, baseSettings: null);
+        return obj;
     }
 
     /// <summary>

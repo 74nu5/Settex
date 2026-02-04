@@ -1,0 +1,268 @@
+Ex├®cuter des tests ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+├®chec ForLoop_SimpleIteration_GeneratesItems (9ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_SimpleIteration_GeneratesItems() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:37
+├®chec ForLoop_InEnvOverlay_GeneratesItems (4ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseEnvBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:341
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:81
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_InEnvOverlay_GeneratesItems() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:334
+├®chec ForLoop_EmptyCollection_GeneratesEmptyArray (2ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_EmptyCollection_GeneratesEmptyArray() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:119
+├®chec ForLoop_NonArrayCollection_ThrowsError (1ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_NonArrayCollection_ThrowsError() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:151
+├®chec ForLoop_AccessesOuterScopeVariables (11ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_AccessesOuterScopeVariables() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:290
+├®chec ForLoop_IteratorVariable_IsLocalToForScope (9ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_IteratorVariable_IsLocalToForScope() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:224
+├®chec ForLoop_WithExpressionCollection_GeneratesItems (3ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_WithExpressionCollection_GeneratesItems() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:257
+├®chec ForLoop_MixedWithRegularItems_GeneratesAllItems (11ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:658
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_MixedWithRegularItems_GeneratesAllItems() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:182
+├®chec ForLoop_WithInterpolation_GeneratesItems (13ms)
+  ParserException: Expected '{'
+  ├á partir de D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64)
+  TUnit.Engine.Exceptions.TestFailedException: ParserException: Expected '{'
+    sur Settex.Core.Parser.Parser.Expect(TokenType type, String errorMessage) dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:779
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:366
+    sur Settex.Core.Parser.Parser.ParseForLoop() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:729
+    sur Settex.Core.Parser.Parser.ParseArrayItem() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:682
+    sur Settex.Core.Parser.Parser.ParseArray() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:640
+    sur Settex.Core.Parser.Parser.ParseValue() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:512
+    sur Settex.Core.Parser.Parser.ParsePrimary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:284
+    sur Settex.Core.Parser.Parser.ParseUnary() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:263
+    sur Settex.Core.Parser.Parser.ParseFactor() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:234
+    sur Settex.Core.Parser.Parser.ParseTerm() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:219
+    sur Settex.Core.Parser.Parser.ParseComparison() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:197
+    sur Settex.Core.Parser.Parser.ParseEquality() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:182
+    sur Settex.Core.Parser.Parser.ParseCoalesce() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:168
+    sur Settex.Core.Parser.Parser.ParseLogicalAnd() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:154
+    sur Settex.Core.Parser.Parser.ParseLogicalOr() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:140
+    sur Settex.Core.Parser.Parser.ParseExpression() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:124
+    sur Settex.Core.Parser.Parser.ParseAssignmentStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:454
+    sur Settex.Core.Parser.Parser.ParseStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:416
+    sur Settex.Core.Parser.Parser.ParseBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:377
+    sur Settex.Core.Parser.Parser.ParseSettingsBlock() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:304
+    sur Settex.Core.Parser.Parser.ParseTopLevelStatement() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:76
+    sur Settex.Core.Parser.Parser.Parse() dans D:\Perso\Settex\src\Settex.Core\Parser\Parser.cs:33
+    sur Settex.Core.Tests.Evaluation.ForLoopTests.ForLoop_WithInterpolation_GeneratesItems() dans D:\Perso\Settex\tests\Settex.Core.Tests\Evaluation\ForLoopTests.cs:79
+D:\Perso\Settex\tests\Settex.Core.Tests\bin\Debug\net10.0\Settex.Core.Tests.dll (net10.0|x64) a ├®chou├® avec 9 erreur(s) (1s 115ms)
+Code de sortie: 2
+  Sortie standard: 
+  ÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòùÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔûêÔòù   ÔûêÔûêÔòùÔûêÔûêÔòùÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔòù
+  ÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔûêÔûêÔòù  ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔòÉÔòÉÔûêÔûêÔòöÔòÉÔòÉÔòØ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòöÔûêÔûêÔòù ÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔûêÔûêÔòæ   ÔûêÔûêÔòæÔûêÔûêÔòæÔòÜÔûêÔûêÔòùÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔûêÔûêÔòæ   ÔòÜÔûêÔûêÔûêÔûêÔûêÔûêÔòöÔòØÔûêÔûêÔòæ ÔòÜÔûêÔûêÔûêÔûêÔòæÔûêÔûêÔòæ   ÔûêÔûêÔòæ
+     ÔòÜÔòÉÔòØ    ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ ÔòÜÔòÉÔòØ  ÔòÜÔòÉÔòÉÔòÉÔòØÔòÜÔòÉÔòØ   ÔòÜÔòÉÔòØ
+  
+     TUnit v1.12.125.0 | 64-bit | Microsoft Windows 10.0.26200 | win-x64 | .NET 10.0.2 | Microsoft Testing Platform v2.0.2
+  
+     Engine Mode: SourceGenerated
+  
+  
+
+R├®sum├® de s├®rie de tests┬á: ├ëchec!
+  total : 169
+  ├®chec : 9
+  r├®ussie : 160
+  ignor├® : 0
+  dur├®e : 1s 452ms
+LÔÇÖex├®cution de tests sÔÇÖest termin├®e avec un code de sortie non r├®ussi┬á: 2 (voir┬á: https://aka.ms/testingplatform/exitcodes)

@@ -622,7 +622,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
     private ArrayNode ParseArray()
     {
         var startToken = this.Expect(TokenType.LeftBracket, "Expected '['");
-        var items = new List<IExpression>();
+        var elements = new List<IArrayElement>();
 
         // Skip leading newlines
         while (this.Match(TokenType.Newline))
@@ -633,11 +633,11 @@ public class Parser(List<Token> tokens, string? filePath = null)
         if (this.Check(TokenType.RightBracket))
         {
             this.Advance();
-            return new(items, startToken.Location);
+            return new(elements, startToken.Location);
         }
 
         // Parse array items with comma or newline separators
-        items.Add(this.ParseArrayItem());
+        elements.Add(this.ParseArrayItem());
 
         while (!this.Check(TokenType.RightBracket) && !this.IsAtEnd)
         {
@@ -655,7 +655,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
                     break;
                 }
 
-                items.Add(this.ParseArrayItem());
+                elements.Add(this.ParseArrayItem());
             }
             else
             {
@@ -668,14 +668,20 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
         this.Expect(TokenType.RightBracket, "Expected ']' to close array");
 
-        return new(items, startToken.Location);
+        return new(elements, startToken.Location);
     }
 
     /// <summary>
-    ///     Parses an array item: expression (literal, variable ref, or tagged object)
+    ///     Parses an array item: expression (literal, variable ref, or tagged object) or for loop
     /// </summary>
-    private IExpression ParseArrayItem()
+    private IArrayElement ParseArrayItem()
     {
+        // Check for for loop
+        if (this.Check(TokenType.For))
+        {
+            return this.ParseForLoop();
+        }
+        
         // Variable reference
         if (this.Check(TokenType.Identifier) && this.Peek().Type != TokenType.LeftBrace)
         {
@@ -702,6 +708,27 @@ public class Parser(List<Token> tokens, string? filePath = null)
             $"Expected array item (literal, variable, or tagged object), but got '{this.Current.Text}'",
             this.Current.Location
         );
+    }
+
+    /// <summary>
+    ///     Parses a for loop: for ident in expr { block }
+    /// </summary>
+    private ForNode ParseForLoop()
+    {
+        var startToken = this.Expect(TokenType.For, "Expected 'for'");
+        var iteratorToken = this.Expect(TokenType.Identifier, "Expected iterator variable name after 'for'");
+        this.Expect(TokenType.In, "Expected 'in' after iterator variable");
+        
+        var collection = this.ParseExpression();
+        
+        // Skip newlines before block
+        while (this.Match(TokenType.Newline))
+        {
+        }
+        
+        var body = this.ParseBlock();
+        
+        return new(iteratorToken.Text, collection, body, startToken.Location);
     }
 
     /// <summary>

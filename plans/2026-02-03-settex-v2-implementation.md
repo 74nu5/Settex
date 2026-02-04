@@ -382,39 +382,54 @@ env "Development" {
 **Objectif** : `Path := DefaultValue` (ne set que si clé absente).
 
 #### Tâches
-- [ ] Ajouter token `:=` (COLON_EQUALS)
-- [ ] Modifier `AssignmentNode` pour distinguer `=` et `:=` :
+- [x] Ajouter token `:=` (COLON_EQUALS)
+- [x] Modifier `AssignmentNode` pour distinguer `=` et `:=` :
   ```csharp
   public enum AssignmentOp { Set, SetIfMissing }
   
   public sealed record AssignmentNode(
       PathNode Path,
       AssignmentOp Op, // nouveau
-      IValue Value,
+      IExpression Value,
       IExpression? Condition,
       SourceLocation Location
   ) : IStatement;
   ```
-- [ ] Evaluator :
-  - [ ] Pour `:=` dans settings base :
-    - [ ] Vérifier si clé existe dans objet en construction
-    - [ ] Si absente → créer
-    - [ ] Si présente → ne rien faire
-  - [ ] Pour `:=` dans env :
-    - [ ] Vérifier si clé existe dans overlay **OU** dans base
-    - [ ] Si absente des deux → créer dans overlay
-    - [ ] Si présente → ne rien faire
-- [ ] Tests :
-  - [ ] Base : `Port := 8080` après `Port = 5000` → reste 5000
-  - [ ] Base : `Port := 8080` sans `Port` défini → devient 8080
-  - [ ] Env : `Port := 9000` avec `Port = 8080` dans base → reste 8080
-  - [ ] Null est considéré comme présent
+- [x] Parser : distinguer `=` et `:=`
+- [x] Evaluator :
+  - [x] Pour `:=` dans settings base :
+    - [x] Vérifier si clé existe dans objet en construction
+    - [x] Si absente → créer
+    - [x] Si présente → ne rien faire
+  - [x] Pour `:=` dans env :
+    - [x] Vérifier si clé existe dans overlay **OU** dans base
+    - [x] Si absente des deux → créer dans overlay
+    - [x] Si présente → ne rien faire
+- [x] Tests :
+  - [x] Base : `Port := 8080` après `Port = 5000` → reste 5000
+  - [x] Base : `Port := 8080` sans `Port` défini → devient 8080
+  - [x] Env : `Port := 9000` avec `Port = 8080` dans base → reste 8080
+  - [x] Null est considéré comme présent
+  - [x] Combinaison avec `if inline`
 
 **Critères de succès** :
 - ✅ `:=` ne remplace pas valeur existante
 - ✅ Règle spéciale env (consulte base + overlay)
-- ✅ Combinaison avec `if inline`
+- ✅ Combinaison avec `if inline` fonctionne
 - ✅ `null` traité comme présent
+
+**Notes d'implémentation** :
+- Token ColonEquals ajouté au lexer
+- AssignmentOp enum créé avec Set et SetIfMissing
+- AssignmentNode modifié pour inclure Op: AssignmentOp
+- Parser.ParseStatement étendu pour reconnaître := en lookahead
+- Parser.ParseAssignmentStatement détecte = ou := et définit l'opérateur
+- PathExists helper créé pour vérifier existence de clé dans JsonObject
+- EvaluateBlock, EvaluateAssignment, EvaluateNestedBlock prennent baseSettings en paramètre
+- EvaluateAssignment vérifie existence dans overlay + base avant d'assigner
+- 11 tests créés dans SetIfMissingTests.cs
+- 160/160 tests passent ✅
+- **COMPLÉTÉ** : Commit effectué (feat(v2): Phase 6 - Set-If-Missing Operator (:=) - complete)
 
 ---
 

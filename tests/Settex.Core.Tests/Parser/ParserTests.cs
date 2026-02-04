@@ -141,9 +141,9 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).Count().IsEqualTo(2);
-        await Assert.That(((LiteralNode)array.Items[0]).Value).IsEqualTo("localhost");
-        await Assert.That(((LiteralNode)array.Items[1]).Value).IsEqualTo("example.com");
+        await Assert.That(array.Elements).Count().IsEqualTo(2);
+        await Assert.That(((LiteralNode)array.Elements[0]).Value).IsEqualTo("localhost");
+        await Assert.That(((LiteralNode)array.Elements[1]).Value).IsEqualTo("example.com");
     }
 
     [Test]
@@ -172,10 +172,10 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).Count().IsEqualTo(3);
-        await Assert.That(((LiteralNode)array.Items[0]).Value).IsEqualTo(8080L);
-        await Assert.That(((LiteralNode)array.Items[1]).Value).IsEqualTo(8081L);
-        await Assert.That(((LiteralNode)array.Items[2]).Value).IsEqualTo(8082L);
+        await Assert.That(array.Elements).Count().IsEqualTo(3);
+        await Assert.That(((LiteralNode)array.Elements[0]).Value).IsEqualTo(8080L);
+        await Assert.That(((LiteralNode)array.Elements[1]).Value).IsEqualTo(8081L);
+        await Assert.That(((LiteralNode)array.Elements[2]).Value).IsEqualTo(8082L);
     }
 
     [Test]
@@ -209,13 +209,13 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).Count().IsEqualTo(2);
+        await Assert.That(array.Elements).Count().IsEqualTo(2);
 
-        var obj1 = (TaggedObjectNode)array.Items[0];
+        var obj1 = (TaggedObjectNode)array.Elements[0];
         await Assert.That(obj1.Tag).IsEqualTo("service");
         await Assert.That(obj1.Block.Statements).Count().IsEqualTo(2);
 
-        var obj2 = (TaggedObjectNode)array.Items[1];
+        var obj2 = (TaggedObjectNode)array.Elements[1];
         await Assert.That(obj2.Tag).IsEqualTo("service");
         await Assert.That(obj2.Block.Statements).Count().IsEqualTo(2);
     }
@@ -481,7 +481,7 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).Count().IsEqualTo(0);
+        await Assert.That(array.Elements).Count().IsEqualTo(0);
     }
 
     [Test]
@@ -506,7 +506,7 @@ public sealed class ParserTests
         var assignment = (AssignmentNode)settingsBlock.Block.Statements[0];
 
         var array = (ArrayNode)assignment.Value;
-        await Assert.That(array.Items).Count().IsEqualTo(3);
+        await Assert.That(array.Elements).Count().IsEqualTo(3);
     }
 
     [Test]
