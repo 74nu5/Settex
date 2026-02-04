@@ -16,7 +16,14 @@ internal static class Program
                 .ConfigureLogging(x => x
                     .AddLanguageProtocolLogging()
                     .SetMinimumLevel(LogLevel.Debug))
+                .WithServices(services =>
+                {
+                    // Register workspace as singleton
+                    services.AddSingleton<SettexWorkspace>();
+                })
                 .WithHandler<SettexTextDocumentSyncHandler>()
+                .WithHandler<SettexCompletionHandler>()
+                .WithHandler<SettexHoverHandler>()
         ).ConfigureAwait(false);
 
         await server.WaitForExit.ConfigureAwait(false);

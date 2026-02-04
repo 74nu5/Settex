@@ -23,10 +23,11 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
     );
 
     public SettexTextDocumentSyncHandler(
+        SettexWorkspace workspace,
         ILanguageServerFacade languageServer,
         ILogger<SettexTextDocumentSyncHandler> logger)
     {
-        this.workspace = new SettexWorkspace();
+        this.workspace = workspace;
         this.languageServer = languageServer;
         this.logger = logger;
     }
