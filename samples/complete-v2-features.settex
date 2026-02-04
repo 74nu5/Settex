@@ -262,6 +262,7 @@ env "Production" {
     let host = "api.example.com"
     let isDevelopment = false
     let isProduction = true
+    let maxRequests = 1000  # Variable pour réutilisation
 
     let productionDatabases = [
         db { Name = "primary" ConnectionString = "Server=prod-db-1;Database=Main" Priority = 1 }
@@ -323,8 +324,8 @@ env "Production" {
 
         # Complex expressions in production
         RateLimiting.Enabled = true
-        RateLimiting.MaxRequests = 1000
+        RateLimiting.MaxRequests = maxRequests
         RateLimiting.TimeWindow = 60
-        RateLimiting.IsStrict = RateLimiting.MaxRequests > 500 and isProduction
+        RateLimiting.IsStrict = maxRequests > 500 and isProduction
     }
 }
