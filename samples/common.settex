@@ -1,0 +1,12 @@
+# common.settex - Shared configuration for all environments
+
+# Global variables (available in all files that include this)
+let defaultPort = 5000
+let logLevel = "Information"
+let maxRetries = 3
+
+# Shared services configuration
+let sharedServices = [
+    service { Name = "auth" Port = 5001 }
+    service { Name = "api" Port = 5002 }
+]

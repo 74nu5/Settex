@@ -1,0 +1,330 @@
+# Settex V2 - Comprehensive Feature Sample
+# This file demonstrates all V2 features:
+# - Include system
+# - Variables (let) with scopes
+# - Expressions (arithmetic, logical, comparison, coalesce)
+# - String interpolation "${expr}"
+# - Conditional assignments (if inline)
+# - Set-if-missing operator (:=)
+# - For loops in arrays
+
+# ============================================
+# 1. INCLUDE - Import shared configuration
+# ============================================
+include "./common.settex"
+
+# ============================================
+# 2. GLOBAL VARIABLES
+# ============================================
+let appName = "Settex Demo"
+let environment = "Base"
+let host = "localhost"
+
+# Arithmetic expressions
+let basePort = 8000
+let apiPort = basePort + 100
+let adminPort = basePort + 200
+
+# Logical expressions
+let isDevelopment = environment == "Development"
+let isProduction = environment == "Production"
+
+# Array variables
+let allowedOrigins = [
+    "http://localhost:3000"
+    "http://localhost:4200"
+]
+
+let databases = [
+    db { Name = "primary" ConnectionString = "Server=localhost;Database=Main" Priority = 1 }
+    db { Name = "cache" ConnectionString = "Server=localhost;Database=Cache" Priority = 2 }
+]
+
+# ============================================
+# 3. BASE SETTINGS
+# ============================================
+settings {
+    # Simple assignment
+    ApplicationName = appName
+    
+    # String interpolation
+    ApplicationUrl = "https://${host}:${apiPort}"
+    
+    # Nested object with dot notation
+    Server.Host = host
+    Server.Port = apiPort
+    Server.Timeout = 30
+    
+    # Set-if-missing operator (:=) - sets default values
+    Server.MaxConnections := 100
+    Server.EnableCompression := true
+    
+    # Conditional assignments (if inline)
+    # These will be evaluated differently in each environment
+    Logging.LogLevel.Default = "Debug" if isDevelopment
+    Logging.LogLevel.Default = "Warning" if isProduction
+    Logging.LogLevel.Default = "Information"  # Fallback if neither
+    
+    # Nested blocks
+    Database {
+        Host = "localhost"
+        Port = 5432
+        Username = "admin"
+        # Password will be overridden in env blocks
+        Password := "default_password"
+    }
+    
+    # Array with literals and variables
+    AllowedHosts = [
+        "localhost"
+        "*.local"
+        host
+    ]
+    
+    # Array with conditional elements (using if)
+    Features = [
+        "logging"
+        "monitoring"
+    ]
+    
+    # For loops in arrays - generate items from collection
+    Services = [
+        for s in sharedServices {
+            item {
+                Name = s.Name
+                Url = "http://${host}:${s.Port}"
+                Enabled = true
+            }
+        }
+    ]
+    
+    # For loop with array literals
+    Ports = [
+        for i in [1, 2, 3] {
+            item {
+                Number = basePort + i
+                Description = "Port ${basePort + i}"
+            }
+        }
+    ]
+    
+    # For loop combining multiple features
+    DatabaseConnections = [
+        for db in databases {
+            item {
+                Name = db.Name
+                ConnectionString = db.ConnectionString
+                Priority = db.Priority
+                Enabled = db.Priority == 1
+            }
+        }
+    ]
+    
+    # Expressions in assignments
+    Math.Addition = 10 + 5
+    Math.Subtraction = 20 - 8
+    Math.Multiplication = 4 * 5
+    Math.Division = 100 / 10
+    
+    # Logical expressions
+    Logic.And = true and false
+    Logic.Or = true or false
+    Logic.Not = not false
+    
+    # Comparison expressions
+    Comparison.Equal = 5 == 5
+    Comparison.NotEqual = 5 != 3
+    Comparison.LessThan = 3 < 5
+    Comparison.GreaterThan = 10 > 5
+    Comparison.LessOrEqual = 5 <= 5
+    Comparison.GreaterOrEqual = 10 >= 10
+    
+    # Null coalescing operator (??)
+    OptionalValue = null ?? "default_value"
+    
+    # Complex expressions
+    Complex.Arithmetic = (10 + 5) * 2 - 3
+    Complex.Logical = (true or false) and not false
+    Complex.Mixed = (basePort + 100) > 8000 and environment == "Base"
+    
+    # Nested blocks with variables
+    Redis {
+        Host = host
+        Port = 6379
+        Database = 0
+    }
+}
+
+# ============================================
+# 4. DEVELOPMENT ENVIRONMENT
+# ============================================
+env "Development" {
+    # Environment-scoped variables (mask global ones)
+    let environment = "Development"
+    let host = "dev.example.com"
+    let isDevelopment = true
+    let isProduction = false
+    
+    # Additional dev-specific variables
+    let enableSwagger = true
+    let debugMode = true
+    
+    settings {
+        # Override base settings
+        Server.Port = 5000
+        Server.MaxConnections = 50
+        
+        # Development-specific database
+        Database.Host = "dev-db.local"
+        Database.Password = "dev_password"
+        
+        # Conditional assignment specific to this env
+        Swagger.Enabled = true if enableSwagger
+        Swagger.Endpoint = "/swagger"
+        
+        # Array with dev-specific values
+        AllowedHosts = [
+            "localhost"
+            "*.dev.local"
+            "dev.example.com"
+        ]
+        
+        # For loop with env variables
+        Services = [
+            for s in sharedServices {
+                item {
+                    Name = s.Name
+                    Url = "http://${host}:${s.Port}"
+                    DebugEnabled = debugMode
+                }
+            }
+        ]
+        
+        # Set-if-missing - won't override base value
+        Server.Timeout := 60
+        
+        # Development features
+        Features = [
+            "logging"
+            "monitoring"
+            "swagger"
+            "debug-toolbar"
+        ]
+    }
+}
+
+# ============================================
+# 5. STAGING ENVIRONMENT
+# ============================================
+env "Staging" {
+    let environment = "Staging"
+    let host = "staging.example.com"
+    let isDevelopment = false
+    let isProduction = false
+    
+    settings {
+        Server.Port = 8080
+        Server.MaxConnections = 150
+        
+        Database.Host = "staging-db.example.com"
+        Database.Password = "staging_password"
+        
+        AllowedHosts = [
+            "staging.example.com"
+            "*.staging.example.com"
+        ]
+        
+        # For loop with expressions
+        Services = [
+            for s in sharedServices {
+                item {
+                    Name = s.Name
+                    Url = "https://${host}:${s.Port}"
+                    HealthCheckUrl = "https://${host}:${s.Port}/health"
+                    Enabled = true
+                }
+            }
+        ]
+        
+        Features = [
+            "logging"
+            "monitoring"
+            "performance-profiling"
+        ]
+    }
+}
+
+# ============================================
+# 6. PRODUCTION ENVIRONMENT
+# ============================================
+env "Production" {
+    let environment = "Production"
+    let host = "api.example.com"
+    let isDevelopment = false
+    let isProduction = true
+    
+    let productionDatabases = [
+        db { Name = "primary" ConnectionString = "Server=prod-db-1;Database=Main" Priority = 1 }
+        db { Name = "secondary" ConnectionString = "Server=prod-db-2;Database=Main" Priority = 2 }
+        db { Name = "cache" ConnectionString = "Server=prod-cache;Database=Cache" Priority = 3 }
+    ]
+    
+    settings {
+        Server.Port = 443
+        Server.MaxConnections = 1000
+        Server.EnableCompression = true
+        
+        Database.Host = "prod-db.example.com"
+        Database.Password = "prod_secure_password"
+        Database.EnableSSL = true
+        
+        AllowedHosts = [
+            "api.example.com"
+            "www.example.com"
+        ]
+        
+        # For loop with production databases
+        DatabaseConnections = [
+            for db in productionDatabases {
+                item {
+                    Name = db.Name
+                    ConnectionString = db.ConnectionString
+                    Priority = db.Priority
+                    Enabled = db.Priority <= 2
+                    ReadOnly = db.Priority > 1
+                }
+            }
+        ]
+        
+        # Production services with SSL
+        Services = [
+            for s in sharedServices {
+                item {
+                    Name = s.Name
+                    Url = "https://${host}:${s.Port}"
+                    HealthCheckUrl = "https://${host}:${s.Port}/health"
+                    HealthCheckInterval = 30
+                    EnableSSL = true
+                    Enabled = true
+                }
+            }
+        ]
+        
+        Features = [
+            "logging"
+            "monitoring"
+            "distributed-tracing"
+            "auto-scaling"
+        ]
+        
+        # Production-specific settings
+        Security.RequireHttps = true
+        Security.EnableCORS = true
+        
+        # Complex expressions in production
+        RateLimiting.Enabled = true
+        RateLimiting.MaxRequests = 1000
+        RateLimiting.TimeWindow = 60
+        RateLimiting.IsStrict = RateLimiting.MaxRequests > 500 and isProduction
+    }
+}
