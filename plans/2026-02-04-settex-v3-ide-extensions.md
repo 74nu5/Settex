@@ -354,6 +354,223 @@ ${|  →  [host, port, baseUrl, ...]
 
 ---
 
+### Phase 6.1 : Hover & Navigation Améliorés 🔍✨
+
+**Objectif** : Support complet des variables locales + affichage valeurs + overlay tracking.
+
+**Durée estimée** : 1-2 jours  
+**Priorité** : 🔴 Haute (améliore significativement l'UX)
+
+#### Problèmes à Résoudre
+
+**1. Pas de valeur dans hover**
+- Actuellement : "Variable (global scope)"
+- Attendu : Type + Valeur + Scope
+
+**2. Variables locales non supportées**
+- Variables dans env blocks ignorées
+- Iterators de for loops non détectés
+- Recherche uniquement top-level
+
+**3. Pas de tracking des overlays**
+- Impossible de voir valeur initiale avant override
+- Pas d'indication de surcharge par environnement
+
+#### Architecture Proposée
+
+**Nouveau composant : ScopeResolver**
+```csharp
+public class ScopeResolver
+{
+    // Construit hiérarchie des scopes depuis AST
+    ScopeInfo BuildScopeHierarchy(FileNode ast);
+    
+    // Trouve scope actif à position donnée
+    ScopeInfo? FindScopeAt(Position position);
+    
+    // Résout variable dans scope (avec remontée parents)
+    LetNode? FindVariableInScope(string name, ScopeInfo scope);
+}
+
+public class ScopeInfo
+{
+    ScopeType Type; // Global, Env, ForLoop
+    string? Name;   // Nom env ou iterator
+    ScopeInfo? Parent;
+    List<LetNode> Variables;
+    SourceLocation Location;
+}
+```
+
+#### Tâches Détaillées
+
+**Tâche 1 : Créer ScopeResolver** (3-4h)
+- [ ] Créer `ScopeResolver.cs` dans Settex.LanguageServer
+- [ ] Créer `ScopeInfo.cs` (modèle scope avec type, parent, variables)
+- [ ] Implémenter `BuildScopeHierarchy(FileNode)` :
+  - [ ] Parcourir AST et créer scopes hiérarchiques
+  - [ ] Scope global (top-level lets)
+  - [ ] Scopes env (lets dans env blocks)
+  - [ ] Scopes for (iterator variables)
+- [ ] Implémenter `FindScopeAt(Position)` :
+  - [ ] Déterminer scope actif selon position curseur
+  - [ ] Comparer ranges des scopes avec position
+- [ ] Implémenter `FindVariableInScope(name, scope)` :
+  - [ ] Chercher dans scope actuel
+  - [ ] Remonter aux scopes parents si non trouvé
+- [ ] Tests unitaires pour scope resolution
+
+**Tâche 2 : Améliorer SettexHoverHandler pour valeurs** (2-3h)
+- [ ] Ajouter référence à Settex.Core.Evaluation
+- [ ] Créer `FormatRuntimeValue(RuntimeValue)` pour Markdown :
+  - [ ] Numbers : `8000`, `3.14`
+  - [ ] Strings : `"Hello"` (avec quotes)
+  - [ ] Bools : `true`, `false`
+  - [ ] Arrays : `[1, 2, 3]` (max 5 items puis ...)
+  - [ ] Objects : `{ "key": "value", ... }` (max 3 clés)
+- [ ] Pour chaque variable trouvée :
+  - [ ] Créer scope avec variables parentes
+  - [ ] Évaluer expression avec ExpressionEvaluator
+  - [ ] Formater résultat en Markdown
+- [ ] Gérer erreurs d'évaluation gracefully (afficher erreur dans hover)
+- [ ] Nouveau format hover :
+  ```markdown
+  **Variable** `basePort`
+  Type: Number
+  Value: 8000
+  Scope: Global
+  ```
+
+**Tâche 3 : Support variables locales dans Hover** (2h)
+- [ ] Intégrer ScopeResolver dans SettexHoverHandler
+- [ ] Remplacer recherche globale par `FindScopeAt(position)`
+- [ ] Utiliser `FindVariableInScope(name, scope)` au lieu de LINQ sur ast.Statements
+- [ ] Afficher scope précis dans hover (Global/Env {name}/For iterator)
+- [ ] Tests :
+  - [ ] Hover sur variable globale
+  - [ ] Hover sur variable dans env block
+  - [ ] Hover sur iterator de for loop
+  - [ ] Hover avec homonymes dans scopes différents
+
+**Tâche 4 : Support variables locales dans Definition** (1h)
+- [ ] Intégrer ScopeResolver dans SettexDefinitionHandler
+- [ ] Utiliser `FindScopeAt(position)` pour déterminer contexte
+- [ ] Utiliser `FindVariableInScope` pour trouver déclaration
+- [ ] Navigation vers déclaration locale si applicable
+- [ ] Tests Go to Definition :
+  - [ ] Variable locale dans env
+  - [ ] Iterator dans for loop
+  - [ ] Homonyme (doit aller à la bonne déclaration)
+
+**Tâche 5 : Support variables locales dans References** (1-2h)
+- [ ] Intégrer ScopeResolver dans SettexReferencesHandler
+- [ ] Pour chaque référence trouvée :
+  - [ ] Déterminer scope de la référence
+  - [ ] Vérifier si elle pointe vers même déclaration
+  - [ ] Filtrer homonymes d'autres scopes
+- [ ] Tests Find References :
+  - [ ] Variable locale utilisée dans même env
+  - [ ] Variable globale avec homonyme local (ne pas confondre)
+  - [ ] Iterator de for loop
+
+**Tâche 6 : Hover avec overlay tracking** (2-3h)
+- [ ] Détecter si cursor est sur un path d'assignation (pas variable)
+- [ ] Extraire path complet (e.g. "Logging.LogLevel.Default")
+- [ ] Déterminer environnement actif (si dans env block)
+- [ ] Évaluer settings block base avec Evaluator
+- [ ] Évaluer settings block env overlay avec Evaluator
+- [ ] Comparer valeurs au path donné
+- [ ] Si différentes, afficher les deux :
+  ```markdown
+  **Setting** `Logging.LogLevel.Default`
+  Base value: "Information"
+  Production override: "Warning"
+  ```
+- [ ] Gérer cas où path n'existe pas en base
+- [ ] Tests :
+  - [ ] Hover sur assignation en base
+  - [ ] Hover sur assignation en env (avec override)
+  - [ ] Hover sur assignation en env (sans override)
+  - [ ] Hover sur nested path (a.b.c)
+
+**Tâche 7 : Tests et validation** (1h)
+- [ ] Tests hover avec différents types :
+  - [ ] Number variable
+  - [ ] String variable
+  - [ ] Bool variable
+  - [ ] Array variable
+  - [ ] Object variable
+- [ ] Tests scopes :
+  - [ ] Variable globale
+  - [ ] Variable dans env
+  - [ ] Iterator for loop
+  - [ ] Nested scopes (for dans env)
+- [ ] Tests overlay :
+  - [ ] Simple override
+  - [ ] Nested path override
+  - [ ] Pas d'override (valeur identique)
+- [ ] Validation :
+  - [ ] 181/181 tests existants passent toujours
+  - [ ] Tous nouveaux tests passent
+  - [ ] Compilation réussie
+  - [ ] Pas de régression hover/navigation existants
+
+#### Fichiers à Créer
+
+- `src/Settex.LanguageServer/ScopeResolver.cs` (~200-300 lignes)
+- `src/Settex.LanguageServer/ScopeInfo.cs` (~50 lignes)
+- Tests unitaires scope resolution
+
+#### Fichiers à Modifier
+
+- `src/Settex.LanguageServer/SettexHoverHandler.cs`
+  - Ajout évaluation variables
+  - Ajout formatage valeurs
+  - Intégration ScopeResolver
+  - Ajout overlay tracking
+- `src/Settex.LanguageServer/SettexDefinitionHandler.cs`
+  - Intégration ScopeResolver pour variables locales
+- `src/Settex.LanguageServer/SettexReferencesHandler.cs`
+  - Filtrage par scope
+- `src/Settex.LanguageServer/Program.cs`
+  - Injection ScopeResolver en singleton (si nécessaire)
+- `src/Settex.LanguageServer/SettexDocument.cs`
+  - Cache des scopes (optionnel, pour performance)
+
+#### Critères de Succès
+
+- ✅ Hover sur variable globale affiche `Type: Number, Value: 8000`
+- ✅ Hover sur variable dans env block fonctionne correctement
+- ✅ Hover sur iterator de for loop affiche sa valeur
+- ✅ Hover sur setting override affiche `Base: "X", Override: "Y"`
+- ✅ Go to Definition fonctionne pour variables locales (env, for)
+- ✅ Find References filtre correctement par scope (pas de confusion homonymes)
+- ✅ Tous les 181 tests existants passent toujours
+- ✅ Compilation réussie sans warnings
+
+#### Notes Techniques
+
+**Évaluation partielle** :
+- Pour évaluer une variable, on a besoin de son scope parent
+- Scopes env et for ont des variables prédéfinies :
+  - Env : variable `env` = nom de l'environnement
+  - For : variable iterator = valeur courante (mais on est en design time !)
+- L'évaluation peut échouer → afficher erreur dans hover gracefully
+
+**Performance** :
+- ScopeResolver appelé sur chaque hover/definition/references
+- Option : cache des scopes dans SettexDocument
+- Invalider cache lors de modifications (DidChange)
+
+**Formatage valeurs complexes** :
+- Arrays : `[1, 2, 3, ...]` (limiter à 5 items)
+- Objects : `{ "a": 1, "b": 2, ... }` (limiter à 3 clés)
+- Strings : échapper caractères spéciaux pour Markdown
+
+**Commit** : `feat(v3): Phase 6.1 - Enhanced Hover & Navigation (values + local scopes + overlays)`
+
+---
+
 ### Phase 7 : Formatting & Code Actions 🔧
 
 **Objectif** : Formatage automatique et suggestions.
