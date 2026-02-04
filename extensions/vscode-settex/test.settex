@@ -1,21 +1,13 @@
-# Test Settex Extension
+# Test Settex avec erreur volontaire
 
 let apiUrl = "https://api.example.com"
 
 settings {
-    App.Name = "TestApp"
+    App.Name = "TestApp
     App.Url = apiUrl
     
     Database.Host = "localhost"
     Database.Port = 5432
 }
 
-env Development {
-    App.Debug = true
-    Database.Host = "localhost"
-}
-
-env Production {
-    App.Debug = false
-    Database.Host = "prod.db.com"
-}
+# Erreur: string non fermée ligne 6
