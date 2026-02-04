@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0078D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00BCF2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="128" height="128" rx="16" fill="url(#grad)"/>
+  
+  <!-- Settex logo - stylized braces with S -->
+  <g fill="#FFFFFF">
+    <!-- Left brace -->
+    <path d="M 25 35 Q 18 48, 18 64 Q 18 80, 25 93" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round"/>
+    
+    <!-- Letter S (bold) -->
+    <path d="M 45 42 Q 58 35, 70 42 Q 78 48, 72 56 L 58 68 Q 52 74, 58 80 Q 64 86, 76 80 Q 88 74, 94 82" 
+          stroke="#FFFFFF" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Right brace -->
+    <path d="M 103 35 Q 110 48, 110 64 Q 110 80, 103 93" stroke="#FFFFFF" stroke-width="5" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

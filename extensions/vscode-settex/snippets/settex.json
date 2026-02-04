@@ -1,0 +1,126 @@
+{
+  "Settex Settings Block": {
+    "prefix": "settings",
+    "body": [
+      "settings {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a settings block"
+  },
+  "Settex Environment": {
+    "prefix": "env",
+    "body": [
+      "env \"${1:Development}\" {",
+      "\tsettings {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Create an environment overlay"
+  },
+  "Let Variable": {
+    "prefix": "let",
+    "body": [
+      "let ${1:name} = ${2:value}"
+    ],
+    "description": "Define a variable"
+  },
+  "For Loop in Array": {
+    "prefix": "for",
+    "body": [
+      "for ${1:item} in ${2:collection} {",
+      "\titem {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Create a for loop in array"
+  },
+  "Include File": {
+    "prefix": "include",
+    "body": [
+      "include \"${1:./common.settex}\""
+    ],
+    "description": "Include another Settex file"
+  },
+  "String Interpolation": {
+    "prefix": "interp",
+    "body": [
+      "\"${1:text} \\${${2:variable}}\""
+    ],
+    "description": "String with interpolation"
+  },
+  "Tagged Object": {
+    "prefix": "tag",
+    "body": [
+      "${1:tag} {",
+      "\t${2:Property} = ${3:value}",
+      "\t$0",
+      "}"
+    ],
+    "description": "Tagged object"
+  },
+  "Array": {
+    "prefix": "array",
+    "body": [
+      "[",
+      "\t$0",
+      "]"
+    ],
+    "description": "Create an array"
+  },
+  "Conditional Assignment": {
+    "prefix": "if",
+    "body": [
+      "${1:Property} = if ${2:condition} ${3:trueValue} else ${4:falseValue}"
+    ],
+    "description": "Conditional if expression"
+  },
+  "Set If Missing": {
+    "prefix": "setif",
+    "body": [
+      "${1:Property} := ${2:defaultValue}"
+    ],
+    "description": "Set value if property is missing"
+  },
+  "Nested Block": {
+    "prefix": "block",
+    "body": [
+      "${1:BlockName} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a nested block"
+  },
+  "Complete File Template": {
+    "prefix": "!settex",
+    "body": [
+      "# ${1:Project} Configuration",
+      "# Generated: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      "",
+      "let appName = \"${2:MyApp}\"",
+      "let version = \"${3:1.0.0}\"",
+      "",
+      "settings {",
+      "\tApplicationName = appName",
+      "\tVersion = version",
+      "\t",
+      "\t$0",
+      "}",
+      "",
+      "env \"Development\" {",
+      "\tsettings {",
+      "\t\t",
+      "\t}",
+      "}",
+      "",
+      "env \"Production\" {",
+      "\tsettings {",
+      "\t\t",
+      "\t}",
+      "}"
+    ],
+    "description": "Complete Settex file template"
+  }
+}

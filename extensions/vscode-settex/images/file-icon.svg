@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#007ACC"/>
+  
+  <!-- Settex logo - stylized "S" and curly braces -->
+  <g fill="#FFFFFF">
+    <!-- Left brace -->
+    <path d="M 30 40 Q 25 50, 25 64 Q 25 78, 30 88" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+    
+    <!-- Letter S -->
+    <path d="M 50 45 Q 60 40, 70 45 Q 75 50, 70 55 L 55 65 Q 50 70, 55 75 Q 60 80, 70 75 Q 80 70, 85 75" 
+          stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"/>
+    
+    <!-- Right brace -->
+    <path d="M 98 40 Q 103 50, 103 64 Q 103 78, 98 88" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+  </g>
+  
+  <!-- Small "settex" text -->
+  <text x="64" y="110" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">settex</text>
+</svg>
