@@ -7,4 +7,4 @@ using Settex.Core.Diagnostics;
 /// </summary>
 public sealed record LiteralNode(
     object? Value,
-    SourceLocation Location) : IValue;
+    SourceLocation Location) : IValue, IExpression;

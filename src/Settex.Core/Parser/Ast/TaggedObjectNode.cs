@@ -6,8 +6,10 @@ using Settex.Core.Diagnostics;
 ///     Tagged object value: ident { ... }
 ///     Example in array: [ service { Host = "localhost" } ]
 ///     This constructs a JSON object as a value.
+///     NOTE: Although tagged objects implement IExpression, they should not be used
+///     in arithmetic or logical expressions - only as values in assignments and arrays.
 /// </summary>
 public sealed record TaggedObjectNode(
     string Tag,
     BlockNode Block,
-    SourceLocation Location) : IValue;
+    SourceLocation Location) : IValue, IExpression;

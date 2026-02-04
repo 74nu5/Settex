@@ -14,4 +14,4 @@ public interface IArrayElement;
 /// </summary>
 public sealed record ArrayNode(
     List<IArrayElement> Elements,
-    SourceLocation Location) : IValue;
+    SourceLocation Location) : IValue, IExpression;

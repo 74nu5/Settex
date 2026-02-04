@@ -265,14 +265,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
     private IExpression ParsePrimary()
     {
-        // Check for tagged object: identifier followed by '{'
-        if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
-        {
-            return this.ParseTaggedObjectValue();
-        }
-
-        // Check for variable reference: identifier NOT followed by '{'
-        // Also allow certain keywords to be used as variable names (e.g., 'env')
+        // Check for variable reference or keyword usable as identifier
         if (this.Check(TokenType.Identifier) || this.IsKeywordUsableAsIdentifier())
         {
             var nameToken = this.Current;
@@ -280,9 +273,24 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return new VariableRefNode(nameToken.Text, nameToken.Location);
         }
 
-        // Otherwise, parse as value (literal or array)
-        var value = this.ParseValue();
-        return value;
+        // Literal values (including interpolated strings)
+        if (this.Check(TokenType.String) || this.Check(TokenType.Integer) ||
+            this.Check(TokenType.Float) || this.Check(TokenType.True) ||
+            this.Check(TokenType.False) || this.Check(TokenType.Null))
+        {
+            return this.ParseLiteral();
+        }
+
+        // Array
+        if (this.Check(TokenType.LeftBracket))
+        {
+            return this.ParseArray();
+        }
+
+        throw new ParserException(
+            $"Expected expression, but got '{this.Current.Text}'",
+            this.Current.Location
+        );
     }
 
     /// <summary>
@@ -451,7 +459,17 @@ public class Parser(List<Token> tokens, string? filePath = null)
             throw new ParserException($"Expected '=' or ':=' after path, but got '{this.Current.Text}'", this.Current.Location);
         }
         
-        var value = this.ParseExpression();
+        // Parse value - can be expression or tagged object
+        // Check for tagged object first: ident {
+        IExpression value;
+        if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
+        {
+            value = this.ParseTaggedObjectValue();
+        }
+        else
+        {
+            value = this.ParseExpression();
+        }
 
         // Check for optional "if" condition
         IExpression? condition = null;
@@ -672,7 +690,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
     }
 
     /// <summary>
-    ///     Parses an array item: expression (literal, variable ref, or tagged object) or for loop
+    ///     Parses an array item: expression (literal, variable ref, binary op, etc.), tagged object, or for loop
     /// </summary>
     private IArrayElement ParseArrayItem()
     {
@@ -682,32 +700,14 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return this.ParseForLoop();
         }
         
-        // Variable reference
-        if (this.Check(TokenType.Identifier) && this.Peek().Type != TokenType.LeftBrace)
-        {
-            var nameToken = this.Current;
-            this.Advance();
-            return new VariableRefNode(nameToken.Text, nameToken.Location);
-        }
-
-        // Tagged object
+        // Check for tagged object: ident {
         if (this.Check(TokenType.Identifier) && this.Peek().Type == TokenType.LeftBrace)
         {
             return this.ParseTaggedObjectValue();
         }
-
-        // Literal
-        if (this.Check(TokenType.String) || this.Check(TokenType.Integer) ||
-            this.Check(TokenType.Float) || this.Check(TokenType.True) ||
-            this.Check(TokenType.False) || this.Check(TokenType.Null))
-        {
-            return this.ParseLiteral();
-        }
-
-        throw new ParserException(
-            $"Expected array item (literal, variable, or tagged object), but got '{this.Current.Text}'",
-            this.Current.Location
-        );
+        
+        // Otherwise, parse as expression (literal, variable, binary op, etc.)
+        return this.ParseExpression();
     }
 
     /// <summary>

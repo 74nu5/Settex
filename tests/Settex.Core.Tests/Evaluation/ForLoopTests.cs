@@ -56,7 +56,7 @@ public sealed class ForLoopTests
             let services = ["auth", "api"]
 
             settings {
-                Services = [ for s in services { item { Name = s, Url = "http://localhost/${s}" } } ]
+                Services = [ for s in services { item { Name = s; Url = "http://localhost/${s}" } } ]
             }
             """;
 
