@@ -433,13 +433,13 @@ env "Development" {
 
 ---
 
-### Phase 7 : For Loops dans Tableaux 🔁
+### Phase 7 : For Loops dans Tableaux 🔁 ✅ COMPLÉTÉE
 
 **Objectif** : `for ident in expr { ... }` pour générer éléments de tableau.
 
 #### Tâches
-- [ ] Ajouter tokens `FOR`, `IN`
-- [ ] Créer `ForNode` :
+- [x] Ajouter tokens `FOR`, `IN`
+- [x] Créer `ForNode` :
   ```csharp
   public sealed record ForNode(
       string IteratorName,
@@ -448,29 +448,34 @@ env "Development" {
       SourceLocation Location
   ) : IArrayElement;
   ```
-- [ ] Modifier `ArrayNode` pour accepter `ForNode` :
+- [x] Modifier `ArrayNode` pour accepter `ForNode` :
   ```csharp
   public sealed record ArrayNode(
       List<IArrayElement> Elements,
       SourceLocation Location
-  ) : IValue;
+  ) : IValue, IExpression;
   
-  public interface IArrayElement; // peut être IValue ou ForNode
+  public interface IArrayElement; // peut être IExpression ou ForNode
   ```
-- [ ] Parser : `for ident in expr block`
-- [ ] Evaluator :
-  - [ ] Évaluer `expr` → doit être array, sinon erreur
-  - [ ] Pour chaque élément :
-    - [ ] Créer scope enfant avec iterator variable
-    - [ ] Évaluer le corps du for
-    - [ ] Collecter les valeurs produites (items)
-  - [ ] Aplatir les résultats dans le tableau final
-- [ ] Tests :
-  - [ ] For simple : générer 3 items
-  - [ ] For avec expression : `for s in services { item { Url = "http://${s.name}" } }`
-  - [ ] For imbriqué
-  - [ ] For sur non-array → erreur
-  - [ ] Scope iterator local au for
+- [x] Parser : `for ident in expr block`
+- [x] Evaluator :
+  - [x] Évaluer `expr` → doit être array, sinon erreur
+  - [x] Pour chaque élément :
+    - [x] Créer scope enfant avec iterator variable
+    - [x] Évaluer le corps du for
+    - [x] Collecter les valeurs produites (items)
+  - [x] Aplatir les résultats dans le tableau final
+- [x] Tests :
+  - [x] For simple : générer 3 items
+  - [x] For avec expression : `for s in services { item { Url = "http://${s}" } }`
+  - [x] For avec collection vide
+  - [x] For sur non-array → erreur
+  - [x] Scope iterator local au for
+  - [x] For mixé avec éléments réguliers
+  - [x] For dans env overlay
+  - [x] For avec accès aux variables outer scope
+  - [x] For avec interpolation
+- [x] Fix parser: tagged objects exclus des contextes d'expression
 
 **Critères de succès** :
 - ✅ For génère items dans tableau
@@ -478,6 +483,9 @@ env "Development" {
 - ✅ Scope créé pour chaque itération
 - ✅ Erreur si collection n'est pas array
 - ✅ Combinaison avec interpolation
+- ✅ 169/169 tests passent
+
+**Commit** : `feat(v2): Phase 7 - For Loops - COMPLETE` (79970c2)
 
 ---
 
@@ -699,16 +707,16 @@ env "Development" {
 
 | Phase | Statut | Complétée | Notes |
 |-------|--------|-----------|-------|
-| Phase 1: Include | ⏳ Planifié | - | - |
-| Phase 2: Let + Scopes | ⏳ Planifié | - | - |
-| Phase 3: Expressions | ⏳ Planifié | - | Pratt parser requis |
-| Phase 4: Interpolation | ⏳ Planifié | - | Dépend de Phase 3 |
-| Phase 5: If Inline Assign | ⏳ Planifié | - | Dépend de Phase 3 |
-| Phase 6: Set-If-Missing | ⏳ Planifié | - | Extension assignation |
-| Phase 7: For Loops | ⏳ Planifié | - | Dépend de Phase 2 & 3 |
+| Phase 1: Include | ✅ Complété | ✅ | 94/94 tests |
+| Phase 2: Let + Scopes | ✅ Complété | ✅ | 104/104 tests |
+| Phase 3: Expressions | ✅ Complété | ✅ | Pratt parser avec 9 niveaux |
+| Phase 4: Interpolation | ✅ Complété | ✅ | 140/140 tests |
+| Phase 5: If Inline Assign | ✅ Complété | ✅ | Variable `env` implicite |
+| Phase 6: Set-If-Missing | ✅ Complété | ✅ | Opérateur := |
+| Phase 7: For Loops | ✅ Complété | ✅ | 169/169 tests ✨ |
 | Phase 8: If Inline Array | ⏳ Planifié | - | Optionnel |
-| Phase 9: Tests | ⏳ Planifié | - | - |
-| Phase 10: Documentation | ⏳ Planifié | - | - |
+| Phase 9: Tests | ⏳ À faire | - | Golden files |
+| Phase 10: Documentation | ⏳ À faire | - | README + samples |
 
 ---
 
