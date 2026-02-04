@@ -1,0 +1,21 @@
+# Test Settex Extension
+
+let apiUrl = "https://api.example.com"
+
+settings {
+    App.Name = "TestApp"
+    App.Url = apiUrl
+    
+    Database.Host = "localhost"
+    Database.Port = 5432
+}
+
+env Development {
+    App.Debug = true
+    Database.Host = "localhost"
+}
+
+env Production {
+    App.Debug = false
+    Database.Host = "prod.db.com"
+}

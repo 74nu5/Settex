@@ -3,6 +3,7 @@
     <Project Path="src/Settex.Build/Settex.Build.csproj" />
     <Project Path="src/Settex.Cli/Settex.Cli.csproj" />
     <Project Path="src/Settex.Core/Settex.Core.csproj" />
+    <Project Path="src/Settex.LanguageServer/Settex.LanguageServer.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Settex.Core.Tests/Settex.Core.Tests.csproj" />

@@ -17,5 +17,7 @@
     <PackageVersion Include="Meziantou.Polyfill" Version="1.0.101" />
     <!-- Sample Web API -->
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <!-- Language Server -->
+    <PackageVersion Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
   </ItemGroup>
 </Project>
