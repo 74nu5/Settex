@@ -123,6 +123,186 @@ public static class HoverOverlayFormatter
     }
 
     /// <summary>
+    /// Formats an object with all its properties showing values across all environments.
+    /// </summary>
+    /// <param name="ast">The parsed AST.</param>
+    /// <param name="objectPath">The dotted path to the object (e.g., "Server").</param>
+    /// <param name="currentEnvName">The current environment name (null if in base settings).</param>
+    /// <param name="logger">Logger for debugging.</param>
+    /// <returns>Formatted markdown string or null if object not found.</returns>
+    public static string? FormatObjectWithOverlay(FileNode ast, string objectPath, string? currentEnvName, ILogger? logger = null)
+    {
+        logger?.LogInformation("[FORMATTER-OBJ] Starting format for object path='{Path}', currentEnv='{CurrentEnv}'", objectPath, currentEnvName ?? "(base)");
+        
+        // Evaluate all settings
+        var evaluation = EvaluateAllSettings(ast, logger);
+        if (evaluation == null)
+        {
+            logger?.LogWarning("[FORMATTER-OBJ] EvaluateAllSettings returned null");
+            return null;
+        }
+
+        var (baseSettings, environmentOverlays) = evaluation.Value;
+        logger?.LogInformation("[FORMATTER-OBJ] Evaluation successful. BaseSettings={HasBase}, Overlays count={Count}", 
+            baseSettings != null ? "present" : "null", 
+            environmentOverlays.Count);
+
+        // Get base object
+        var baseObject = GetValueAtPath(baseSettings, objectPath, logger);
+        logger?.LogInformation("[FORMATTER-OBJ] Base object for '{Path}': {HasValue}, type={Type}", 
+            objectPath, 
+            baseObject != null ? "FOUND" : "NULL",
+            baseObject?.GetType().Name ?? "null");
+
+        if (baseObject is not JsonObject baseJsonObject)
+        {
+            logger?.LogWarning("[FORMATTER-OBJ] Path '{Path}' does not point to an object (type={Type})", objectPath, baseObject?.GetType().Name ?? "null");
+            return null;
+        }
+
+        // Collect all unique property names from base and all environments
+        var allPropertyNames = new HashSet<string>();
+        
+        // Add properties from base object
+        foreach (var prop in baseJsonObject)
+        {
+            allPropertyNames.Add(prop.Key);
+        }
+
+        // Merge base with each overlay and collect properties
+        var merger = new Merger();
+        var environmentObjects = new Dictionary<string, JsonObject>();
+
+        foreach (var kvp in environmentOverlays)
+        {
+            var envName = kvp.Key;
+            var overlay = kvp.Value;
+
+            JsonObject mergedSettings;
+            if (baseSettings != null)
+            {
+                mergedSettings = merger.Merge(baseSettings, overlay);
+            }
+            else
+            {
+                mergedSettings = overlay;
+            }
+
+            var envObject = GetValueAtPath(mergedSettings, objectPath, logger);
+            if (envObject is JsonObject envJsonObject)
+            {
+                environmentObjects[envName] = envJsonObject;
+                foreach (var prop in envJsonObject)
+                {
+                    allPropertyNames.Add(prop.Key);
+                }
+            }
+        }
+
+        if (allPropertyNames.Count == 0)
+        {
+            logger?.LogWarning("[FORMATTER-OBJ] No properties found in object '{Path}'", objectPath);
+            return null;
+        }
+
+        // Build result
+        var result = new StringBuilder();
+        result.AppendLine($"**Object:** `{objectPath}`");
+        result.AppendLine();
+
+        // If we're in base block (no env), just show base properties
+        if (currentEnvName == null)
+        {
+            logger?.LogInformation("[FORMATTER-OBJ] In base block, showing base properties only");
+            result.AppendLine("**Properties:**");
+            result.AppendLine();
+            result.AppendLine("| Property | Value |");
+            result.AppendLine("|----------|-------|");
+
+            foreach (var propName in allPropertyNames.OrderBy(p => p))
+            {
+                if (baseJsonObject.TryGetPropertyValue(propName, out var value) && value != null)
+                {
+                    var formatted = FormatJsonValue(value);
+                    result.AppendLine($"| {propName} | `{formatted}` |");
+                }
+                else
+                {
+                    result.AppendLine($"| {propName} | `*(not set)*` |");
+                }
+            }
+
+            var baseResult = result.ToString();
+            logger?.LogDebug("[FORMATTER-OBJ] Base result:\n{Result}", baseResult);
+            return baseResult;
+        }
+
+        // We're in an environment - show properties across all environments
+        logger?.LogInformation("[FORMATTER-OBJ] In environment block, showing all environments");
+        
+        // Create header with environment names
+        result.Append("| Property | Base |");
+        foreach (var envName in environmentOverlays.Keys.OrderBy(e => e))
+        {
+            if (envName == currentEnvName)
+            {
+                result.Append($" **{envName}** ✓ |");
+            }
+            else
+            {
+                result.Append($" {envName} |");
+            }
+        }
+        result.AppendLine();
+
+        // Create separator
+        result.Append("|----------|------|");
+        for (int i = 0; i < environmentOverlays.Count; i++)
+        {
+            result.Append("------|");
+        }
+        result.AppendLine();
+
+        // Add rows for each property
+        foreach (var propName in allPropertyNames.OrderBy(p => p))
+        {
+            result.Append($"| **{propName}** |");
+
+            // Base value
+            if (baseJsonObject.TryGetPropertyValue(propName, out var baseValue) && baseValue != null)
+            {
+                var formatted = FormatJsonValue(baseValue);
+                result.Append($" `{formatted}` |");
+            }
+            else
+            {
+                result.Append(" `*(not set)*` |");
+            }
+
+            // Environment values
+            foreach (var envName in environmentOverlays.Keys.OrderBy(e => e))
+            {
+                if (environmentObjects.TryGetValue(envName, out var envObj) && 
+                    envObj.TryGetPropertyValue(propName, out var envValue) &&
+                    envValue != null)
+                {
+                    var formatted = FormatJsonValue(envValue);
+                    result.Append($" `{formatted}` |");
+                }
+                else
+                {
+                    result.Append(" `*(not set)*` |");
+                }
+            }
+            result.AppendLine();
+        }
+
+        var finalResult = result.ToString();
+        logger?.LogDebug("[FORMATTER-OBJ] Final object result:\n{Result}", finalResult);
+        return finalResult;
+    }
+
+    /// <summary>
     /// Evaluates all settings from an AST.
     /// </summary>
     private static (JsonObject? BaseSettings, Dictionary<string, JsonObject> EnvironmentOverlays)? EvaluateAllSettings(FileNode ast, ILogger? logger)

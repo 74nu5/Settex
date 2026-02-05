@@ -83,26 +83,58 @@ public class SettexHoverHandler : HoverHandlerBase
                 if (isOnPath)
                 {
                     var path = string.Join(".", assignment.Path.Segments);
-                    this.logger.LogInformation("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
                     
-                    var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName, this.logger);
+                    // Détecter si le mot survolé est un segment d'objet (pas le dernier segment)
+                    var wordIndex = assignment.Path.Segments.IndexOf(word);
+                    var isObjectSegment = wordIndex >= 0 && wordIndex < assignment.Path.Segments.Count - 1;
                     
-                    this.logger.LogInformation("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
-                    if (overlayHover != null)
+                    if (isObjectSegment)
                     {
-                        this.logger.LogDebug("[HOVER-OVERLAY] Content:\n{Content}", overlayHover);
-                    }
-                    
-                    if (overlayHover != null)
-                    {
-                        return Task.FromResult<Hover?>(new Hover
+                        // Le mot survolé est un objet (ex: "Server" dans "Server.Port")
+                        // Construire le path de l'objet (tous les segments jusqu'au mot inclus)
+                        var objectPath = string.Join(".", assignment.Path.Segments.Take(wordIndex + 1));
+                        this.logger.LogInformation("[HOVER-OVERLAY] Formatting OBJECT for path='{ObjectPath}', envName='{EnvName}', word='{Word}'", objectPath, envName ?? "(base)", word);
+                        
+                        var objectHover = HoverOverlayFormatter.FormatObjectWithOverlay(document.Ast, objectPath, envName, this.logger);
+                        
+                        this.logger.LogInformation("[HOVER-OVERLAY] Object result: {IsNull}, length={Length}", objectHover == null ? "NULL" : "NOT NULL", objectHover?.Length ?? 0);
+                        if (objectHover != null)
                         {
-                            Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                            this.logger.LogDebug("[HOVER-OVERLAY] Object content:\n{Content}", objectHover);
+                            return Task.FromResult<Hover?>(new Hover
                             {
-                                Kind = MarkupKind.Markdown,
-                                Value = overlayHover
-                            })
-                        });
+                                Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                                {
+                                    Kind = MarkupKind.Markdown,
+                                    Value = objectHover
+                                })
+                            });
+                        }
+                    }
+                    else
+                    {
+                        // Le mot survolé est la valeur finale (ex: "Port" dans "Server.Port")
+                        this.logger.LogInformation("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
+                        
+                        var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName, this.logger);
+                        
+                        this.logger.LogInformation("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
+                        if (overlayHover != null)
+                        {
+                            this.logger.LogDebug("[HOVER-OVERLAY] Content:\n{Content}", overlayHover);
+                        }
+                        
+                        if (overlayHover != null)
+                        {
+                            return Task.FromResult<Hover?>(new Hover
+                            {
+                                Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                                {
+                                    Kind = MarkupKind.Markdown,
+                                    Value = overlayHover
+                                })
+                            });
+                        }
                     }
                 }
             }
