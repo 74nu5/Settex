@@ -20,6 +20,7 @@ public class SettexHoverHandler : HoverHandlerBase
 {
     private readonly SettexWorkspace workspace;
     private readonly ILogger<SettexHoverHandler> logger;
+    private readonly ScopeResolver scopeResolver;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
@@ -28,6 +29,7 @@ public class SettexHoverHandler : HoverHandlerBase
     {
         this.workspace = workspace;
         this.logger = logger;
+        this.scopeResolver = new ScopeResolver();
     }
 
     public override Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
@@ -65,22 +67,38 @@ public class SettexHoverHandler : HoverHandlerBase
         // Vérifier si c'est une variable
         if (document.Ast != null)
         {
-            var variable = FindVariable(document.Ast, word);
-            if (variable != null)
+            // Construire la hiérarchie des scopes
+            var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+            
+            // Trouver le scope actif à la position du curseur
+            var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+            
+            if (activeScope != null)
             {
-                // Évaluer la valeur de la variable
-                var (value, error) = EvaluateVariable(variable);
-
-                var hoverText = FormatVariableHover(word, value, error, "Global");
-
-                return Task.FromResult<Hover?>(new Hover
+                // Chercher la variable dans le scope actif (avec remontée aux parents)
+                var variable = this.scopeResolver.FindVariableInScope(word, activeScope);
+                
+                if (variable != null)
                 {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                    // Construire un scope d'évaluation avec toutes les variables du contexte
+                    var evaluationScope = BuildEvaluationScope(activeScope);
+                    
+                    // Évaluer la valeur de la variable
+                    var (value, error) = EvaluateVariable(variable, evaluationScope);
+                    
+                    // Formater le nom du scope pour affichage
+                    var scopeName = FormatScopeName(activeScope);
+                    var hoverText = FormatVariableHover(word, value, error, scopeName);
+
+                    return Task.FromResult<Hover?>(new Hover
                     {
-                        Kind = MarkupKind.Markdown,
-                        Value = hoverText
-                    })
-                });
+                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                        {
+                            Kind = MarkupKind.Markdown,
+                            Value = hoverText
+                        })
+                    });
+                }
             }
 
             // Vérifier si c'est un environnement
@@ -182,15 +200,12 @@ public class SettexHoverHandler : HoverHandlerBase
     /// <summary>
     /// Évalue une variable let et retourne sa valeur ou une erreur.
     /// </summary>
-    private static (RuntimeValue? Value, string? Error) EvaluateVariable(Core.Parser.Ast.LetNode letNode)
+    private static (RuntimeValue? Value, string? Error) EvaluateVariable(Core.Parser.Ast.LetNode letNode, VariableScope scope)
     {
         try
         {
-            // Créer un scope vide pour l'évaluation
-            var globalScope = new VariableScope();
-
-            // Créer un evaluator avec le scope
-            var evaluator = new ExpressionEvaluator(globalScope);
+            // Créer un evaluator avec le scope fourni
+            var evaluator = new ExpressionEvaluator(scope);
 
             // Évaluer l'expression de la variable
             var value = evaluator.Evaluate(letNode.Value);
@@ -200,6 +215,63 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             return (null, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Construit un VariableScope pour l'évaluation en incluant toutes les variables du scope et de ses parents.
+    /// </summary>
+    private static VariableScope BuildEvaluationScope(ScopeInfo scopeInfo)
+    {
+        // Créer un scope vide
+        var scope = new VariableScope();
+
+        // Collecter les scopes de la racine jusqu'au scope actuel
+        var scopeChain = new List<ScopeInfo>();
+        var current = scopeInfo;
+        while (current != null)
+        {
+            scopeChain.Add(current);
+            current = current.Parent;
+        }
+
+        // Inverser pour avoir du global vers le local
+        scopeChain.Reverse();
+
+        // Évaluer et ajouter toutes les variables dans l'ordre
+        foreach (var s in scopeChain)
+        {
+            foreach (var letNode in s.Variables)
+            {
+                try
+                {
+                    // Évaluer la variable avec le scope courant
+                    var evaluator = new ExpressionEvaluator(scope);
+                    var value = evaluator.Evaluate(letNode.Value);
+                    scope.Define(letNode.Name, value);
+                }
+                catch
+                {
+                    // Si l'évaluation échoue, définir comme null
+                    scope.Define(letNode.Name, NullValue.Instance);
+                }
+            }
+        }
+
+        return scope;
+    }
+
+    /// <summary>
+    /// Formate le nom d'un scope pour affichage.
+    /// </summary>
+    private static string FormatScopeName(ScopeInfo scopeInfo)
+    {
+        return scopeInfo.Type switch
+        {
+            ScopeType.Global => "Global",
+            ScopeType.Env => $"Env \"{scopeInfo.Name}\"",
+            ScopeType.ForLoop => $"For loop (iterator: {scopeInfo.Name})",
+            _ => "Unknown"
+        };
     }
 
     /// <summary>
