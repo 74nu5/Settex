@@ -81,6 +81,26 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
         }
 
+        // Autocomplétion générale : keywords, variables, environments, et noms d'objets existants
+
+        // Proposer les noms d'objets existants en priorité
+        this.logger.LogInformation("[COMPLETION] Adding existing object names");
+        var objectNames = this.GetAllObjectNames(document);
+        
+        foreach (var (objectName, environments) in objectNames)
+        {
+            var envList = string.Join(", ", environments);
+            completions.Add(new CompletionItem
+            {
+                Label = objectName,
+                Kind = CompletionItemKind.Class,
+                Detail = $"Object (defined in {envList})",
+                Documentation = $"Existing object defined in: {envList}",
+                InsertText = objectName,
+                SortText = "0_" + objectName // Priorité haute pour les objets
+            });
+        }
+
         // Sinon, autocomplétion générale : keywords, variables, environments
 
         // Keywords top-level
@@ -409,6 +429,141 @@ public class SettexCompletionHandler : CompletionHandlerBase
             if (!properties[propertyName].Contains(environmentName))
             {
                 properties[propertyName].Add(environmentName);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Vérifie si on est dans un contexte settings{} ou env{} où on peut définir des objets.
+    /// </summary>
+    private bool IsInSettingsOrEnvBlock(string textBeforeCursor)
+    {
+        // Simple heuristique : on cherche si on a "settings {" ou "env X {" avant le curseur
+        // et qu'on n'est pas en train d'écrire une propriété (pas de point juste avant)
+        
+        var lines = textBeforeCursor.Split('\n');
+        var lastLine = lines[^1].TrimStart();
+        
+        this.logger.LogInformation("[COMPLETION-CONTEXT] Checking if in settings/env block. Last line: '{Line}'", lastLine);
+        
+        // Si la dernière ligne se termine par un point, on est dans une propriété
+        if (lastLine.TrimEnd().EndsWith('.'))
+        {
+            this.logger.LogInformation("[COMPLETION-CONTEXT] Last line ends with '.', not in settings/env block");
+            return false;
+        }
+        
+        // Si on est en train de taper après un identifiant suivi d'un point, ce n'est pas un nouveau nom d'objet
+        var trimmedLine = lastLine.TrimEnd();
+        if (trimmedLine.Contains('.'))
+        {
+            this.logger.LogInformation("[COMPLETION-CONTEXT] Line contains '.', likely in property path");
+            return false;
+        }
+        
+        // Chercher si on a un "settings {" ou "env X {" ouvert
+        int braceDepth = 0;
+        bool inSettingsOrEnv = false;
+        
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            
+            // Vérifier si on entre dans un bloc settings ou env
+            if (trimmed.StartsWith("settings") && trimmed.Contains('{'))
+            {
+                inSettingsOrEnv = true;
+                this.logger.LogDebug("[COMPLETION-CONTEXT] Found 'settings {{' block");
+            }
+            else if (trimmed.StartsWith("env ") && trimmed.Contains('{'))
+            {
+                inSettingsOrEnv = true;
+                this.logger.LogDebug("[COMPLETION-CONTEXT] Found 'env {{' block");
+            }
+            
+            // Compter les accolades pour suivre la profondeur
+            braceDepth += trimmed.Count(c => c == '{');
+            braceDepth -= trimmed.Count(c => c == '}');
+        }
+        
+        var result = inSettingsOrEnv && braceDepth > 0;
+        this.logger.LogInformation("[COMPLETION-CONTEXT] In settings/env block: {Result} (inBlock={InBlock}, depth={Depth})", 
+            result, inSettingsOrEnv, braceDepth);
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Récupère tous les noms d'objets de premier niveau définis dans base + tous les environnements.
+    /// </summary>
+    private Dictionary<string, List<string>> GetAllObjectNames(SettexDocument document)
+    {
+        var objectNames = new Dictionary<string, List<string>>();
+        
+        if (document.Ast == null)
+        {
+            return objectNames;
+        }
+        
+        try
+        {
+            var evaluation = this.EvaluateAllSettings(document.Ast);
+            if (evaluation == null)
+            {
+                this.logger.LogWarning("[COMPLETION] EvaluateAllSettings returned null");
+                return objectNames;
+            }
+            
+            var (baseSettings, envOverlays) = evaluation.Value;
+            
+            // Collecter les objets de base
+            if (baseSettings != null)
+            {
+                this.CollectObjectNames(baseSettings, "Base", objectNames);
+            }
+            
+            // Collecter les objets de chaque environnement (merged avec base)
+            var merger = new Merger();
+            foreach (var (envName, overlay) in envOverlays)
+            {
+                var mergedSettings = baseSettings != null 
+                    ? merger.Merge(baseSettings, overlay)
+                    : overlay;
+                
+                this.CollectObjectNames(mergedSettings, envName, objectNames);
+            }
+            
+            this.logger.LogInformation("[COMPLETION] Found {Count} object names", objectNames.Count);
+        }
+        catch (System.Exception ex)
+        {
+            this.logger.LogWarning(ex, "[COMPLETION] Error getting object names");
+        }
+        
+        return objectNames;
+    }
+
+    /// <summary>
+    /// Collecte les noms d'objets de premier niveau depuis un JsonObject.
+    /// </summary>
+    private void CollectObjectNames(JsonObject settings, string environmentName, Dictionary<string, List<string>> objectNames)
+    {
+        foreach (var property in settings)
+        {
+            var propertyName = property.Key;
+            
+            // On ne garde que les propriétés qui sont des objets (pas des valeurs primitives)
+            if (property.Value is JsonObject)
+            {
+                if (!objectNames.ContainsKey(propertyName))
+                {
+                    objectNames[propertyName] = new List<string>();
+                }
+                
+                if (!objectNames[propertyName].Contains(environmentName))
+                {
+                    objectNames[propertyName].Add(environmentName);
+                }
             }
         }
     }
