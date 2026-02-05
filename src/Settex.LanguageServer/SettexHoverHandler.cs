@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -9,6 +10,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Settex.Core.Evaluation;
 using Settex.Core.Runtime;
+using Settex.Core.Merging;
 
 namespace Settex.LanguageServer;
 
@@ -67,7 +69,27 @@ public class SettexHoverHandler : HoverHandlerBase
         // Vérifier si c'est une variable
         if (document.Ast != null)
         {
-            // Construire la hiérarchie des scopes
+            // PREMIÈRE PRIORITÉ : Vérifier si le curseur est sur un path d'assignation (overlay tracking)
+            var assignmentInfo = FindAssignmentAtPosition(document.Ast, request.Position);
+            if (assignmentInfo != null)
+            {
+                var (assignment, envName) = assignmentInfo.Value;
+                var overlayHover = FormatAssignmentWithOverlay(document.Ast, assignment, envName);
+                
+                if (overlayHover != null)
+                {
+                    return Task.FromResult<Hover?>(new Hover
+                    {
+                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                        {
+                            Kind = MarkupKind.Markdown,
+                            Value = overlayHover
+                        })
+                    });
+                }
+            }
+
+            // DEUXIÈME PRIORITÉ : Construire la hiérarchie des scopes
             var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
 
             // Trouver le scope actif à la position du curseur
@@ -390,5 +412,206 @@ public class SettexHoverHandler : HoverHandlerBase
             .Replace("\n", "\\n")
             .Replace("\r", "\\r")
             .Replace("\t", "\\t");
+    }
+
+    /// <summary>
+    /// Trouve une assignation à la position donnée et retourne l'assignation + l'environnement (null si dans base).
+    /// </summary>
+    private static (Core.Parser.Ast.AssignmentNode Assignment, string? EnvName)? FindAssignmentAtPosition(
+        Core.Parser.Ast.FileNode ast,
+        Position position)
+    {
+        // Convertir position LSP (0-based) en position Settex (1-based)
+        var line = position.Line + 1;
+        var column = position.Character + 1;
+
+        // Chercher dans les statements de base
+        foreach (var stmt in ast.Statements)
+        {
+            if (stmt is Core.Parser.Ast.SettingsBlockNode settings)
+            {
+                var assignment = FindAssignmentInStatements(settings.Block.Statements, line, column);
+                if (assignment != null)
+                {
+                    return (assignment, null); // Base, pas d'environnement
+                }
+            }
+            else if (stmt is Core.Parser.Ast.EnvBlockNode env)
+            {
+                var assignment = FindAssignmentInStatements(env.SettingsBlock.Block.Statements, line, column);
+                if (assignment != null)
+                {
+                    return (assignment, env.EnvironmentName); // Dans un environnement
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Cherche récursivement une assignation à une position donnée dans une liste de statements.
+    /// </summary>
+    private static Core.Parser.Ast.AssignmentNode? FindAssignmentInStatements(
+        System.Collections.Generic.List<Core.Parser.Ast.IStatement> statements,
+        int line,
+        int column)
+    {
+        foreach (var stmt in statements)
+        {
+            if (stmt is Core.Parser.Ast.AssignmentNode assignment)
+            {
+                // Vérifier si la position est dans l'assignation
+                if (IsPositionInLocation(assignment.Location, line, column))
+                {
+                    return assignment;
+                }
+            }
+            // Note: ForNode est un IArrayElement, pas un IStatement, donc pas de récursion ici
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Vérifie si une position est dans une SourceLocation.
+    /// </summary>
+    private static bool IsPositionInLocation(Core.Diagnostics.SourceLocation location, int line, int column)
+    {
+        // Vérifier si la ligne correspond
+        return location.Line == line;
+    }
+
+    /// <summary>
+    /// Formate une assignation avec affichage de la valeur de base et de l'override si applicable.
+    /// </summary>
+    private static string? FormatAssignmentWithOverlay(
+        Core.Parser.Ast.FileNode ast,
+        Core.Parser.Ast.AssignmentNode assignment,
+        string? envName)
+    {
+        var path = string.Join(".", assignment.Path.Segments);
+
+        // Évaluer le settings de base
+        var baseSettings = EvaluateSettingsBlock(ast);
+        var baseValue = GetValueAtPath(baseSettings, path);
+
+        if (envName == null)
+        {
+            // On est dans le block base, afficher juste la valeur
+            if (baseValue != null)
+            {
+                return $"**Setting:** `{path}`\n\n**Base value:**\n```settex\n{FormatJsonNode(baseValue)}\n```";
+            }
+            return null;
+        }
+
+        // On est dans un environnement, comparer avec la base
+        var envSettings = EvaluateEnvBlock(ast, envName);
+        var envValue = GetValueAtPath(envSettings, path);
+
+        // Comparer les valeurs
+        var baseFormatted = baseValue != null ? FormatJsonNode(baseValue) : "(not set)";
+        var envFormatted = envValue != null ? FormatJsonNode(envValue) : "(not set)";
+
+        // Si les valeurs sont identiques, ne pas afficher l'override
+        if (baseFormatted == envFormatted)
+        {
+            return $"**Setting:** `{path}`\n\n**Value:**\n```settex\n{baseFormatted}\n```\n\n*(same in base and {envName})*";
+        }
+
+        // Afficher base et override
+        return $"**Setting:** `{path}`\n\n**Base value:**\n```settex\n{baseFormatted}\n```\n\n**{envName} override:**\n```settex\n{envFormatted}\n```";
+    }
+
+    /// <summary>
+    /// Formate un JsonNode en texte lisible pour affichage.
+    /// </summary>
+    private static string FormatJsonNode(JsonNode node)
+    {
+        // Utiliser la sérialisation JSON avec indentation
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = false // Compact pour le hover
+        };
+        return node.ToJsonString(options);
+    }
+
+    /// <summary>
+    /// Évalue le block settings de base et retourne un JsonObject avec tous les settings.
+    /// </summary>
+    private static JsonObject? EvaluateSettingsBlock(Core.Parser.Ast.FileNode ast)
+    {
+        try
+        {
+            var evaluator = new Evaluator();
+            var model = evaluator.Evaluate(ast);
+            return model.BaseSettings;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Évalue un block env avec merge sur la base et retourne un JsonObject.
+    /// </summary>
+    private static JsonObject? EvaluateEnvBlock(
+        Core.Parser.Ast.FileNode ast,
+        string envName)
+    {
+        try
+        {
+            var evaluator = new Evaluator();
+            var model = evaluator.Evaluate(ast);
+
+            // Chercher l'overlay pour cet environnement
+            if (model.EnvironmentOverlays.TryGetValue(envName, out var overlay))
+            {
+                return overlay;
+            }
+
+            return null; // Pas d'overlay trouvé
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Récupère une valeur à un path donné dans un JsonObject (notation pointée).
+    /// </summary>
+    private static JsonNode? GetValueAtPath(JsonObject? obj, string path)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        var parts = path.Split('.');
+        JsonNode? current = obj;
+
+        foreach (var part in parts)
+        {
+            if (current is JsonObject objectNode)
+            {
+                if (objectNode.TryGetPropertyValue(part, out var value))
+                {
+                    current = value;
+                }
+                else
+                {
+                    return null; // Path non trouvé
+                }
+            }
+            else
+            {
+                return null; // Pas un objet, impossible de naviguer
+            }
+        }
+
+        return current;
     }
 }

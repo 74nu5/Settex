@@ -465,14 +465,16 @@ public class ScopeInfo
   - [x] Tous les 191 tests passent (pas de régression)
   - [x] Go to Definition fonctionne avec scopes locaux (env, for)
 
-**Tâche 5 : Support variables locales dans References** (1-2h)
-- [ ] Intégrer ScopeResolver dans SettexReferencesHandler
-- [ ] Pour chaque référence trouvée :
-  - [ ] Déterminer scope de la référence
-  - [ ] Vérifier si elle pointe vers même déclaration
-  - [ ] Filtrer homonymes d'autres scopes
-- [ ] Tests Find References :
-  - [ ] Variable locale utilisée dans même env
+**Tâche 5 : Support variables locales dans References** ✅ COMPLÉTÉE (45min)
+- [x] Intégrer ScopeResolver dans SettexReferencesHandler
+- [x] Pour chaque référence trouvée :
+  - [x] Déterminer scope de la référence
+  - [x] Vérifier si elle pointe vers même déclaration
+  - [x] Filtrer homonymes d'autres scopes
+- [x] Créer `FindScopedReferences()` pour filtrage basé scope
+- [x] Tests Find References :
+  - [x] Tous les 191 tests passent (pas de régression)
+  - [x] Find All References fonctionne avec scopes locaux
   - [ ] Variable globale avec homonyme local (ne pas confondre)
   - [ ] Iterator de for loop
 
