@@ -147,26 +147,29 @@ public static class HoverOverlayFormatter
             baseSettings != null ? "present" : "null", 
             environmentOverlays.Count);
 
-        // Get base object
+        // Get base object (may be null if only defined in environments)
         var baseObject = GetValueAtPath(baseSettings, objectPath, logger);
         logger?.LogInformation("[FORMATTER-OBJ] Base object for '{Path}': {HasValue}, type={Type}", 
             objectPath, 
             baseObject != null ? "FOUND" : "NULL",
             baseObject?.GetType().Name ?? "null");
 
-        if (baseObject is not JsonObject baseJsonObject)
+        JsonObject? baseJsonObject = null;
+        if (baseObject is JsonObject jsonObj)
         {
-            logger?.LogWarning("[FORMATTER-OBJ] Path '{Path}' does not point to an object (type={Type})", objectPath, baseObject?.GetType().Name ?? "null");
-            return null;
+            baseJsonObject = jsonObj;
         }
 
         // Collect all unique property names from base and all environments
         var allPropertyNames = new HashSet<string>();
         
-        // Add properties from base object
-        foreach (var prop in baseJsonObject)
+        // Add properties from base object (if exists)
+        if (baseJsonObject != null)
         {
-            allPropertyNames.Add(prop.Key);
+            foreach (var prop in baseJsonObject)
+            {
+                allPropertyNames.Add(prop.Key);
+            }
         }
 
         // Merge base with each overlay and collect properties
@@ -199,9 +202,10 @@ public static class HoverOverlayFormatter
             }
         }
 
+        // If no properties found anywhere, the object doesn't exist
         if (allPropertyNames.Count == 0)
         {
-            logger?.LogWarning("[FORMATTER-OBJ] No properties found in object '{Path}'", objectPath);
+            logger?.LogWarning("[FORMATTER-OBJ] Object '{Path}' has no properties in any environment", objectPath);
             return null;
         }
 
@@ -214,6 +218,22 @@ public static class HoverOverlayFormatter
         if (currentEnvName == null)
         {
             logger?.LogInformation("[FORMATTER-OBJ] In base block, showing base properties only");
+            
+            // If object doesn't exist in base, show message
+            if (baseJsonObject == null)
+            {
+                result.AppendLine("*This object is not defined in base settings. It only exists in specific environments.*");
+                result.AppendLine();
+                result.AppendLine("**Defined in environments:**");
+                foreach (var envName in environmentObjects.Keys.OrderBy(e => e))
+                {
+                    result.AppendLine($"- {envName}");
+                }
+                var baseResult = result.ToString();
+                logger?.LogDebug("[FORMATTER-OBJ] Base result (no base object):\n{Result}", baseResult);
+                return baseResult;
+            }
+            
             result.AppendLine("**Properties:**");
             result.AppendLine();
             result.AppendLine("| Property | Value |");
@@ -232,9 +252,9 @@ public static class HoverOverlayFormatter
                 }
             }
 
-            var baseResult = result.ToString();
-            logger?.LogDebug("[FORMATTER-OBJ] Base result:\n{Result}", baseResult);
-            return baseResult;
+            var baseResult2 = result.ToString();
+            logger?.LogDebug("[FORMATTER-OBJ] Base result:\n{Result}", baseResult2);
+            return baseResult2;
         }
 
         // We're in an environment - show properties across all environments
@@ -269,7 +289,7 @@ public static class HoverOverlayFormatter
             result.Append($"| **{propName}** |");
 
             // Base value
-            if (baseJsonObject.TryGetPropertyValue(propName, out var baseValue) && baseValue != null)
+            if (baseJsonObject != null && baseJsonObject.TryGetPropertyValue(propName, out var baseValue) && baseValue != null)
             {
                 var formatted = FormatJsonValue(baseValue);
                 result.Append($" `{formatted}` |");
