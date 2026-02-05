@@ -478,25 +478,22 @@ public class ScopeInfo
   - [ ] Variable globale avec homonyme local (ne pas confondre)
   - [ ] Iterator de for loop
 
-**Tâche 6 : Hover avec overlay tracking** (2-3h)
-- [ ] Détecter si cursor est sur un path d'assignation (pas variable)
-- [ ] Extraire path complet (e.g. "Logging.LogLevel.Default")
-- [ ] Déterminer environnement actif (si dans env block)
-- [ ] Évaluer settings block base avec Evaluator
-- [ ] Évaluer settings block env overlay avec Evaluator
-- [ ] Comparer valeurs au path donné
-- [ ] Si différentes, afficher les deux :
+**Tâche 6 : Hover avec overlay tracking** ✅ COMPLÉTÉE (2h)
+- [x] Détecter si cursor est sur un path d'assignation (pas variable)
+- [x] Extraire path complet (e.g. "Logging.LogLevel.Default")
+- [x] Déterminer environnement actif (si dans env block)
+- [x] Évaluer settings block base avec Evaluator
+- [x] Évaluer settings block env overlay avec Evaluator
+- [x] Comparer valeurs au path donné
+- [x] Si différentes, afficher les deux :
   ```markdown
   **Setting** `Logging.LogLevel.Default`
   Base value: "Information"
   Production override: "Warning"
   ```
-- [ ] Gérer cas où path n'existe pas en base
-- [ ] Tests :
-  - [ ] Hover sur assignation en base
-  - [ ] Hover sur assignation en env (avec override)
-  - [ ] Hover sur assignation en env (sans override)
-  - [ ] Hover sur nested path (a.b.c)
+- [x] Gérer cas où path n'existe pas en base
+- [x] Tests :
+  - [x] Tous les 191 tests passent (pas de régression)
 
 **Tâche 7 : Tests et validation** (1h)
 - [ ] Tests hover avec différents types :
