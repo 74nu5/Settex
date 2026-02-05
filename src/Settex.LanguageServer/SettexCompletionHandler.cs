@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -7,6 +8,9 @@ using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Settex.Core.Evaluation;
+using Settex.Core.Merging;
+using Settex.Core.Parser.Ast;
 
 namespace Settex.LanguageServer;
 
@@ -45,6 +49,39 @@ public class SettexCompletionHandler : CompletionHandlerBase
         }
 
         var completions = new List<CompletionItem>();
+
+        // Détection du contexte : est-on après un point pour une propriété d'objet ?
+        var textBeforeCursor = this.GetTextBeforeCursor(document, request.Position);
+        var objectPath = this.ExtractObjectPath(textBeforeCursor);
+
+        if (!string.IsNullOrEmpty(objectPath))
+        {
+            // Autocomplétion des propriétés d'objet
+            this.logger.LogInformation("[COMPLETION] Object property completion for path: {Path}", objectPath);
+            var properties = this.GetObjectProperties(document, objectPath);
+            
+            foreach (var (propertyName, environments) in properties)
+            {
+                var envList = string.Join(", ", environments);
+                completions.Add(new CompletionItem
+                {
+                    Label = propertyName,
+                    Kind = CompletionItemKind.Property,
+                    Detail = $"Property (in {envList})",
+                    Documentation = $"Available in environments: {envList}",
+                    InsertText = propertyName
+                });
+            }
+
+            // Si on a des propriétés, on retourne uniquement celles-ci
+            if (completions.Count > 0)
+            {
+                this.logger.LogInformation("[COMPLETION] Returning {Count} property completions", completions.Count);
+                return Task.FromResult(new CompletionList(completions));
+            }
+        }
+
+        // Sinon, autocomplétion générale : keywords, variables, environments
 
         // Keywords top-level
         foreach (var keyword in TopLevelKeywords)
@@ -174,5 +211,205 @@ public class SettexCompletionHandler : CompletionHandlerBase
         }
 
         return environments.Distinct().ToList();
+    }
+
+    /// <summary>
+    /// Extrait le texte du document jusqu'à la position du curseur.
+    /// </summary>
+    private string GetTextBeforeCursor(SettexDocument document, Position position)
+    {
+        var lines = document.Text.Split('\n');
+        if (position.Line >= lines.Length)
+        {
+            return document.Text;
+        }
+
+        var textBeforeCursor = string.Join("\n", lines.Take((int)position.Line));
+        var currentLine = lines[position.Line];
+        var currentLinePrefix = currentLine.Substring(0, (int)System.Math.Min(position.Character, currentLine.Length));
+        
+        return textBeforeCursor + "\n" + currentLinePrefix;
+    }
+
+    /// <summary>
+    /// Extrait le chemin d'objet avant le curseur (ex: "Server", "Logging.LogLevel").
+    /// Retourne null si on n'est pas dans un contexte de propriété d'objet.
+    /// </summary>
+    private string? ExtractObjectPath(string textBeforeCursor)
+    {
+        // On cherche un pattern comme "Identifier.Identifier." à la fin du texte
+        // Regex: identifier suivi de points, se terminant par un point
+        var lines = textBeforeCursor.Split('\n');
+        var lastLine = lines[^1].TrimStart();
+
+        // Pattern: Word1.Word2.Word3. (se termine par un point)
+        if (!lastLine.EndsWith('.'))
+        {
+            return null;
+        }
+
+        // Extraire tout ce qui précède le dernier point
+        var pathWithDot = lastLine.TrimEnd();
+        if (pathWithDot.Length == 0 || pathWithDot[^1] != '.')
+        {
+            return null;
+        }
+
+        // Retirer le point final
+        var path = pathWithDot[..^1];
+
+        // Vérifier que c'est bien un path valide (lettres, chiffres, underscores, points)
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        // Extraire seulement le dernier "mot.mot.mot" avant le curseur
+        // Par ex: "Server.Port = 5000\n  Server.Host = " → on veut "Server.Host"
+        var tokens = path.Split(new[] { ' ', '\t', '=', ',', '[', ']', '{', '}', '(', ')', '"' }, 
+            System.StringSplitOptions.RemoveEmptyEntries);
+        
+        if (tokens.Length == 0)
+        {
+            return null;
+        }
+
+        var lastToken = tokens[^1];
+        
+        // Vérifier que c'est un identifiant valide avec possiblement des points
+        if (!System.Text.RegularExpressions.Regex.IsMatch(lastToken, @"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$"))
+        {
+            return null;
+        }
+
+        this.logger.LogInformation("[COMPLETION] Extracted object path: {Path}", lastToken);
+        return lastToken;
+    }
+
+    /// <summary>
+    /// Récupère toutes les propriétés d'un objet donné depuis base + tous les environnements.
+    /// Retourne un dictionnaire : PropertyName → Liste des environnements où elle existe.
+    /// </summary>
+    private Dictionary<string, List<string>> GetObjectProperties(SettexDocument document, string path)
+    {
+        var properties = new Dictionary<string, List<string>>();
+
+        if (document.Ast == null)
+        {
+            return properties;
+        }
+
+        try
+        {
+            // Évaluer les settings base + overlays
+            var evaluation = this.EvaluateAllSettings(document.Ast);
+            if (evaluation == null)
+            {
+                this.logger.LogWarning("[COMPLETION] EvaluateAllSettings returned null");
+                return properties;
+            }
+
+            var (baseSettings, envOverlays) = evaluation.Value;
+
+            // Naviguer dans l'objet base pour trouver les propriétés
+            if (baseSettings != null)
+            {
+                var baseObject = this.NavigateToObject(baseSettings, path);
+                if (baseObject != null)
+                {
+                    this.CollectProperties(baseObject, "Base", properties);
+                }
+            }
+
+            // Naviguer dans chaque overlay
+            var merger = new Merger();
+            foreach (var (envName, overlay) in envOverlays)
+            {
+                // Merger base + overlay pour avoir l'état final
+                var mergedSettings = baseSettings != null 
+                    ? merger.Merge(baseSettings, overlay)
+                    : overlay;
+                
+                var envObject = this.NavigateToObject(mergedSettings, path);
+                
+                if (envObject != null)
+                {
+                    this.CollectProperties(envObject, envName, properties);
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            this.logger.LogWarning(ex, "[COMPLETION] Error getting properties for path {Path}", path);
+        }
+
+        return properties;
+    }
+
+    /// <summary>
+    /// Évalue tous les settings : base + overlays pour chaque environnement.
+    /// </summary>
+    private (JsonObject? BaseSettings, Dictionary<string, JsonObject> EnvOverlays)? EvaluateAllSettings(FileNode ast)
+    {
+        try
+        {
+            var evaluator = new Evaluator();
+            var model = evaluator.Evaluate(ast);
+            return (model.BaseSettings, model.EnvironmentOverlays);
+        }
+        catch (System.Exception ex)
+        {
+            this.logger.LogWarning(ex, "[COMPLETION] Evaluation failed");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Navigate dans un objet JSON en suivant un chemin avec points (ex: "Server.Connection").
+    /// </summary>
+    private JsonObject? NavigateToObject(JsonObject root, string path)
+    {
+        var segments = path.Split('.');
+        JsonObject? current = root;
+
+        foreach (var segment in segments)
+        {
+            if (current == null)
+            {
+                return null;
+            }
+
+            if (current.TryGetPropertyValue(segment, out var value) && value is JsonObject obj)
+            {
+                current = obj;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return current;
+    }
+
+    /// <summary>
+    /// Collecte toutes les propriétés d'un objet JSON et les ajoute au dictionnaire.
+    /// </summary>
+    private void CollectProperties(JsonObject obj, string environmentName, Dictionary<string, List<string>> properties)
+    {
+        foreach (var property in obj)
+        {
+            var propertyName = property.Key;
+            
+            if (!properties.ContainsKey(propertyName))
+            {
+                properties[propertyName] = new List<string>();
+            }
+
+            if (!properties[propertyName].Contains(environmentName))
+            {
+                properties[propertyName].Add(environmentName);
+            }
+        }
     }
 }
