@@ -1,0 +1,219 @@
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Settex.Core.Diagnostics;
+using Settex.Core.Parser.Ast;
+
+namespace Settex.LanguageServer;
+
+/// <summary>
+/// Résout les scopes lexicaux dans un fichier Settex.
+/// Construit la hiérarchie de scopes (global → env → for) et permet de trouver
+/// le scope actif à une position donnée ou de résoudre une variable.
+/// </summary>
+public class ScopeResolver
+{
+    /// <summary>
+    /// Construit la hiérarchie complète des scopes à partir de l'AST.
+    /// </summary>
+    public ScopeInfo BuildScopeHierarchy(FileNode ast)
+    {
+        // Créer le scope global (racine)
+        var globalScope = new ScopeInfo(
+            ScopeType.Global,
+            ast.Location,
+            parent: null,
+            name: null);
+
+        // Parcourir les statements top-level
+        foreach (var statement in ast.Statements)
+        {
+            this.ProcessTopLevelStatement(statement, globalScope);
+        }
+
+        return globalScope;
+    }
+
+    /// <summary>
+    /// Trouve le scope actif à une position donnée (ligne, colonne).
+    /// Retourne le scope le plus spécifique (le plus profond dans la hiérarchie).
+    /// </summary>
+    public ScopeInfo? FindScopeAt(ScopeInfo rootScope, Position position)
+    {
+        return this.FindScopeAtRecursive(rootScope, position.Line + 1, position.Character + 1);
+    }
+
+    /// <summary>
+    /// Résout une variable dans un scope donné (avec remontée aux scopes parents).
+    /// </summary>
+    public LetNode? FindVariableInScope(string name, ScopeInfo scope)
+    {
+        return scope.FindVariable(name);
+    }
+
+    private ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column)
+    {
+        // Vérifier si la position est dans ce scope
+        if (!scope.ContainsPosition(line, column))
+        {
+            return null;
+        }
+
+        // Chercher dans les scopes enfants (ordre inverse pour avoir le plus récent)
+        for (var i = scope.Children.Count - 1; i >= 0; i--)
+        {
+            var child = scope.Children[i];
+            var childResult = this.FindScopeAtRecursive(child, line, column);
+            if (childResult != null)
+            {
+                return childResult;
+            }
+        }
+
+        // Aucun enfant ne contient la position, ce scope est le plus spécifique
+        return scope;
+    }
+
+    private void ProcessTopLevelStatement(ITopLevelStatement statement, ScopeInfo parentScope)
+    {
+        switch (statement)
+        {
+            case LetNode letNode:
+                // Ajouter la variable au scope courant
+                parentScope.Variables.Add(letNode);
+                break;
+
+            case EnvBlockNode envNode:
+                // Créer un scope pour l'environnement
+                var envScope = new ScopeInfo(
+                    ScopeType.Env,
+                    envNode.Location,
+                    parent: parentScope,
+                    name: envNode.EnvironmentName);
+
+                parentScope.Children.Add(envScope);
+
+                // Parcourir le contenu de l'env block
+                this.ProcessSettingsBlock(envNode.SettingsBlock, envScope);
+                break;
+
+            case SettingsBlockNode settingsNode:
+                // Le settings block au top-level partage le scope global
+                this.ProcessBlock(settingsNode.Block, parentScope);
+                break;
+
+            // IncludeNode n'affecte pas les scopes (déjà résolu par le compilateur)
+        }
+    }
+
+    private void ProcessSettingsBlock(SettingsBlockNode settingsBlock, ScopeInfo parentScope)
+    {
+        this.ProcessBlock(settingsBlock.Block, parentScope);
+    }
+
+    private void ProcessBlock(BlockNode block, ScopeInfo parentScope)
+    {
+        foreach (var statement in block.Statements)
+        {
+            this.ProcessStatement(statement, parentScope);
+        }
+    }
+
+    private void ProcessStatement(IStatement statement, ScopeInfo parentScope)
+    {
+        switch (statement)
+        {
+            case LetNode letNode:
+                // Ajouter la variable au scope courant
+                parentScope.Variables.Add(letNode);
+                break;
+
+            case AssignmentNode assignmentNode:
+                // Parcourir la valeur pour trouver d'éventuels ForNode
+                this.ProcessExpression(assignmentNode.Value, parentScope);
+                // Parcourir la condition si présente
+                if (assignmentNode.Condition != null)
+                {
+                    this.ProcessExpression(assignmentNode.Condition, parentScope);
+                }
+                break;
+
+            case NestedBlockNode nestedBlockNode:
+                // Parcourir le bloc imbriqué
+                this.ProcessBlock(nestedBlockNode.Block, parentScope);
+                break;
+        }
+    }
+
+    private void ProcessExpression(IExpression expression, ScopeInfo parentScope)
+    {
+        switch (expression)
+        {
+            case ArrayNode arrayNode:
+                // Parcourir les éléments du tableau
+                foreach (var element in arrayNode.Elements)
+                {
+                    this.ProcessArrayElement(element, parentScope);
+                }
+                break;
+
+            case BinaryOpNode binaryOp:
+                this.ProcessExpression(binaryOp.Left, parentScope);
+                this.ProcessExpression(binaryOp.Right, parentScope);
+                break;
+
+            case UnaryOpNode unaryOp:
+                this.ProcessExpression(unaryOp.Operand, parentScope);
+                break;
+
+            case InterpolatedStringNode interpolatedString:
+                foreach (var segment in interpolatedString.Segments)
+                {
+                    if (segment is ExpressionSegment exprSegment)
+                    {
+                        this.ProcessExpression(exprSegment.Expression, parentScope);
+                    }
+                }
+                break;
+
+            case MemberAccessNode memberAccess:
+                this.ProcessExpression(memberAccess.Object, parentScope);
+                break;
+
+            case TaggedObjectNode taggedObject:
+                this.ProcessBlock(taggedObject.Block, parentScope);
+                break;
+
+            // Les autres expressions (literals, variables, etc.) n'ont pas de scopes imbriqués
+        }
+    }
+
+    private void ProcessArrayElement(IArrayElement element, ScopeInfo parentScope)
+    {
+        switch (element)
+        {
+            case ForNode forNode:
+                // Créer un scope pour la boucle for
+                var forScope = new ScopeInfo(
+                    ScopeType.ForLoop,
+                    forNode.Location,
+                    parent: parentScope,
+                    name: forNode.IteratorName);
+
+                parentScope.Children.Add(forScope);
+
+                // Note: L'iterator lui-même n'est pas un LetNode, mais une variable implicite
+                // On pourrait créer un LetNode synthétique si nécessaire pour FindVariable
+
+                // Parcourir le corps de la boucle
+                this.ProcessBlock(forNode.Body, forScope);
+
+                // Parcourir la collection pour trouver d'éventuels for imbriqués
+                this.ProcessExpression(forNode.Collection, parentScope);
+                break;
+
+            case IExpression expr:
+                // Les autres éléments de tableau sont des expressions
+                this.ProcessExpression(expr, parentScope);
+                break;
+        }
+    }
+}

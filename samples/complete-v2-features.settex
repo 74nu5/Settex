@@ -329,3 +329,10 @@ env "Production" {
         RateLimiting.IsStrict = maxRequests > 500 and isProduction
     }
 }
+
+env "Test" {
+    settings {
+        Server.Port = 6000
+        Database.Password = "test_password"
+    }
+}
