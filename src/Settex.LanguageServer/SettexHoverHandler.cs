@@ -70,22 +70,31 @@ public class SettexHoverHandler : HoverHandlerBase
         if (document.Ast != null)
         {
             // PREMIÈRE PRIORITÉ : Vérifier si le curseur est sur un path d'assignation (overlay tracking)
+            // MAIS seulement si le mot sous le curseur correspond au path !
             var assignmentInfo = FindAssignmentAtPosition(document.Ast, request.Position);
             if (assignmentInfo != null)
             {
                 var (assignment, envName) = assignmentInfo.Value;
-                var overlayHover = FormatAssignmentWithOverlay(document.Ast, assignment, envName);
                 
-                if (overlayHover != null)
+                // Vérifier que le mot sous le curseur est bien le path (ou une partie du path)
+                var pathSegments = assignment.Path.Segments;
+                var isOnPath = pathSegments.Any(segment => segment == word);
+                
+                if (isOnPath)
                 {
-                    return Task.FromResult<Hover?>(new Hover
+                    var overlayHover = FormatAssignmentWithOverlay(document.Ast, assignment, envName);
+                    
+                    if (overlayHover != null)
                     {
-                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                        return Task.FromResult<Hover?>(new Hover
                         {
-                            Kind = MarkupKind.Markdown,
-                            Value = overlayHover
-                        })
-                    });
+                            Contents = new MarkedStringsOrMarkupContent(new MarkupContent
+                            {
+                                Kind = MarkupKind.Markdown,
+                                Value = overlayHover
+                            })
+                        });
+                    }
                 }
             }
 
