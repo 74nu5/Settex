@@ -420,25 +420,28 @@ public class ScopeInfo
   - [x] Remonter aux scopes parents si non trouvé
 - [x] Tests unitaires pour scope resolution (10 tests passent)
 
-**Tâche 2 : Améliorer SettexHoverHandler pour valeurs** (2-3h)
-- [ ] Ajouter référence à Settex.Core.Evaluation
-- [ ] Créer `FormatRuntimeValue(RuntimeValue)` pour Markdown :
-  - [ ] Numbers : `8000`, `3.14`
-  - [ ] Strings : `"Hello"` (avec quotes)
-  - [ ] Bools : `true`, `false`
-  - [ ] Arrays : `[1, 2, 3]` (max 5 items puis ...)
-  - [ ] Objects : `{ "key": "value", ... }` (max 3 clés)
-- [ ] Pour chaque variable trouvée :
-  - [ ] Créer scope avec variables parentes
-  - [ ] Évaluer expression avec ExpressionEvaluator
-  - [ ] Formater résultat en Markdown
-- [ ] Gérer erreurs d'évaluation gracefully (afficher erreur dans hover)
-- [ ] Nouveau format hover :
+**Tâche 2 : Améliorer SettexHoverHandler pour valeurs** ✅ COMPLÉTÉE (1h30)
+- [x] Ajouter référence à Settex.Core.Evaluation
+- [x] Créer `FormatRuntimeValue(RuntimeValue)` pour Markdown :
+  - [x] Numbers : `8000`, `3.14`
+  - [x] Strings : `"Hello"` (avec quotes + échappement)
+  - [x] Bools : `true`, `false`
+  - [x] Arrays : `[1, 2, 3]` (max 5 items puis ...)
+  - [x] Objects : `{ "key": "value", ... }` (max 3 clés)
+- [x] Pour chaque variable trouvée :
+  - [x] Créer scope avec variables parentes
+  - [x] Évaluer expression avec ExpressionEvaluator
+  - [x] Formatter résultat en Markdown
+- [x] Gérer erreurs d'évaluation gracefully (afficher erreur dans hover)
+- [x] Nouveau format hover :
   ```markdown
-  **Variable** `basePort`
-  Type: Number
-  Value: 8000
-  Scope: Global
+  **Variable:** `basePort`
+  **Scope:** Global
+  **Type:** Number
+  **Value:**
+  ```settex
+  8000
+  ```
   ```
 
 **Tâche 3 : Support variables locales dans Hover** (2h)

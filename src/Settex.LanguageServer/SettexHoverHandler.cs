@@ -42,7 +42,7 @@ public class SettexHoverHandler : HoverHandlerBase
 
         // Récupérer le mot à la position
         var word = GetWordAtPosition(document.Text, request.Position);
-        
+
         if (string.IsNullOrEmpty(word))
         {
             return Task.FromResult<Hover?>(null);
@@ -70,9 +70,9 @@ public class SettexHoverHandler : HoverHandlerBase
             {
                 // Évaluer la valeur de la variable
                 var (value, error) = EvaluateVariable(variable);
-                
+
                 var hoverText = FormatVariableHover(word, value, error, "Global");
-                
+
                 return Task.FromResult<Hover?>(new Hover
                 {
                     Contents = new MarkedStringsOrMarkupContent(new MarkupContent
@@ -188,10 +188,10 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             // Créer un scope vide pour l'évaluation
             var globalScope = new VariableScope();
-            
+
             // Créer un evaluator avec le scope
             var evaluator = new ExpressionEvaluator(globalScope);
-            
+
             // Évaluer l'expression de la variable
             var value = evaluator.Evaluate(letNode.Value);
             return (value, null);
@@ -209,7 +209,7 @@ public class SettexHoverHandler : HoverHandlerBase
     {
         var result = $"**Variable:** `{name}`\n\n";
         result += $"**Scope:** {scope}\n\n";
-        
+
         if (error != null)
         {
             result += $"**Error:** {error}";
@@ -223,7 +223,7 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             result += "**Value:** *(not evaluated)*";
         }
-        
+
         return result;
     }
 
@@ -256,17 +256,17 @@ public class SettexHoverHandler : HoverHandlerBase
             StringValue str => $"\"{EscapeString(str.Value)}\"",
             BoolValue b => b.Value ? "true" : "false",
             NullValue => "null",
-            
+
             // Arrays
             ArrayValue arr when arr.Items.Count == 0 => "[]",
             ArrayValue arr when currentDepth >= maxDepth => $"[... {arr.Items.Count} items ...]",
             ArrayValue arr => FormatArray(arr, maxDepth, currentDepth),
-            
+
             // Objects
             ObjectValue obj when obj.Properties.Count == 0 => "{}",
             ObjectValue obj when currentDepth >= maxDepth => $"{{ ... {obj.Properties.Count} properties ... }}",
             ObjectValue obj => FormatObject(obj, maxDepth, currentDepth),
-            
+
             _ => "(unknown)"
         };
     }
@@ -279,12 +279,12 @@ public class SettexHoverHandler : HoverHandlerBase
         const int maxItems = 5;
         var items = arr.Items.Take(maxItems).Select(el => FormatRuntimeValue(el, maxDepth, currentDepth + 1));
         var formatted = string.Join(", ", items);
-        
+
         if (arr.Items.Count > maxItems)
         {
             formatted += $", ... ({arr.Items.Count - maxItems} more)";
         }
-        
+
         return $"[{formatted}]";
     }
 
@@ -296,14 +296,14 @@ public class SettexHoverHandler : HoverHandlerBase
         const int maxKeys = 3;
         var properties = obj.Properties.Take(maxKeys)
             .Select(kvp => $"\"{EscapeString(kvp.Key)}\": {FormatRuntimeValue(kvp.Value, maxDepth, currentDepth + 1)}");
-        
+
         var formatted = string.Join(", ", properties);
-        
+
         if (obj.Properties.Count > maxKeys)
         {
             formatted += $", ... ({obj.Properties.Count - maxKeys} more)";
         }
-        
+
         return $"{{ {formatted} }}";
     }
 
