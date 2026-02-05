@@ -15,6 +15,7 @@ namespace Settex.LanguageServer;
 public class SettexReferencesHandler : ReferencesHandlerBase
 {
     private readonly SettexWorkspace workspace;
+    private readonly ScopeResolver scopeResolver;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
@@ -22,6 +23,7 @@ public class SettexReferencesHandler : ReferencesHandlerBase
     public SettexReferencesHandler(SettexWorkspace workspace)
     {
         this.workspace = workspace;
+        this.scopeResolver = new ScopeResolver();
     }
 
     public override Task<LocationContainer?> Handle(
@@ -45,25 +47,37 @@ public class SettexReferencesHandler : ReferencesHandlerBase
 
         var locations = new List<Location>();
 
+        // Construire la hiérarchie des scopes
+        var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+        
+        // Trouver le scope actif à la position du curseur
+        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+        
+        if (activeScope == null)
+        {
+            return Task.FromResult<LocationContainer?>(null);
+        }
+
+        // Trouver la définition de la variable dans le scope actif
+        var targetLetNode = this.scopeResolver.FindVariableInScope(word, activeScope);
+        
+        if (targetLetNode == null)
+        {
+            return Task.FromResult<LocationContainer?>(null);
+        }
+
         // Inclure la déclaration si demandée
         if (request.Context.IncludeDeclaration)
         {
-            var letNode = document.Ast.Statements
-                .OfType<Core.Parser.Ast.LetNode>()
-                .FirstOrDefault(let => let.Name == word);
-
-            if (letNode != null)
+            locations.Add(new Location
             {
-                locations.Add(new Location
-                {
-                    Uri = request.TextDocument.Uri,
-                    Range = SettexDocument.LocationToRange(letNode.Location)
-                });
-            }
+                Uri = request.TextDocument.Uri,
+                Range = SettexDocument.LocationToRange(targetLetNode.Location)
+            });
         }
 
-        // Trouver toutes les références (VariableRefNode)
-        var references = FindVariableReferences(document.Ast, word);
+        // Trouver toutes les références qui résolvent vers cette même définition
+        var references = FindScopedReferences(document.Ast, word, targetLetNode, rootScope);
         
         foreach (var reference in references)
         {
@@ -125,6 +139,81 @@ public class SettexReferencesHandler : ReferencesHandlerBase
     private static bool IsWordChar(char c)
     {
         return char.IsLetterOrDigit(c) || c == '_';
+    }
+
+    /// <summary>
+    /// Trouve toutes les références à une variable qui résolvent vers la même déclaration,
+    /// en tenant compte des scopes pour éviter la confusion entre homonymes.
+    /// </summary>
+    private List<Core.Parser.Ast.VariableRefNode> FindScopedReferences(
+        Core.Parser.Ast.FileNode ast,
+        string name,
+        Core.Parser.Ast.LetNode targetDeclaration,
+        ScopeInfo rootScope)
+    {
+        var scopedReferences = new List<Core.Parser.Ast.VariableRefNode>();
+        
+        // Trouver toutes les références brutes
+        var allReferences = FindVariableReferences(ast, name);
+        
+        // Filtrer pour ne garder que celles qui résolvent vers la même déclaration
+        foreach (var reference in allReferences)
+        {
+            // Trouver le scope de cette référence
+            var refScope = FindScopeAtLocation(rootScope, reference.Location);
+            
+            if (refScope != null)
+            {
+                // Résoudre la variable dans ce scope
+                var resolvedDeclaration = this.scopeResolver.FindVariableInScope(name, refScope);
+                
+                // Si elle résout vers la même déclaration que notre cible, l'inclure
+                if (resolvedDeclaration == targetDeclaration)
+                {
+                    scopedReferences.Add(reference);
+                }
+            }
+        }
+        
+        return scopedReferences;
+    }
+
+    /// <summary>
+    /// Trouve le scope qui contient une position donnée (basé sur SourceLocation).
+    /// </summary>
+    private static ScopeInfo? FindScopeAtLocation(ScopeInfo rootScope, Core.Diagnostics.SourceLocation location)
+    {
+        // Convertir SourceLocation en position LSP (1-based → 0-based)
+        var position = new Position(location.Line - 1, location.Column - 1);
+        
+        // Utiliser la méthode récursive existante
+        return FindScopeAtRecursive(rootScope, location.Line, location.Column);
+    }
+
+    /// <summary>
+    /// Recherche récursive du scope à une position donnée.
+    /// </summary>
+    private static ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column)
+    {
+        // Vérifier si la position est dans ce scope
+        if (!scope.ContainsPosition(line, column))
+        {
+            return null;
+        }
+
+        // Chercher dans les scopes enfants (ordre inverse pour avoir le plus récent)
+        for (var i = scope.Children.Count - 1; i >= 0; i--)
+        {
+            var child = scope.Children[i];
+            var childResult = FindScopeAtRecursive(child, line, column);
+            if (childResult != null)
+            {
+                return childResult;
+            }
+        }
+
+        // Aucun enfant ne contient la position, ce scope est le plus spécifique
+        return scope;
     }
 
     private static List<Core.Parser.Ast.VariableRefNode> FindVariableReferences(

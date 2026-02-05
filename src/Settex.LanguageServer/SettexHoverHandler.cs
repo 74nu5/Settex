@@ -69,23 +69,23 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             // Construire la hiérarchie des scopes
             var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
-            
+
             // Trouver le scope actif à la position du curseur
             var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
-            
+
             if (activeScope != null)
             {
                 // Chercher la variable dans le scope actif (avec remontée aux parents)
                 var variable = this.scopeResolver.FindVariableInScope(word, activeScope);
-                
+
                 if (variable != null)
                 {
                     // Construire un scope d'évaluation avec toutes les variables du contexte
                     var evaluationScope = BuildEvaluationScope(activeScope);
-                    
+
                     // Évaluer la valeur de la variable
                     var (value, error) = EvaluateVariable(variable, evaluationScope);
-                    
+
                     // Formater le nom du scope pour affichage
                     var scopeName = FormatScopeName(activeScope);
                     var hoverText = FormatVariableHover(word, value, error, scopeName);

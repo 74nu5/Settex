@@ -39,7 +39,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
 
         // Extraire le mot à la position
         var word = GetWordAtPosition(document.Text, request.Position);
-        
+
         if (string.IsNullOrEmpty(word))
         {
             return Task.FromResult<LocationOrLocationLinks?>(null);
@@ -47,15 +47,15 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
 
         // Construire la hiérarchie des scopes
         var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
-        
+
         // Trouver le scope actif à la position du curseur
         var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
-        
+
         if (activeScope != null)
         {
             // Chercher la variable dans le scope actif (avec remontée aux parents)
             var letNode = this.scopeResolver.FindVariableInScope(word, activeScope);
-            
+
             if (letNode != null)
             {
                 var range = SettexDocument.LocationToRange(letNode.Location);
