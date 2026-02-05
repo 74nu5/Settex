@@ -82,7 +82,8 @@ public class SettexHoverHandler : HoverHandlerBase
                 
                 if (isOnPath)
                 {
-                    var overlayHover = FormatAssignmentWithOverlay(document.Ast, assignment, envName);
+                    var path = string.Join(".", assignment.Path.Segments);
+                    var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName);
                     
                     if (overlayHover != null)
                     {
@@ -489,138 +490,5 @@ public class SettexHoverHandler : HoverHandlerBase
     {
         // Vérifier si la ligne correspond
         return location.Line == line;
-    }
-
-    /// <summary>
-    /// Formate une assignation avec affichage de la valeur de base et de l'override si applicable.
-    /// </summary>
-    private static string? FormatAssignmentWithOverlay(
-        Core.Parser.Ast.FileNode ast,
-        Core.Parser.Ast.AssignmentNode assignment,
-        string? envName)
-    {
-        var path = string.Join(".", assignment.Path.Segments);
-
-        // Évaluer le settings de base
-        var baseSettings = EvaluateSettingsBlock(ast);
-        var baseValue = GetValueAtPath(baseSettings, path);
-
-        if (envName == null)
-        {
-            // On est dans le block base, afficher juste la valeur
-            if (baseValue != null)
-            {
-                return $"**Setting:** `{path}`\n\n**Base value:**\n```settex\n{FormatJsonNode(baseValue)}\n```";
-            }
-            return null;
-        }
-
-        // On est dans un environnement, comparer avec la base
-        var envSettings = EvaluateEnvBlock(ast, envName);
-        var envValue = GetValueAtPath(envSettings, path);
-
-        // Comparer les valeurs
-        var baseFormatted = baseValue != null ? FormatJsonNode(baseValue) : "(not set)";
-        var envFormatted = envValue != null ? FormatJsonNode(envValue) : "(not set)";
-
-        // Si les valeurs sont identiques, ne pas afficher l'override
-        if (baseFormatted == envFormatted)
-        {
-            return $"**Setting:** `{path}`\n\n**Value:**\n```settex\n{baseFormatted}\n```\n\n*(same in base and {envName})*";
-        }
-
-        // Afficher base et override
-        return $"**Setting:** `{path}`\n\n**Base value:**\n```settex\n{baseFormatted}\n```\n\n**{envName} override:**\n```settex\n{envFormatted}\n```";
-    }
-
-    /// <summary>
-    /// Formate un JsonNode en texte lisible pour affichage.
-    /// </summary>
-    private static string FormatJsonNode(JsonNode node)
-    {
-        // Utiliser la sérialisation JSON avec indentation
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = false // Compact pour le hover
-        };
-        return node.ToJsonString(options);
-    }
-
-    /// <summary>
-    /// Évalue le block settings de base et retourne un JsonObject avec tous les settings.
-    /// </summary>
-    private static JsonObject? EvaluateSettingsBlock(Core.Parser.Ast.FileNode ast)
-    {
-        try
-        {
-            var evaluator = new Evaluator();
-            var model = evaluator.Evaluate(ast);
-            return model.BaseSettings;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Évalue un block env avec merge sur la base et retourne un JsonObject.
-    /// </summary>
-    private static JsonObject? EvaluateEnvBlock(
-        Core.Parser.Ast.FileNode ast,
-        string envName)
-    {
-        try
-        {
-            var evaluator = new Evaluator();
-            var model = evaluator.Evaluate(ast);
-
-            // Chercher l'overlay pour cet environnement
-            if (model.EnvironmentOverlays.TryGetValue(envName, out var overlay))
-            {
-                return overlay;
-            }
-
-            return null; // Pas d'overlay trouvé
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Récupère une valeur à un path donné dans un JsonObject (notation pointée).
-    /// </summary>
-    private static JsonNode? GetValueAtPath(JsonObject? obj, string path)
-    {
-        if (obj == null)
-        {
-            return null;
-        }
-
-        var parts = path.Split('.');
-        JsonNode? current = obj;
-
-        foreach (var part in parts)
-        {
-            if (current is JsonObject objectNode)
-            {
-                if (objectNode.TryGetPropertyValue(part, out var value))
-                {
-                    current = value;
-                }
-                else
-                {
-                    return null; // Path non trouvé
-                }
-            }
-            else
-            {
-                return null; // Pas un objet, impossible de naviguer
-            }
-        }
-
-        return current;
     }
 }
