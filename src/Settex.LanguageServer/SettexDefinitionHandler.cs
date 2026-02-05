@@ -14,6 +14,7 @@ namespace Settex.LanguageServer;
 public class SettexDefinitionHandler : DefinitionHandlerBase
 {
     private readonly SettexWorkspace workspace;
+    private readonly ScopeResolver scopeResolver;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
@@ -21,6 +22,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
     public SettexDefinitionHandler(SettexWorkspace workspace)
     {
         this.workspace = workspace;
+        this.scopeResolver = new ScopeResolver();
     }
 
     public override Task<LocationOrLocationLinks?> Handle(
@@ -43,20 +45,27 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
             return Task.FromResult<LocationOrLocationLinks?>(null);
         }
 
-        // Chercher la définition d'une variable
-        var letNode = document.Ast.Statements
-            .OfType<Core.Parser.Ast.LetNode>()
-            .FirstOrDefault(let => let.Name == word);
-
-        if (letNode != null)
+        // Construire la hiérarchie des scopes
+        var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+        
+        // Trouver le scope actif à la position du curseur
+        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+        
+        if (activeScope != null)
         {
-            var range = SettexDocument.LocationToRange(letNode.Location);
-            var location = new Location
+            // Chercher la variable dans le scope actif (avec remontée aux parents)
+            var letNode = this.scopeResolver.FindVariableInScope(word, activeScope);
+            
+            if (letNode != null)
             {
-                Uri = request.TextDocument.Uri,
-                Range = range
-            };
-            return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
+                var range = SettexDocument.LocationToRange(letNode.Location);
+                var location = new Location
+                {
+                    Uri = request.TextDocument.Uri,
+                    Range = range
+                };
+                return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
+            }
         }
 
         // Chercher la définition d'un environnement
