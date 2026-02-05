@@ -83,7 +83,15 @@ public class SettexHoverHandler : HoverHandlerBase
                 if (isOnPath)
                 {
                     var path = string.Join(".", assignment.Path.Segments);
-                    var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName);
+                    this.logger.LogInformation("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
+                    
+                    var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName, this.logger);
+                    
+                    this.logger.LogInformation("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
+                    if (overlayHover != null)
+                    {
+                        this.logger.LogDebug("[HOVER-OVERLAY] Content:\n{Content}", overlayHover);
+                    }
                     
                     if (overlayHover != null)
                     {

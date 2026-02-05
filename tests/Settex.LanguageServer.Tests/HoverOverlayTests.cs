@@ -217,6 +217,6 @@ public static class SettexHoverTestHelper
         string path,
         string? currentEnvName)
     {
-        return HoverOverlayFormatter.FormatAssignmentWithOverlay(ast, path, currentEnvName);
+        return HoverOverlayFormatter.FormatAssignmentWithOverlay(ast, path, currentEnvName, logger: null);
     }
 }
