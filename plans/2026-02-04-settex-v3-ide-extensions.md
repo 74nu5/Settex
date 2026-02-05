@@ -404,21 +404,21 @@ public class ScopeInfo
 
 #### Tâches Détaillées
 
-**Tâche 1 : Créer ScopeResolver** (3-4h)
-- [ ] Créer `ScopeResolver.cs` dans Settex.LanguageServer
-- [ ] Créer `ScopeInfo.cs` (modèle scope avec type, parent, variables)
-- [ ] Implémenter `BuildScopeHierarchy(FileNode)` :
-  - [ ] Parcourir AST et créer scopes hiérarchiques
-  - [ ] Scope global (top-level lets)
-  - [ ] Scopes env (lets dans env blocks)
-  - [ ] Scopes for (iterator variables)
-- [ ] Implémenter `FindScopeAt(Position)` :
-  - [ ] Déterminer scope actif selon position curseur
-  - [ ] Comparer ranges des scopes avec position
-- [ ] Implémenter `FindVariableInScope(name, scope)` :
-  - [ ] Chercher dans scope actuel
-  - [ ] Remonter aux scopes parents si non trouvé
-- [ ] Tests unitaires pour scope resolution
+**Tâche 1 : Créer ScopeResolver** ✅ COMPLÉTÉE (2h)
+- [x] Créer `ScopeResolver.cs` dans Settex.LanguageServer
+- [x] Créer `ScopeInfo.cs` (modèle scope avec type, parent, variables)
+- [x] Implémenter `BuildScopeHierarchy(FileNode)` :
+  - [x] Parcourir AST et créer scopes hiérarchiques
+  - [x] Scopes globaux (let top-level)
+  - [x] Scopes env ({ ... } de env "Name")
+  - [x] Scopes for (iterator variables)
+- [x] Implémenter `FindScopeAt(Position)` :
+  - [x] Déterminer scope actif selon position curseur
+  - [x] Comparer ranges des scopes avec position
+- [x] Implémenter `FindVariableInScope(name, scope)` :
+  - [x] Chercher dans scope actuel
+  - [x] Remonter aux scopes parents si non trouvé
+- [x] Tests unitaires pour scope resolution (10 tests passent)
 
 **Tâche 2 : Améliorer SettexHoverHandler pour valeurs** (2-3h)
 - [ ] Ajouter référence à Settex.Core.Evaluation

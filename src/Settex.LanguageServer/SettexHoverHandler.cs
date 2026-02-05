@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -6,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Settex.Core.Evaluation;
+using Settex.Core.Runtime;
 
 namespace Settex.LanguageServer;
 
@@ -65,12 +68,17 @@ public class SettexHoverHandler : HoverHandlerBase
             var variable = FindVariable(document.Ast, word);
             if (variable != null)
             {
+                // Évaluer la valeur de la variable
+                var (value, error) = EvaluateVariable(variable);
+                
+                var hoverText = FormatVariableHover(word, value, error, "Global");
+                
                 return Task.FromResult<Hover?>(new Hover
                 {
                     Contents = new MarkedStringsOrMarkupContent(new MarkupContent
                     {
                         Kind = MarkupKind.Markdown,
-                        Value = $"**Variable** (global scope)\n\n`{word}`"
+                        Value = hoverText
                     })
                 });
             }
@@ -169,5 +177,146 @@ public class SettexHoverHandler : HoverHandlerBase
         return ast.Statements
             .OfType<Core.Parser.Ast.EnvBlockNode>()
             .FirstOrDefault(env => env.EnvironmentName == name);
+    }
+
+    /// <summary>
+    /// Évalue une variable let et retourne sa valeur ou une erreur.
+    /// </summary>
+    private static (RuntimeValue? Value, string? Error) EvaluateVariable(Core.Parser.Ast.LetNode letNode)
+    {
+        try
+        {
+            // Créer un scope vide pour l'évaluation
+            var globalScope = new VariableScope();
+            
+            // Créer un evaluator avec le scope
+            var evaluator = new ExpressionEvaluator(globalScope);
+            
+            // Évaluer l'expression de la variable
+            var value = evaluator.Evaluate(letNode.Value);
+            return (value, null);
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Formate les informations d'une variable pour le hover (Markdown).
+    /// </summary>
+    private static string FormatVariableHover(string name, RuntimeValue? value, string? error, string scope)
+    {
+        var result = $"**Variable:** `{name}`\n\n";
+        result += $"**Scope:** {scope}\n\n";
+        
+        if (error != null)
+        {
+            result += $"**Error:** {error}";
+        }
+        else if (value != null)
+        {
+            result += $"**Type:** {GetValueTypeName(value)}\n\n";
+            result += $"**Value:**\n```settex\n{FormatRuntimeValue(value)}\n```";
+        }
+        else
+        {
+            result += "**Value:** *(not evaluated)*";
+        }
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Détermine le nom du type d'une RuntimeValue.
+    /// </summary>
+    private static string GetValueTypeName(RuntimeValue value)
+    {
+        return value switch
+        {
+            StringValue => "String",
+            NumberValue => "Number",
+            BoolValue => "Boolean",
+            NullValue => "Null",
+            ArrayValue => "Array",
+            ObjectValue => "Object",
+            _ => "Unknown"
+        };
+    }
+
+    /// <summary>
+    /// Formate une RuntimeValue en texte lisible pour affichage dans le hover.
+    /// </summary>
+    private static string FormatRuntimeValue(RuntimeValue value, int maxDepth = 2, int currentDepth = 0)
+    {
+        return value switch
+        {
+            // Primitives
+            NumberValue num => num.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            StringValue str => $"\"{EscapeString(str.Value)}\"",
+            BoolValue b => b.Value ? "true" : "false",
+            NullValue => "null",
+            
+            // Arrays
+            ArrayValue arr when arr.Items.Count == 0 => "[]",
+            ArrayValue arr when currentDepth >= maxDepth => $"[... {arr.Items.Count} items ...]",
+            ArrayValue arr => FormatArray(arr, maxDepth, currentDepth),
+            
+            // Objects
+            ObjectValue obj when obj.Properties.Count == 0 => "{}",
+            ObjectValue obj when currentDepth >= maxDepth => $"{{ ... {obj.Properties.Count} properties ... }}",
+            ObjectValue obj => FormatObject(obj, maxDepth, currentDepth),
+            
+            _ => "(unknown)"
+        };
+    }
+
+    /// <summary>
+    /// Formate un ArrayValue avec limitation d'items.
+    /// </summary>
+    private static string FormatArray(ArrayValue arr, int maxDepth, int currentDepth)
+    {
+        const int maxItems = 5;
+        var items = arr.Items.Take(maxItems).Select(el => FormatRuntimeValue(el, maxDepth, currentDepth + 1));
+        var formatted = string.Join(", ", items);
+        
+        if (arr.Items.Count > maxItems)
+        {
+            formatted += $", ... ({arr.Items.Count - maxItems} more)";
+        }
+        
+        return $"[{formatted}]";
+    }
+
+    /// <summary>
+    /// Formate un ObjectValue avec limitation de clés.
+    /// </summary>
+    private static string FormatObject(ObjectValue obj, int maxDepth, int currentDepth)
+    {
+        const int maxKeys = 3;
+        var properties = obj.Properties.Take(maxKeys)
+            .Select(kvp => $"\"{EscapeString(kvp.Key)}\": {FormatRuntimeValue(kvp.Value, maxDepth, currentDepth + 1)}");
+        
+        var formatted = string.Join(", ", properties);
+        
+        if (obj.Properties.Count > maxKeys)
+        {
+            formatted += $", ... ({obj.Properties.Count - maxKeys} more)";
+        }
+        
+        return $"{{ {formatted} }}";
+    }
+
+    /// <summary>
+    /// Échappe les caractères spéciaux dans une chaîne pour affichage.
+    /// </summary>
+    private static string EscapeString(string str)
+    {
+        return str
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t");
     }
 }
