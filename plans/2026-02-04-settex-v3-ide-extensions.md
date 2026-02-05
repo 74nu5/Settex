@@ -444,13 +444,14 @@ public class ScopeInfo
   ```
   ```
 
-**Tâche 3 : Support variables locales dans Hover** (2h)
-- [ ] Intégrer ScopeResolver dans SettexHoverHandler
-- [ ] Remplacer recherche globale par `FindScopeAt(position)`
-- [ ] Utiliser `FindVariableInScope(name, scope)` au lieu de LINQ sur ast.Statements
-- [ ] Afficher scope précis dans hover (Global/Env {name}/For iterator)
-- [ ] Tests :
-  - [ ] Hover sur variable globale
+**Tâche 3 : Support variables locales dans Hover** ✅ COMPLÉTÉE (1h)
+- [x] Intégrer ScopeResolver dans SettexHoverHandler
+- [x] Remplacer recherche globale par `FindScopeAt(position)`
+- [x] Utiliser `FindVariableInScope(name, scope)` au lieu de LINQ sur ast.Statements
+- [x] Construire scope d'évaluation avec `BuildEvaluationScope(scopeInfo)`
+- [x] Afficher scope précis dans hover (Global/Env "Name"/For loop)
+- [x] Tests :
+  - [x] Tous les 191 tests passent (pas de régression)
   - [ ] Hover sur variable dans env block
   - [ ] Hover sur iterator de for loop
   - [ ] Hover avec homonymes dans scopes différents
