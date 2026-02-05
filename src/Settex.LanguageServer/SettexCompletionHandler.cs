@@ -54,6 +54,10 @@ public class SettexCompletionHandler : CompletionHandlerBase
         var textBeforeCursor = this.GetTextBeforeCursor(document, request.Position);
         var objectPath = this.ExtractObjectPath(textBeforeCursor);
 
+        // Extraire le mot partiel en cours de frappe pour le filtrage
+        var partialWord = this.ExtractPartialWord(textBeforeCursor);
+        this.logger.LogInformation("[COMPLETION] Partial word: '{PartialWord}'", partialWord ?? "(none)");
+
         if (!string.IsNullOrEmpty(objectPath))
         {
             // Autocomplétion des propriétés d'objet
@@ -62,6 +66,13 @@ public class SettexCompletionHandler : CompletionHandlerBase
             
             foreach (var (propertyName, environments) in properties)
             {
+                // Filtrer par le mot partiel si présent
+                if (!string.IsNullOrEmpty(partialWord) && 
+                    !propertyName.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 var envList = string.Join(", ", environments);
                 completions.Add(new CompletionItem
                 {
@@ -69,7 +80,8 @@ public class SettexCompletionHandler : CompletionHandlerBase
                     Kind = CompletionItemKind.Property,
                     Detail = $"Property (in {envList})",
                     Documentation = $"Available in environments: {envList}",
-                    InsertText = propertyName
+                    InsertText = propertyName,
+                    FilterText = propertyName
                 });
             }
 
@@ -89,6 +101,13 @@ public class SettexCompletionHandler : CompletionHandlerBase
         
         foreach (var (objectName, environments) in objectNames)
         {
+            // Filtrer par le mot partiel si présent
+            if (!string.IsNullOrEmpty(partialWord) && 
+                !objectName.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             var envList = string.Join(", ", environments);
             completions.Add(new CompletionItem
             {
@@ -97,6 +116,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
                 Detail = $"Object (defined in {envList})",
                 Documentation = $"Existing object defined in: {envList}",
                 InsertText = objectName,
+                FilterText = objectName,
                 SortText = "0_" + objectName // Priorité haute pour les objets
             });
         }
@@ -106,6 +126,13 @@ public class SettexCompletionHandler : CompletionHandlerBase
         // Keywords top-level
         foreach (var keyword in TopLevelKeywords)
         {
+            // Filtrer par le mot partiel
+            if (!string.IsNullOrEmpty(partialWord) && 
+                !keyword.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             completions.Add(new CompletionItem
             {
                 Label = keyword,
@@ -113,19 +140,28 @@ public class SettexCompletionHandler : CompletionHandlerBase
                 Detail = $"{keyword} block",
                 Documentation = GetKeywordDocumentation(keyword),
                 InsertText = GetKeywordSnippet(keyword),
-                InsertTextFormat = InsertTextFormat.Snippet
+                InsertTextFormat = InsertTextFormat.Snippet,
+                FilterText = keyword
             });
         }
 
         // Keywords dans expressions
         foreach (var keyword in ExpressionKeywords)
         {
+            // Filtrer par le mot partiel
+            if (!string.IsNullOrEmpty(partialWord) && 
+                !keyword.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             completions.Add(new CompletionItem
             {
                 Label = keyword,
                 Kind = CompletionItemKind.Keyword,
                 Detail = $"{keyword} operator",
-                InsertText = keyword
+                InsertText = keyword,
+                FilterText = keyword
             });
         }
 
@@ -135,12 +171,20 @@ public class SettexCompletionHandler : CompletionHandlerBase
             var variables = ExtractVariables(document.Ast);
             foreach (var variable in variables)
             {
+                // Filtrer par le mot partiel
+                if (!string.IsNullOrEmpty(partialWord) && 
+                    !variable.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 completions.Add(new CompletionItem
                 {
                     Label = variable,
                     Kind = CompletionItemKind.Variable,
                     Detail = "Variable",
-                    InsertText = variable
+                    InsertText = variable,
+                    FilterText = variable
                 });
             }
 
@@ -148,12 +192,20 @@ public class SettexCompletionHandler : CompletionHandlerBase
             var environments = ExtractEnvironments(document.Ast);
             foreach (var env in environments)
             {
+                // Filtrer par le mot partiel
+                if (!string.IsNullOrEmpty(partialWord) && 
+                    !env.StartsWith(partialWord, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 completions.Add(new CompletionItem
                 {
                     Label = env,
                     Kind = CompletionItemKind.EnumMember,
                     Detail = "Environment",
-                    InsertText = env
+                    InsertText = env,
+                    FilterText = env
                 });
             }
         }
@@ -307,6 +359,33 @@ public class SettexCompletionHandler : CompletionHandlerBase
     }
 
     /// <summary>
+    /// Extrait le mot partiel en cours de frappe avant le curseur (pour le filtrage).
+    /// Par exemple: "Server.Po" → retourne "Po", "Ser" → retourne "Ser"
+    /// </summary>
+    private string? ExtractPartialWord(string textBeforeCursor)
+    {
+        var lines = textBeforeCursor.Split('\n');
+        var lastLine = lines[^1];
+
+        // Trouver le dernier mot (identifiant) avant le curseur
+        // On cherche les caractères valides pour un identifiant depuis la fin
+        int i = lastLine.Length - 1;
+        while (i >= 0 && (char.IsLetterOrDigit(lastLine[i]) || lastLine[i] == '_'))
+        {
+            i--;
+        }
+
+        if (i == lastLine.Length - 1)
+        {
+            // Pas de mot partiel (curseur après un espace, point, etc.)
+            return null;
+        }
+
+        var partialWord = lastLine.Substring(i + 1);
+        return string.IsNullOrWhiteSpace(partialWord) ? null : partialWord;
+    }
+
+    /// <summary>
     /// Récupère toutes les propriétés d'un objet donné depuis base + tous les environnements.
     /// Retourne un dictionnaire : PropertyName → Liste des environnements où elle existe.
     /// </summary>
@@ -389,26 +468,51 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// </summary>
     private JsonObject? NavigateToObject(JsonObject root, string path)
     {
+        this.logger.LogInformation("[COMPLETION-NAV] Navigating to path '{Path}'", path);
+        
         var segments = path.Split('.');
         JsonObject? current = root;
 
-        foreach (var segment in segments)
+        for (int i = 0; i < segments.Length; i++)
         {
+            var segment = segments[i];
+            this.logger.LogDebug("[COMPLETION-NAV] Looking for segment '{Segment}' (step {Step}/{Total})", 
+                segment, i + 1, segments.Length);
+            
             if (current == null)
             {
+                this.logger.LogWarning("[COMPLETION-NAV] Current is null at segment '{Segment}'", segment);
                 return null;
             }
 
-            if (current.TryGetPropertyValue(segment, out var value) && value is JsonObject obj)
+            if (current.TryGetPropertyValue(segment, out var value))
             {
-                current = obj;
+                this.logger.LogDebug("[COMPLETION-NAV] Found property '{Segment}', type: {Type}", 
+                    segment, value?.GetType().Name ?? "null");
+                
+                if (value is JsonObject obj)
+                {
+                    current = obj;
+                    this.logger.LogDebug("[COMPLETION-NAV] Navigated to object '{Segment}', properties: {Properties}", 
+                        segment, string.Join(", ", obj.Select(p => p.Key)));
+                }
+                else
+                {
+                    this.logger.LogWarning("[COMPLETION-NAV] Property '{Segment}' is not an object (type: {Type})", 
+                        segment, value?.GetType().Name ?? "null");
+                    return null;
+                }
             }
             else
             {
+                this.logger.LogWarning("[COMPLETION-NAV] Property '{Segment}' not found. Available: {Available}", 
+                    segment, string.Join(", ", current.Select(p => p.Key)));
                 return null;
             }
         }
 
+        this.logger.LogInformation("[COMPLETION-NAV] Successfully navigated to '{Path}', final object has {Count} properties", 
+            path, current?.Count ?? 0);
         return current;
     }
 
@@ -417,9 +521,14 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// </summary>
     private void CollectProperties(JsonObject obj, string environmentName, Dictionary<string, List<string>> properties)
     {
+        this.logger.LogInformation("[COMPLETION-COLLECT] Collecting properties from env '{Env}', object has {Count} properties", 
+            environmentName, obj.Count);
+        
         foreach (var property in obj)
         {
             var propertyName = property.Key;
+            this.logger.LogDebug("[COMPLETION-COLLECT] Found property '{Name}' (type: {Type}) in env '{Env}'", 
+                propertyName, property.Value?.GetType().Name ?? "null", environmentName);
             
             if (!properties.ContainsKey(propertyName))
             {
@@ -431,6 +540,8 @@ public class SettexCompletionHandler : CompletionHandlerBase
                 properties[propertyName].Add(environmentName);
             }
         }
+        
+        this.logger.LogInformation("[COMPLETION-COLLECT] Total unique properties collected: {Count}", properties.Count);
     }
 
     /// <summary>
