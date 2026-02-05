@@ -3,6 +3,7 @@ using Settex.Core.Diagnostics;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
 using Settex.Core.Parser.Ast;
+using Settex.Core.Resolution;
 
 namespace Settex.LanguageServer;
 
@@ -43,7 +44,7 @@ public class SettexDocument
     }
 
     /// <summary>
-    /// Re-parse le document complet (Lexer + Parser).
+    /// Re-parse le document complet (Lexer + Parser + Include resolution).
     /// </summary>
     private void Reparse()
     {
@@ -59,7 +60,39 @@ public class SettexDocument
 
             // Phase 2: Parser
             var parser = new Parser(this.tokens);
-            this.ast = parser.Parse();
+            var parsedAst = parser.Parse();
+
+            // Phase 2.5: Resolve includes (if file is saved to disk)
+            var filePath = UriToFilePath(this.uri);
+            if (filePath != null)
+            {
+                try
+                {
+                    var includeResolver = new IncludeResolver();
+                    var resolvedStatements = includeResolver.ResolveIncludes(parsedAst, filePath);
+                    
+                    // Rebuild AST with resolved includes
+                    this.ast = new FileNode(resolvedStatements, parsedAst.Location);
+                }
+                catch (IncludeException ex)
+                {
+                    // Include resolution failed, use original AST and report error
+                    this.ast = parsedAst;
+                    this.diagnostics.Add(new Diagnostic
+                    {
+                        Range = ex.Location != null ? LocationToRange(ex.Location) : new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(new Position(0, 0), new Position(0, 0)),
+                        Severity = DiagnosticSeverity.Error,
+                        Code = "STX301",
+                        Source = "settex",
+                        Message = ex.Message
+                    });
+                }
+            }
+            else
+            {
+                // File not on disk (unsaved), use original AST without includes
+                this.ast = parsedAst;
+            }
         }
         catch (LexerException ex)
         {
@@ -114,5 +147,27 @@ public class SettexDocument
             new Position(line, column),
             new Position(line, column + location.Length)
         );
+    }
+
+    /// <summary>
+    /// Convertit une URI LSP en chemin de fichier système.
+    /// </summary>
+    private static string? UriToFilePath(string uri)
+    {
+        if (uri.StartsWith("file:///"))
+        {
+            // file:///d:/path/to/file.settex -> d:/path/to/file.settex
+            var path = uri.Substring(8);
+            
+            // On Windows, convertir les / en \
+            if (Path.DirectorySeparatorChar == '\\')
+            {
+                path = path.Replace('/', '\\');
+            }
+            
+            return path;
+        }
+        
+        return null;
     }
 }

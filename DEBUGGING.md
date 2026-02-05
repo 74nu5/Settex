@@ -4,6 +4,13 @@
 
 Les logs sont maintenant activés dans le Language Server pour le hover overlay tracking.
 
+### Résolution des includes
+
+Le Language Server résout automatiquement les `include` statements lors du parsing :
+- Les variables définies dans les fichiers inclus sont disponibles
+- Les cycles d'includes sont détectés et signalés comme erreurs
+- Les fichiers non sauvegardés (unsaved) ne résolvent pas les includes
+
 ### Tags de logs ajoutés :
 - `[HOVER-OVERLAY]` : Logs dans SettexHoverHandler
 - `[FORMATTER]` : Logs principaux dans HoverOverlayFormatter
