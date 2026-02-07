@@ -35,6 +35,9 @@ public sealed class SettexVisualStudioPackage : AsyncPackage
         // When initialized asynchronously, switch to the main thread before accessing VS services
         await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
+        // Initialize the compile command
+        await CompileSettexCommand.InitializeAsync(this);
+
         // Language client will be automatically initialized via MEF (SettexLanguageClient.cs)
         // TextMate grammar and syntax highlighting are configured via Settex.pkgdef
         // Code snippets are registered via pkgdef and located in the Snippets folder
