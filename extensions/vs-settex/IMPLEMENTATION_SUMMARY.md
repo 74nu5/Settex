@@ -2,7 +2,7 @@
 
 ## Overview
 
-A complete Visual Studio 2022+ extension for Settex has been successfully created on the branch `copilot/create-vs-extension-settex`.
+A complete Visual Studio 2022+ extension for Settex has been successfully created in this repository under `extensions/vs-settex/`.
 
 ## What Was Built
 
