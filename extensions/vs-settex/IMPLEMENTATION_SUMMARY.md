@@ -97,7 +97,6 @@ For Windows users with Visual Studio 2022+:
 # 1. Clone repository
 git clone https://github.com/74nu5/Settex.git
 cd Settex
-git checkout copilot/create-vs-extension-settex
 
 # 2. Navigate to project
 cd extensions\vs-settex\Settex.VisualStudio
