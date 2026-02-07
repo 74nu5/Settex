@@ -1,0 +1,21 @@
+// Register the Settex language
+[$RootKey$\Languages\File Extensions\.settex]
+@="Settex"
+
+[$RootKey$\Languages\Language Services\Settex]
+@="Settex Configuration Language"
+"Package"="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
+
+// Enable syntax highlighting using TextMate grammar
+[$RootKey$\TextMate\Repositories]
+"Settex"="$PackageFolder$\Grammars\settex.tmLanguage.json"
+
+// Language configuration
+[$RootKey$\Languages\Language Services\Settex\EditorFactory]
+@="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
+
+// Associate .settex files with the language
+[$RootKey$\Editors\{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}]
+@="Settex Editor"
+"DisplayName"="Settex Configuration Editor"
+"Package"="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
