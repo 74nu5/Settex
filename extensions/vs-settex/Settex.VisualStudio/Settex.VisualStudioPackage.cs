@@ -31,7 +31,9 @@ namespace Settex.VisualStudio
             // When initialized asynchronously, switch to the main thread before accessing VS services
             await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            // TODO: Add your initialization code here
+            // No additional initialization required for TextMate-based language support.
+            // Language registration and syntax highlighting are configured via Settex.pkgdef
+            // and the TextMate grammar file in Grammars/settex.tmLanguage.json.
         }
     }
 }
