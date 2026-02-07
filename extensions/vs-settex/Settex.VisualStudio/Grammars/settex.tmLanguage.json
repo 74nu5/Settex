@@ -98,12 +98,12 @@
     "operators": {
       "patterns": [
         {
-          "name": "keyword.operator.assignment.settex",
-          "match": ":=|="
-        },
-        {
           "name": "keyword.operator.comparison.settex",
           "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.assignment.settex",
+          "match": ":=|="
         },
         {
           "name": "keyword.operator.arithmetic.settex",
