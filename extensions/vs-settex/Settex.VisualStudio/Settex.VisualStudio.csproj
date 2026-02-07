@@ -6,7 +6,7 @@
     <Platforms>AnyCPU</Platforms>
     <Platform>AnyCPU</Platform>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <RootNamespace>Settex.VisualStudio</RootNamespace>
     <AssemblyName>Settex.VisualStudio</AssemblyName>
   </PropertyGroup>

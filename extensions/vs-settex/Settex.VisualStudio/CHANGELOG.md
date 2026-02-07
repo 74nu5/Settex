@@ -5,17 +5,38 @@ All notable changes to the Settex Visual Studio extension will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-02-07
 
-### Planned
-- Language Server Protocol integration for IntelliSense
-- Build integration with automatic .settex compilation
-- Error diagnostics in Error List window
-- Code snippets for common Settex patterns
-- Quick fixes for common issues
-- Go to definition support
-- Find all references
-- Rename refactoring
+### Added
+- **Code Snippets**: 11 built-in code snippets for common Settex patterns
+  - `settings` - Settings block
+  - `env` - Environment overlay
+  - `let` - Variable declaration
+  - `for` - For loop in array
+  - `include` - Include file
+  - `interp` - String interpolation
+  - `tag` - Tagged object
+  - `array` - Array literal
+  - `setif` - Set if missing (`:=` operator)
+  - `block` - Nested block
+  - `settex` - Complete file template
+- **Language Server Protocol (LSP) Integration**:
+  - IntelliSense with code completion
+  - Hover information for variables
+  - Real-time diagnostics and error checking
+  - Go to definition support
+  - Powered by Settex.LanguageServer
+- **Build Integration**:
+  - Manual compilation via **Tools > Compile Settex File** menu
+  - Build service for compiling `.settex` files
+  - Integration with Settex.Cli
+- **Visual Studio 2026 Support**:
+  - Compatible with Visual Studio 2022-2026 (versions 17.0-19.0)
+
+### Changed
+- Updated extension description to reflect new features
+- Enhanced documentation with usage examples for new features
+- Improved package initialization for better reliability
 
 ## [1.0.0] - 2026-02-07
 

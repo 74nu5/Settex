@@ -19,15 +19,37 @@ Visual Studio extension for the Settex configuration language, providing syntax 
 - Comment toggling (Ctrl+/ or Ctrl+K, Ctrl+C)
 - Folding regions for settings and environment blocks
 
-### Build Integration (Coming Soon)
-- Automatic compilation of `.settex` files during build
-- Error diagnostics in the Error List window
-- Quick fixes for common issues
+### Code Snippets
+- **11 built-in snippets** for common Settex patterns:
+  - `settings` - Settings block
+  - `env` - Environment overlay
+  - `let` - Variable declaration
+  - `for` - For loop in array
+  - `include` - Include file
+  - `interp` - String interpolation
+  - `tag` - Tagged object
+  - `array` - Array literal
+  - `setif` - Set if missing (`:=` operator)
+  - `block` - Nested block
+  - `settex` - Complete file template
+- Type snippet prefix and press Tab to expand
 
-### IntelliSense (Coming Soon)
-- Code completion for keywords and variables
-- Hover information for variable values
-- Signature help for function-like constructs
+### IntelliSense & Language Server
+- **Code completion** for keywords and variables
+- **Hover information** for variable values
+- **Go to definition** support
+- **Diagnostics and error checking** in real-time
+- Powered by Settex.LanguageServer (LSP)
+
+### Build Integration
+- **Manual compilation** via Tools menu:
+  - Open a `.settex` file
+  - Go to **Tools > Compile Settex File**
+  - Generates `appsettings*.json` files
+- **Automatic build integration** (via MSBuild task)
+  - Add `<PackageReference Include="Settex.Build" />` to your project
+  - `.settex` files compile automatically during build
+- **Error diagnostics** shown in Error List window
 
 ## Installation
 
@@ -44,10 +66,33 @@ Visual Studio extension for the Settex configuration language, providing syntax 
 
 ## Usage
 
+### Basic Editing
 1. Create or open a `.settex` file in your project
-2. The extension automatically provides syntax highlighting
-3. Use standard Visual Studio editor features (IntelliSense, bracket matching, etc.)
-4. Build your project to compile `.settex` files to `appsettings.json`
+2. The extension automatically provides:
+   - Syntax highlighting
+   - IntelliSense (code completion)
+   - Bracket matching
+3. Use code snippets (type prefix + Tab):
+   - Type `settings` + Tab for a settings block
+   - Type `env` + Tab for an environment overlay
+   - Type `let` + Tab for a variable declaration
+
+### Compiling Settex Files
+
+#### Manual Compilation
+1. Open a `.settex` file
+2. Go to **Tools > Compile Settex File**
+3. Generated `appsettings*.json` files appear in the same directory
+
+#### Automatic Build Integration
+Add to your `.csproj`:
+```xml
+<ItemGroup>
+  <PackageReference Include="Settex.Build" Version="2.0.0" />
+</ItemGroup>
+```
+
+Then build your project - `.settex` files compile automatically!
 
 ## Example
 
@@ -81,8 +126,10 @@ env Production {
 
 ## Requirements
 
-- Visual Studio 2022 (version 17.0) or later
-- .NET Framework 4.7.2 or later
+- Visual Studio 2022 (version 17.0) or later, **including Visual Studio 2026**
+- .NET Framework 4.7.2 or later (for the extension itself)
+- Optional: Settex.LanguageServer for IntelliSense (auto-detected if available)
+- Optional: Settex.Build for automatic compilation during build
 
 ## Supported Visual Studio Editions
 
@@ -92,8 +139,9 @@ env Production {
 
 ## Known Issues
 
-- Language server integration is in progress
-- Some IntelliSense features are not yet available
+- Language server features require Settex.LanguageServer to be available
+- Build integration requires Settex.Cli to be available or Settex.Build package installed
+- Some advanced IntelliSense features are still in development
 
 ## Contributing
 
@@ -111,6 +159,14 @@ This extension is licensed under the MIT License - see the [LICENSE](https://git
 - [Report Issues](https://github.com/74nu5/Settex/issues)
 
 ## Changelog
+
+### 1.1.0 (Latest)
+
+- ✨ **Code Snippets**: 11 built-in snippets for common patterns
+- ✨ **Language Server Integration**: IntelliSense with code completion, hover, and diagnostics
+- ✨ **Build Integration**: Manual compilation via Tools menu
+- ✨ Visual Studio 2026 support
+- 📝 Updated documentation and testing guides
 
 ### 1.0.0 (Initial Release)
 
