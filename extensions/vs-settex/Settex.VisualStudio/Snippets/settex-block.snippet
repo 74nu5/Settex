@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Nested Block</Title>
+      <Shortcut>block</Shortcut>
+      <Description>Create a nested block</Description>
+      <Author>Settex</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>name</ID>
+          <ToolTip>Block name</ToolTip>
+          <Default>BlockName</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="settex">
+        <![CDATA[$name$ {
+	$end$
+}]]>
+      </Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

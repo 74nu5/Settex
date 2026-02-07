@@ -43,4 +43,12 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Snippets\*.snippet">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </None>
+  </ItemGroup>
+
 </Project>
