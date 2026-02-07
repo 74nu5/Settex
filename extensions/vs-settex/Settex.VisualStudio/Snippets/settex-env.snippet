@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Settex Environment</Title>
+      <Shortcut>env</Shortcut>
+      <Description>Create an environment overlay</Description>
+      <Author>Settex</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>environment</ID>
+          <ToolTip>Environment name (e.g., Development, Production)</ToolTip>
+          <Default>Development</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="settex">
+        <![CDATA[env $environment$ {
+	$end$
+}]]>
+      </Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

@@ -26,3 +26,15 @@
 @="Settex Editor"
 "DisplayName"="Settex Configuration Editor"
 "Package"="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
+
+// Code snippets for Settex language
+[$RootKey$\Languages\CodeExpansions\settex\Paths]
+"Path1"="$PackageFolder$\Snippets"
+
+[$RootKey$\Languages\CodeExpansions\settex]
+"DisplayName"="Settex"
+@="settex"
+"IndexPath"="$PackageFolder$\Snippets"
+"LangStringId"="settex"
+"Package"="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
+"ShowRoots"=dword:00000001
