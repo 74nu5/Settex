@@ -16,6 +16,13 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" PrivateAssets="all" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" />
     <PackageReference Include="StreamJsonRpc" />
+    <PackageReference Include="EnvDTE" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <VSCTCompile Include="SettexCommands.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
   </ItemGroup>
 
   <ItemGroup>

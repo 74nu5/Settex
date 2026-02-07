@@ -24,5 +24,6 @@
     <PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="17.12.2214" />
     <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.12.40459" />
     <PackageVersion Include="StreamJsonRpc" Version="2.19.27" />
+    <PackageVersion Include="EnvDTE" Version="17.12.40459" />
   </ItemGroup>
 </Project>
