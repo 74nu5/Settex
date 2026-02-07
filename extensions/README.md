@@ -72,13 +72,16 @@ Both extensions share the following components:
    - Defines syntax highlighting rules
    - Supports all Settex V2 features
    - Maintained in `vscode-settex/syntaxes/`
-   - Copied to VS extension during build
+   - Manually copied to VS extension at `vs-settex/Settex.VisualStudio/Grammars/`
+   - **Important**: Keep both copies in sync when updating the grammar
 
 2. **Language Configuration**
    - Bracket pairs and auto-closing
    - Comment styles (`#` and `//`)
    - Indentation rules
    - Maintained in `vscode-settex/language-configuration.json`
+   - Manually copied to VS extension at `vs-settex/Settex.VisualStudio/Grammars/settex-language-configuration.json`
+   - **Important**: Keep both copies in sync when updating the configuration
 
 ## Development
 

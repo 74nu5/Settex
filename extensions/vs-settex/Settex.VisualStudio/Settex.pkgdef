@@ -10,6 +10,13 @@
 [$RootKey$\TextMate\Repositories]
 "Settex"="$PackageFolder$\Grammars\settex.tmLanguage.json"
 
+// Map .settex files to TextMate grammar
+[$RootKey$\TextMate\Languages\Settex]
+"FileExtensions"=".settex"
+"Grammar"="Settex"
+"ScopeName"="source.settex"
+"LanguageConfiguration"="$PackageFolder$\Grammars\settex-language-configuration.json"
+
 // Language configuration
 [$RootKey$\Languages\Language Services\Settex\EditorFactory]
 @="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}"
