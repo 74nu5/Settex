@@ -272,3 +272,90 @@ If you find issues:
 ---
 
 **Happy Testing!** 🚀
+
+---
+
+## Testing New Features (v1.1.0)
+
+### Code Snippets Testing
+
+1. **Open a .settex file** in the experimental instance
+2. **Test each snippet**:
+   - Type `settings` + Tab → Should expand to settings block
+   - Type `env` + Tab → Should expand to environment overlay with parameter
+   - Type `let` + Tab → Should expand to variable declaration
+   - Type `for` + Tab → Should expand to for loop
+   - Type `include` + Tab → Should expand to include statement
+   - Type `interp` + Tab → Should expand to string interpolation
+   - Type `tag` + Tab → Should expand to tagged object
+   - Type `array` + Tab → Should expand to array
+   - Type `setif` + Tab → Should expand to set-if-missing operator
+   - Type `block` + Tab → Should expand to nested block
+   - Type `settex` + Tab → Should expand to complete file template
+
+3. **Verify Tab Order**:
+   - After expanding, press Tab to move between placeholders
+   - Placeholders should be highlighted and editable
+
+### Language Server Testing
+
+**Prerequisites**: Ensure Settex.LanguageServer is built and accessible
+
+1. **Open a .settex file**
+2. **Test Code Completion**:
+   - Type `let ` → IntelliSense should appear
+   - Type `env ` → Should suggest environment names
+   - Inside `settings {}`, type to see completions
+
+3. **Test Hover Information**:
+   - Declare a variable: `let port = 8000`
+   - Hover over `port` later in the file
+   - Should show tooltip with value
+
+4. **Test Diagnostics**:
+   - Type invalid syntax (e.g., `let = value`)
+   - Red squiggle should appear
+   - Hover to see error message
+
+5. **Check Output Window**:
+   - Go to View > Output
+   - Select "Settex Language Server" from dropdown
+   - Should show LSP initialization messages
+
+### Build Integration Testing
+
+1. **Test Manual Compilation**:
+   - Open a `.settex` file (e.g., `test.settex`)
+   - Go to **Tools > Compile Settex File**
+   - Should show success message
+   - Check directory for `appsettings.json`, `appsettings.Development.json`, etc.
+
+2. **Test Error Handling**:
+   - Create invalid syntax in .settex file
+   - Try to compile
+   - Should show error message dialog
+
+3. **Verify Generated Files**:
+   - Open generated `appsettings.json`
+   - Verify content matches expected output
+   - Check environment-specific files
+
+### Visual Studio 2026 Compatibility
+
+If testing on Visual Studio 2026:
+1. Verify extension installs successfully
+2. Verify all features work as expected
+3. Check for any warnings or errors in Output window
+
+### Regression Testing
+
+Ensure original features still work:
+- ✅ Syntax highlighting
+- ✅ Bracket matching
+- ✅ Auto-indentation
+- ✅ Comment toggling
+- ✅ File extension association
+
+---
+
+**v1.1.0 Testing Complete!** 🎉
