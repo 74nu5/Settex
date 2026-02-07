@@ -8,14 +8,14 @@ This directory contains editor extensions for Settex, providing IDE support for 
 
 **Location**: `vscode-settex/`
 
-A fully-featured VS Code extension with syntax highlighting, language server integration, and IntelliSense support.
+A VS Code extension providing syntax highlighting and basic editor support for Settex. Language server integration and advanced IntelliSense features are under active development.
 
 **Features**:
 - ✅ Syntax highlighting
-- ✅ Language server integration
-- ✅ Code completion
-- ✅ Diagnostics and error checking
-- ✅ Hover information
+- 🔄 Language server integration (planned)
+- 🔄 Code completion / IntelliSense (planned)
+- 🔄 Diagnostics and error checking (planned)
+- 🔄 Hover information (planned)
 - ✅ Code snippets
 
 **Installation**:
