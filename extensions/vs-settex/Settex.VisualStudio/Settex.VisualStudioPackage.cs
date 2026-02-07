@@ -13,6 +13,8 @@ using Task = System.Threading.Tasks.Task;
 /// </summary>
 [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 [Guid(PackageGuidString)]
+[ProvideLanguageService(typeof(SettexLanguageClient), "Settex", 0, ShowHotURLs = false, DefaultToNonHotURLs = true, EnableCommenting = true, MatchBraces = true, ShowMatchingBrace = true)]
+[ProvideLanguageExtension(typeof(SettexLanguageClient), ".settex")]
 public sealed class SettexVisualStudioPackage : AsyncPackage
 {
     /// <summary>
@@ -33,8 +35,8 @@ public sealed class SettexVisualStudioPackage : AsyncPackage
         // When initialized asynchronously, switch to the main thread before accessing VS services
         await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-        // No additional initialization required for TextMate-based language support.
-        // Language registration and syntax highlighting are configured via Settex.pkgdef
-        // and the TextMate grammar file in Grammars/settex.tmLanguage.json.
+        // Language client will be automatically initialized via MEF (SettexLanguageClient.cs)
+        // TextMate grammar and syntax highlighting are configured via Settex.pkgdef
+        // Code snippets are registered via pkgdef and located in the Snippets folder
     }
 }
