@@ -18,7 +18,6 @@ Before you begin, ensure you have:
 ```powershell
 git clone https://github.com/74nu5/Settex.git
 cd Settex
-git checkout copilot/create-vs-extension-settex
 ```
 
 ### Step 2: Open in Visual Studio
