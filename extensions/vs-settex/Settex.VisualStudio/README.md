@@ -49,7 +49,7 @@ Visual Studio extension for the Settex configuration language, providing syntax 
 - **Automatic build integration** (via MSBuild task)
   - Add `<PackageReference Include="Settex.Build" />` to your project
   - `.settex` files compile automatically during build
-- **Error diagnostics** shown in Error List window
+- **Build errors** from these commands are reported via Visual Studio message boxes (real-time diagnostics come from the Settex language server, not the MSBuild task)
 
 ## Installation
 
