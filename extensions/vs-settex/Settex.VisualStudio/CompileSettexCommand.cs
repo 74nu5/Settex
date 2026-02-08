@@ -7,6 +7,7 @@ using System.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 
 using Task = System.Threading.Tasks.Task;
 
@@ -39,12 +40,14 @@ internal sealed class CompileSettexCommand
         this.package = package ?? throw new ArgumentNullException(nameof(package));
         this.buildService = buildService ?? throw new ArgumentNullException(nameof(buildService));
 
-        if (commandService != null)
+        if (commandService == null)
         {
-            var menuCommandID = new CommandID(CommandSet, CommandId);
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
-            commandService.AddCommand(menuItem);
+            throw new ArgumentNullException(nameof(commandService));
         }
+
+        var menuCommandID = new CommandID(CommandSet, CommandId);
+        var menuItem = new MenuCommand(this.Execute, menuCommandID);
+        commandService.AddCommand(menuItem);
     }
 
     /// <summary>
@@ -62,6 +65,11 @@ internal sealed class CompileSettexCommand
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(package.DisposalToken);
 
         var commandService = await package.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
+        if (commandService == null)
+        {
+            throw new InvalidOperationException("Failed to get OleMenuCommandService");
+        }
+
         var buildService = new SettexBuildService(package);
 
         Instance = new CompileSettexCommand(package, commandService, buildService);
