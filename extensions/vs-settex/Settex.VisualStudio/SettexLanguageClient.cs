@@ -41,7 +41,7 @@ public class SettexLanguageClient : ILanguageClient
     public IEnumerable<string> FilesToWatch => Array.Empty<string>();
 
     /// <summary>
-    /// Event raised when the language server has stopped.
+    /// Event raised when the language server is starting.
     /// </summary>
     public event AsyncEventHandler<EventArgs> StartAsync;
 
