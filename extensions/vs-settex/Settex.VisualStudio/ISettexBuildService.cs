@@ -13,8 +13,9 @@ internal interface ISettexBuildService
     /// </summary>
     /// <param name="settexFilePath">Path to the .settex file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="showDialogs">Whether to show error/warning dialogs.</param>
     /// <returns>True if compilation succeeded, false otherwise.</returns>
-    Task<bool> CompileSettexFileAsync(string settexFilePath, CancellationToken cancellationToken);
+    Task<bool> CompileSettexFileAsync(string settexFilePath, CancellationToken cancellationToken, bool showDialogs = true);
 
     /// <summary>
     /// Compiles all Settex files in a project.

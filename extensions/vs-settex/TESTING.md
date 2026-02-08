@@ -135,6 +135,57 @@ Check that the following are highlighted correctly:
   - Type `settings {` and press Enter
   - Next line should be indented automatically
 
+### 5. Test Auto-Compile on Save (v1.2.0+)
+
+1. **Verify Output Pane**:
+   - Go to **View > Output** (Ctrl+Alt+O)
+   - Select "Settex" from the dropdown
+   - You should see the Settex output pane
+
+2. **Test Auto-Compile**:
+   - Create or open a `.settex` file
+   - Make a change and save (Ctrl+S)
+   - Check the "Settex" output pane - you should see:
+     ```
+     [Settex] Compiling test.settex...
+     [Settex] Successfully compiled test.settex
+     ```
+   - Verify `appsettings.json` files are generated in the same directory
+
+3. **Test Options Page**:
+   - Go to **Tools > Options > Settex > General**
+   - Verify you see these options:
+     - Compile on Save (checked by default)
+     - Show Success Notifications (unchecked by default)
+     - Show Error Notifications (checked by default)
+     - Log to Output Window (checked by default)
+
+4. **Test Disabling Auto-Compile**:
+   - Uncheck "Compile on Save" in options
+   - Click OK
+   - Edit and save a `.settex` file
+   - Verify NO compilation occurs (no output messages)
+
+5. **Test Notifications**:
+   - Enable "Show Success Notifications" in options
+   - Save a `.settex` file
+   - Verify you get a success message box
+
+6. **Test Error Handling**:
+   - Create invalid syntax in a `.settex` file (e.g., `settings {` without closing `}`)
+   - Save the file
+   - Check output pane for error message
+   - Verify error notification appears (if enabled)
+
+### 6. Test Manual Compilation
+
+1. **Open a .settex file**
+2. **Go to Tools > Compile Settex File**
+3. **Verify**:
+   - Success message box appears
+   - `appsettings*.json` files are generated
+   - No error dialogs (unless there's an actual error)
+
 ## Installing Built Extension
 
 ### 1. Build the Extension

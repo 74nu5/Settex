@@ -39,8 +39,9 @@ A Visual Studio extension providing syntax highlighting and editor support for V
 - ✅ Comment toggling
 - ✅ Code snippets (11 built-in snippets)
 - ✅ Language Server integration (IntelliSense)
-- ✅ Build integration (manual compilation)
-- 🔄 Automatic build integration (planned)
+- ✅ Build integration (manual + automatic on save)
+- ✅ Options page for configuration
+- 🔄 MSBuild integration (via Settex.Build package)
 
 **Installation**:
 - From Visual Studio Marketplace: Search for "Settex"
@@ -61,9 +62,11 @@ A Visual Studio extension providing syntax highlighting and editor support for V
 | Code Completion | ✅ | ✅ |
 | Diagnostics | ✅ | ✅ |
 | Code Snippets | ✅ | ✅ |
-| Build Integration | ✅ | ✅ (Manual) |
+| Build Integration | ✅ | ✅ (Manual + Auto) |
+| Auto-Compile on Save | ❌ | ✅ |
+| Options/Settings | ❌ | ✅ |
 | Platforms | All | Windows only |
-| Status | Stable | Latest (v1.1.0) |
+| Status | Stable | Latest (v1.2.0) |
 
 Legend: ✅ = Available, 🔄 = Planned, ❌ = Not supported
 

@@ -33,8 +33,9 @@ internal class SettexBuildService : ISettexBuildService
     /// </summary>
     /// <param name="settexFilePath">Path to the .settex file.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <param name="showDialogs">Whether to show error/warning dialogs.</param>
     /// <returns>True if compilation succeeded, false otherwise.</returns>
-    public async Task<bool> CompileSettexFileAsync(string settexFilePath, CancellationToken cancellationToken)
+    public async Task<bool> CompileSettexFileAsync(string settexFilePath, CancellationToken cancellationToken, bool showDialogs = true)
     {
         if (string.IsNullOrEmpty(settexFilePath) || !File.Exists(settexFilePath))
         {
@@ -51,8 +52,11 @@ internal class SettexBuildService : ISettexBuildService
             if (string.IsNullOrEmpty(cliPath))
             {
                 Debug.WriteLine("Settex.Cli not found. Cannot compile .settex files.");
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.ShowWarning("Settex compiler not found. Please ensure Settex.Cli is installed.");
+                if (showDialogs)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    this.ShowWarning("Settex compiler not found. Please ensure Settex.Cli is installed.");
+                }
                 return false;
             }
 
@@ -87,8 +91,11 @@ internal class SettexBuildService : ISettexBuildService
                 if (process.ExitCode != 0)
                 {
                     Debug.WriteLine($"Settex compilation failed: {error}");
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    this.ShowError($"Settex compilation failed:\n{error}");
+                    if (showDialogs)
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        this.ShowError($"Settex compilation failed:\n{error}");
+                    }
                     return false;
                 }
 
@@ -99,8 +106,11 @@ internal class SettexBuildService : ISettexBuildService
         catch (Exception ex)
         {
             Debug.WriteLine($"Error compiling Settex file: {ex.Message}");
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.ShowError($"Error compiling Settex file: {ex.Message}");
+            if (showDialogs)
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.ShowError($"Error compiling Settex file: {ex.Message}");
+            }
             return false;
         }
     }

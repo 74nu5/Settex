@@ -5,6 +5,28 @@ All notable changes to the Settex Visual Studio extension will be documented in 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-08
+
+### Added
+- **Automatic Build Integration**: Automatically compile .settex files when saved
+  - New Options page: **Tools > Options > Settex > General**
+  - Toggle "Compile on Save" (enabled by default)
+  - Configure success/error notifications
+  - Log compilation output to dedicated "Settex" output pane
+- **Settings/Options Page**:
+  - Compile on Save: Enable/disable auto-compile (default: enabled)
+  - Show Success Notifications: Display message box on successful compilation (default: disabled)
+  - Show Error Notifications: Display message box on compilation errors (default: enabled)
+  - Log to Output Window: Write compilation messages to Output pane (default: enabled)
+- **Output Window Integration**:
+  - Dedicated "Settex" output pane for compilation messages
+  - Real-time compilation status and error messages
+
+### Changed
+- Manual compilation (Tools > Compile Settex File) now shows error dialogs
+- Auto-compile on save only logs to Output window (no dialogs unless configured)
+- Enhanced build service to support both interactive and automatic compilation modes
+
 ## [1.1.0] - 2026-02-07
 
 ### Added

@@ -42,6 +42,10 @@ Visual Studio extension for the Settex configuration language, providing syntax 
 - Powered by Settex.LanguageServer (LSP)
 
 ### Build Integration
+- **Automatic compilation** when you save .settex files:
+  - Enabled by default
+  - Configure in **Tools > Options > Settex > General**
+  - View compilation status in the "Settex" output pane
 - **Manual compilation** via Tools menu:
   - Open a `.settex` file
   - Go to **Tools > Compile Settex File**
@@ -77,7 +81,22 @@ Visual Studio extension for the Settex configuration language, providing syntax 
    - Type `env` + Tab for an environment overlay
    - Type `let` + Tab for a variable declaration
 
+### Automatic Compilation
+1. By default, `.settex` files are automatically compiled when saved
+2. View compilation output in **View > Output** (select "Settex" from dropdown)
+3. Configure auto-compile in **Tools > Options > Settex > General**:
+   - **Compile on Save**: Enable/disable automatic compilation
+   - **Show Success Notifications**: Display message box on success
+   - **Show Error Notifications**: Display message box on errors
+   - **Log to Output Window**: Write messages to Output pane
+
 ### Compiling Settex Files
+
+#### Automatic (On Save)
+1. Open and edit a `.settex` file
+2. Press Ctrl+S to save
+3. File compiles automatically (if enabled in options)
+4. Check the "Settex" output pane for status
 
 #### Manual Compilation
 1. Open a `.settex` file
@@ -142,6 +161,7 @@ env Production {
 - Language server features require Settex.LanguageServer to be available
 - Build integration requires Settex.Cli to be available or Settex.Build package installed
 - Some advanced IntelliSense features are still in development
+- Auto-compile on save requires Visual Studio to have write access to the output directory
 
 ## Contributing
 
@@ -160,7 +180,14 @@ This extension is licensed under the MIT License - see the [LICENSE](https://git
 
 ## Changelog
 
-### 1.1.0 (Latest)
+### 1.2.0 (Latest)
+
+- ✨ **Automatic Build Integration**: Auto-compile on save
+- ✨ **Options Page**: Configure compilation behavior in Tools > Options > Settex
+- ✨ **Output Window Integration**: Dedicated "Settex" output pane for messages
+- 📝 Enhanced documentation with auto-compile instructions
+
+### 1.1.0
 
 - ✨ **Code Snippets**: 11 built-in snippets for common patterns
 - ✨ **Language Server Integration**: IntelliSense with code completion, hover, and diagnostics
