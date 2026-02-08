@@ -33,7 +33,7 @@ public class SettexLanguageClient : ILanguageClient
     /// <summary>
     /// Gets additional initialization options.
     /// </summary>
-    public object InitializationOptions => null;
+    public object InitializationOptions => null!;
 
     /// <summary>
     /// Gets the list of file names to monitor.
