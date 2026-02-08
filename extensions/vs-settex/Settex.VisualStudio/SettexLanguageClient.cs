@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,7 +29,7 @@ public class SettexLanguageClient : ILanguageClient
     /// <summary>
     /// Gets the configuration of the language client.
     /// </summary>
-    public IEnumerable<string> ConfigurationSections => null;
+    public IEnumerable<string> ConfigurationSections => Array.Empty<string>();
 
     /// <summary>
     /// Gets additional initialization options.
@@ -62,11 +63,11 @@ public class SettexLanguageClient : ILanguageClient
         // Find the Settex.LanguageServer executable
         var serverPath = this.GetLanguageServerPath();
 
-        if (serverPath == null || !File.Exists(serverPath))
+        if (string.IsNullOrEmpty(serverPath))
         {
             // Language server not found - return null to disable LSP features
             Debug.WriteLine("Settex Language Server not found. IntelliSense features will be disabled.");
-            return null;
+            return null!;
         }
 
         var processStartInfo = new ProcessStartInfo
@@ -84,7 +85,7 @@ public class SettexLanguageClient : ILanguageClient
 
         if (process == null)
         {
-            return null;
+            return null!;
         }
 
         return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
@@ -127,7 +128,7 @@ public class SettexLanguageClient : ILanguageClient
     /// Attempts to find the Settex.LanguageServer executable.
     /// Searches in common locations relative to the extension.
     /// </summary>
-    /// <returns>Path to the language server DLL, or null if not found.</returns>
+    /// <returns>Path to the language server DLL, or empty string if not found.</returns>
     private string GetLanguageServerPath()
     {
         // Try to find the language server in several locations
@@ -152,24 +153,24 @@ public class SettexLanguageClient : ILanguageClient
             }
         }
 
-        return null;
+        return string.Empty;
     }
 
     /// <summary>
     /// Searches for a file in the system PATH.
     /// </summary>
     /// <param name="fileName">File name to search for.</param>
-    /// <returns>Full path if found, or null.</returns>
+    /// <returns>Full path if found, or empty string.</returns>
     private string FindInPath(string fileName)
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH");
         if (string.IsNullOrEmpty(pathEnv))
         {
-            return null;
+            return string.Empty;
         }
 
         var paths = pathEnv.Split(Path.PathSeparator);
-        foreach (var path in paths)
+        foreach (var path in paths.Where(p => !string.IsNullOrWhiteSpace(p)))
         {
             try
             {
@@ -185,6 +186,6 @@ public class SettexLanguageClient : ILanguageClient
             }
         }
 
-        return null;
+        return string.Empty;
     }
 }

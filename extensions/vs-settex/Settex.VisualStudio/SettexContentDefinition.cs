@@ -16,7 +16,7 @@ internal static class SettexContentDefinition
     [Export]
     [Name("settex")]
     [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteContentTypeName)]
-    internal static ContentTypeDefinition SettexContentTypeDefinition;
+    internal static ContentTypeDefinition SettexContentTypeDefinition = null!;
 
     /// <summary>
     /// File extension to content type mapping for .settex files.
@@ -24,5 +24,5 @@ internal static class SettexContentDefinition
     [Export]
     [FileExtension(".settex")]
     [ContentType("settex")]
-    internal static FileExtensionToContentTypeDefinition SettexFileExtensionDefinition;
+    internal static FileExtensionToContentTypeDefinition SettexFileExtensionDefinition = null!;
 }
