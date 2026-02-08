@@ -3,6 +3,7 @@ namespace Settex.VisualStudio;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,9 +48,10 @@ internal class SettexBuildService : ISettexBuildService
             // Find the Settex.Cli tool
             var cliPath = this.FindSettexCli();
 
-            if (cliPath == null)
+            if (string.IsNullOrEmpty(cliPath))
             {
                 Debug.WriteLine("Settex.Cli not found. Cannot compile .settex files.");
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ShowWarning("Settex compiler not found. Please ensure Settex.Cli is installed.");
                 return false;
             }
@@ -79,11 +81,13 @@ internal class SettexBuildService : ISettexBuildService
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
-                await process.WaitForExitAsync(cancellationToken);
+                // WaitForExitAsync is not available on net472, use synchronous wait with Task.Run
+                await Task.Run(() => process.WaitForExit(), cancellationToken);
 
                 if (process.ExitCode != 0)
                 {
                     Debug.WriteLine($"Settex compilation failed: {error}");
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     this.ShowError($"Settex compilation failed:\n{error}");
                     return false;
                 }
@@ -95,6 +99,7 @@ internal class SettexBuildService : ISettexBuildService
         catch (Exception ex)
         {
             Debug.WriteLine($"Error compiling Settex file: {ex.Message}");
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.ShowError($"Error compiling Settex file: {ex.Message}");
             return false;
         }
@@ -139,7 +144,7 @@ internal class SettexBuildService : ISettexBuildService
     /// <summary>
     /// Attempts to find the Settex.Cli executable.
     /// </summary>
-    /// <returns>Path to the CLI DLL, or null if not found.</returns>
+    /// <returns>Path to the CLI DLL, or empty string if not found.</returns>
     private string FindSettexCli()
     {
         var searchPaths = new[]
@@ -159,24 +164,24 @@ internal class SettexBuildService : ISettexBuildService
             }
         }
 
-        return null;
+        return string.Empty;
     }
 
     /// <summary>
     /// Searches for a file in the system PATH.
     /// </summary>
     /// <param name="fileName">File name to search for.</param>
-    /// <returns>Full path if found, or null.</returns>
+    /// <returns>Full path if found, or empty string.</returns>
     private string FindInPath(string fileName)
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH");
         if (string.IsNullOrEmpty(pathEnv))
         {
-            return null;
+            return string.Empty;
         }
 
         var paths = pathEnv.Split(Path.PathSeparator);
-        foreach (var path in paths)
+        foreach (var path in paths.Where(p => !string.IsNullOrWhiteSpace(p)))
         {
             try
             {
@@ -192,7 +197,7 @@ internal class SettexBuildService : ISettexBuildService
             }
         }
 
-        return null;
+        return string.Empty;
     }
 
     /// <summary>
