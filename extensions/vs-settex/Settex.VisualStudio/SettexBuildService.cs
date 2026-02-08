@@ -54,8 +54,8 @@ internal class SettexBuildService : ISettexBuildService
                 return false;
             }
 
-            // Get the directory of the settex file
-            var directory = Path.GetDirectoryName(settexFilePath);
+            // Get the directory of the settex file; fall back to current directory if none
+            var directory = Path.GetDirectoryName(settexFilePath) ?? Directory.GetCurrentDirectory();
 
             // Run the Settex compiler
             var processStartInfo = new ProcessStartInfo
