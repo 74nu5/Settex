@@ -38,7 +38,7 @@ public class SettexLanguageClient : ILanguageClient
     /// <summary>
     /// Gets the list of file names to monitor.
     /// </summary>
-    public IEnumerable<string> FilesToWatch => null;
+    public IEnumerable<string> FilesToWatch => Array.Empty<string>();
 
     /// <summary>
     /// Event raised when the language server has stopped.
