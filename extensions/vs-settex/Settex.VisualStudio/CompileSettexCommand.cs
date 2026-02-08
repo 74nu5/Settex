@@ -50,7 +50,7 @@ internal sealed class CompileSettexCommand
     /// <summary>
     /// Gets the instance of the command.
     /// </summary>
-    public static CompileSettexCommand Instance { get; private set; }
+    public static CompileSettexCommand Instance { get; private set; } = null!;
 
     /// <summary>
     /// Initializes the singleton instance of the command.
