@@ -1,7 +1,7 @@
 namespace Settex.VisualStudio;
 
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 
@@ -21,8 +21,7 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
     private readonly ISettexBuildService buildService;
     private readonly IVsOutputWindowPane outputPane;
     private RunningDocumentTable runningDocumentTable = null!;
-    private readonly Dictionary<string, CancellationTokenSource> activeCompilations = new Dictionary<string, CancellationTokenSource>();
-    private readonly object compilationLock = new object();
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> activeCompilations = new ConcurrentDictionary<string, CancellationTokenSource>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SettexDocumentEventHandler"/> class.
@@ -63,14 +62,13 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         }
 
         // Cancel and dispose all active compilations
-        lock (this.compilationLock)
+        foreach (var kvp in this.activeCompilations)
         {
-            foreach (var cts in this.activeCompilations.Values)
+            kvp.Value.Cancel();
+            if (this.activeCompilations.TryRemove(kvp))
             {
-                cts.Cancel();
-                cts.Dispose();
+                kvp.Value.Dispose();
             }
-            this.activeCompilations.Clear();
         }
     }
 
@@ -114,19 +112,16 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         }
 
         // Cancel any in-flight compilation for this file and start a new one
-        CancellationTokenSource newCts;
-        lock (this.compilationLock)
-        {
-            if (this.activeCompilations.TryGetValue(filePath, out var existingCts))
+        var newCts = new CancellationTokenSource();
+        var oldCts = this.activeCompilations.AddOrUpdate(
+            filePath,
+            newCts,
+            (key, existingCts) =>
             {
                 existingCts.Cancel();
-                existingCts.Dispose();
-            }
-
-            // Create new cancellation token source for this compilation
-            newCts = new CancellationTokenSource();
-            this.activeCompilations[filePath] = newCts;
-        }
+                // Don't dispose here - let the finally block in the async task handle it
+                return newCts;
+            });
 
         // Compile the file asynchronously
         ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -137,15 +132,10 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             }
             finally
             {
-                // Clean up the cancellation token source
-                lock (this.compilationLock)
+                // Clean up the cancellation token source only if this is still the active compilation
+                if (this.activeCompilations.TryRemove(new KeyValuePair<string, CancellationTokenSource>(filePath, newCts)))
                 {
-                    // Only remove if this is still the active compilation for this file
-                    if (this.activeCompilations.TryGetValue(filePath, out var cts) && ReferenceEquals(cts, newCts))
-                    {
-                        this.activeCompilations.Remove(filePath);
-                        cts.Dispose();
-                    }
+                    newCts.Dispose();
                 }
             }
         }).FileAndForget("settex/auto-compile");
@@ -184,12 +174,6 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
     {
         try
         {
-            // Check for cancellation before starting
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-
             var fileName = Path.GetFileName(filePath);
 
             if (logToOutputWindow)
@@ -199,17 +183,6 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             }
 
             var result = await this.buildService.CompileSettexFileAsync(filePath, cancellationToken, showDialogs: false);
-
-            // Check for cancellation after compilation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                if (logToOutputWindow)
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    this.outputPane.OutputString($"[Settex] Compilation of {fileName} was cancelled\n");
-                }
-                return;
-            }
 
             if (result)
             {
