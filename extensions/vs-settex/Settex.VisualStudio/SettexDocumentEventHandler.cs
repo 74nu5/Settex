@@ -17,6 +17,12 @@ using Task = System.Threading.Tasks.Task;
 /// </summary>
 internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
 {
+    /// <summary>
+    /// Delay in milliseconds before disposing a cancelled CancellationTokenSource.
+    /// This ensures the finally block of the cancelled task has time to complete.
+    /// </summary>
+    private const int CancellationTokenDisposalDelayMs = 100;
+
     private readonly AsyncPackage package;
     private readonly ISettexBuildService buildService;
     private readonly IVsOutputWindowPane outputPane;
@@ -126,8 +132,15 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
                 // This prevents resource leaks when a compilation is replaced mid-flight
                 System.Threading.Tasks.Task.Run(async () =>
                 {
-                    await System.Threading.Tasks.Task.Delay(100);
-                    existingCts.Dispose();
+                    try
+                    {
+                        await System.Threading.Tasks.Task.Delay(CancellationTokenDisposalDelayMs);
+                        existingCts.Dispose();
+                    }
+                    catch
+                    {
+                        // Ignore disposal errors - token may have already been disposed
+                    }
                 });
                 
                 return newCts;
@@ -143,11 +156,14 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             finally
             {
                 // Clean up the cancellation token source only if this is still the active compilation
-                // If a new compilation started before this finally block, TryRemove will fail because
-                // the dictionary contains the newer CTS, correctly preventing disposal of the wrong token
-                if (this.activeCompilations.TryRemove(new KeyValuePair<string, CancellationTokenSource>(filePath, newCts)))
+                // If a new compilation started before this finally block, we don't want to remove the newer CTS
+                if (this.activeCompilations.TryGetValue(filePath, out var currentCts) && ReferenceEquals(currentCts, newCts))
                 {
-                    newCts.Dispose();
+                    // Only remove and dispose if this is still the active compilation
+                    if (this.activeCompilations.TryRemove(filePath, out _))
+                    {
+                        newCts.Dispose();
+                    }
                 }
             }
         }).FileAndForget("settex/auto-compile");
