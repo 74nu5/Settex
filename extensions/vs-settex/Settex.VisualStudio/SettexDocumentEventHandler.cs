@@ -69,15 +69,14 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         }
 
         // Cancel and dispose all active compilations
-        // Create a snapshot to avoid InvalidOperationException during enumeration
-        var compilationsToCancel = this.activeCompilations.ToList();
-        foreach (var kvp in compilationsToCancel)
+        // Create a snapshot of keys to avoid InvalidOperationException during enumeration
+        var filePaths = this.activeCompilations.Keys.ToList();
+        foreach (var filePath in filePaths)
         {
-            kvp.Value.Cancel();
-            // Unconditionally remove all entries during cleanup
-            if (this.activeCompilations.TryRemove(kvp.Key, out var removedCts))
+            if (this.activeCompilations.TryRemove(filePath, out var cts))
             {
-                removedCts.Dispose();
+                cts.Cancel();
+                cts.Dispose();
             }
         }
     }
@@ -159,14 +158,10 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             finally
             {
                 // Clean up the cancellation token source only if this is still the active compilation
-                // If a new compilation started before this finally block, we don't want to remove the newer CTS
-                if (this.activeCompilations.TryGetValue(filePath, out var currentCts) && ReferenceEquals(currentCts, newCts))
+                // Use TryRemove to atomically remove and get the value, preventing race conditions
+                if (this.activeCompilations.TryRemove(filePath, out var removedCts) && ReferenceEquals(removedCts, newCts))
                 {
-                    // Only remove and dispose if this is still the active compilation
-                    if (this.activeCompilations.TryRemove(filePath, out _))
-                    {
-                        newCts.Dispose();
-                    }
+                    newCts.Dispose();
                 }
             }
         }).FileAndForget("settex/auto-compile");
