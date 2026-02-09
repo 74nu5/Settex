@@ -99,7 +99,6 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         }
 
         // Capture option values on UI thread before async work
-        var compileOnSave = optionsPage.CompileOnSave;
         var showSuccessNotifications = optionsPage.ShowSuccessNotifications;
         var showErrorNotifications = optionsPage.ShowErrorNotifications;
         var logToOutputWindow = optionsPage.LogToOutputWindow;
@@ -114,7 +113,8 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             return VSConstants.S_OK;
         }
 
-        // Cancel any in-flight compilation for this file
+        // Cancel any in-flight compilation for this file and start a new one
+        CancellationTokenSource newCts;
         lock (this.compilationLock)
         {
             if (this.activeCompilations.TryGetValue(filePath, out var existingCts))
@@ -124,32 +124,24 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             }
 
             // Create new cancellation token source for this compilation
-            var cts = new CancellationTokenSource();
-            this.activeCompilations[filePath] = cts;
+            newCts = new CancellationTokenSource();
+            this.activeCompilations[filePath] = newCts;
         }
 
         // Compile the file asynchronously
         ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
-            CancellationTokenSource currentCts;
-            lock (this.compilationLock)
-            {
-                if (!this.activeCompilations.TryGetValue(filePath, out currentCts))
-                {
-                    return; // Compilation was already cancelled
-                }
-            }
-
             try
             {
-                await this.CompileFileAsync(filePath, showSuccessNotifications, showErrorNotifications, logToOutputWindow, currentCts.Token);
+                await this.CompileFileAsync(filePath, showSuccessNotifications, showErrorNotifications, logToOutputWindow, newCts.Token);
             }
             finally
             {
                 // Clean up the cancellation token source
                 lock (this.compilationLock)
                 {
-                    if (this.activeCompilations.TryGetValue(filePath, out var cts) && cts == currentCts)
+                    // Only remove if this is still the active compilation for this file
+                    if (this.activeCompilations.TryGetValue(filePath, out var cts) && ReferenceEquals(cts, newCts))
                     {
                         this.activeCompilations.Remove(filePath);
                         cts.Dispose();
