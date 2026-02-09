@@ -65,9 +65,10 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         foreach (var kvp in this.activeCompilations)
         {
             kvp.Value.Cancel();
-            if (this.activeCompilations.TryRemove(kvp))
+            // Unconditionally remove all entries during cleanup
+            if (this.activeCompilations.TryRemove(kvp.Key, out var removedCts))
             {
-                kvp.Value.Dispose();
+                removedCts.Dispose();
             }
         }
     }
@@ -113,13 +114,22 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
 
         // Cancel any in-flight compilation for this file and start a new one
         var newCts = new CancellationTokenSource();
-        var oldCts = this.activeCompilations.AddOrUpdate(
+        this.activeCompilations.AddOrUpdate(
             filePath,
             newCts,
             (key, existingCts) =>
             {
+                // Cancel the existing compilation
                 existingCts.Cancel();
-                // Don't dispose here - let the finally block in the async task handle it
+                
+                // Schedule disposal of the old token after a delay to ensure its finally block completes
+                // This prevents resource leaks when a compilation is replaced mid-flight
+                System.Threading.Tasks.Task.Run(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(100);
+                    existingCts.Dispose();
+                });
+                
                 return newCts;
             });
 
@@ -133,6 +143,8 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             finally
             {
                 // Clean up the cancellation token source only if this is still the active compilation
+                // If a new compilation started before this finally block, TryRemove will fail because
+                // the dictionary contains the newer CTS, correctly preventing disposal of the wrong token
                 if (this.activeCompilations.TryRemove(new KeyValuePair<string, CancellationTokenSource>(filePath, newCts)))
                 {
                     newCts.Dispose();
