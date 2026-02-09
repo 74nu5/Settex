@@ -3,6 +3,7 @@ namespace Settex.VisualStudio;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 using Microsoft.VisualStudio;
@@ -68,7 +69,9 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         }
 
         // Cancel and dispose all active compilations
-        foreach (var kvp in this.activeCompilations)
+        // Create a snapshot to avoid InvalidOperationException during enumeration
+        var compilationsToCancel = this.activeCompilations.ToList();
+        foreach (var kvp in compilationsToCancel)
         {
             kvp.Value.Cancel();
             // Unconditionally remove all entries during cleanup
@@ -130,11 +133,11 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
                 
                 // Schedule disposal of the old token after a delay to ensure its finally block completes
                 // This prevents resource leaks when a compilation is replaced mid-flight
-                System.Threading.Tasks.Task.Run(async () =>
+                Task.Run(async () =>
                 {
                     try
                     {
-                        await System.Threading.Tasks.Task.Delay(CancellationTokenDisposalDelayMs);
+                        await Task.Delay(CancellationTokenDisposalDelayMs);
                         existingCts.Dispose();
                     }
                     catch
