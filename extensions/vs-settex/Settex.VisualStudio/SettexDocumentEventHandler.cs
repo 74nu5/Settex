@@ -4,11 +4,10 @@ using System;
 using System.IO;
 using System.Threading;
 
-using EnvDTE;
-
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 
 using Task = System.Threading.Tasks.Task;
 
@@ -78,12 +77,18 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
     {
         ThreadHelper.ThrowIfNotOnUIThread();
 
-        // Get options
+        // Get options and capture values on UI thread to avoid cross-thread access
         var optionsPage = this.package.GetDialogPage(typeof(SettexOptionsPage)) as SettexOptionsPage;
         if (optionsPage == null || !optionsPage.CompileOnSave)
         {
             return VSConstants.S_OK;
         }
+
+        // Capture option values on UI thread before async work
+        var compileOnSave = optionsPage.CompileOnSave;
+        var showSuccessNotifications = optionsPage.ShowSuccessNotifications;
+        var showErrorNotifications = optionsPage.ShowErrorNotifications;
+        var logToOutputWindow = optionsPage.LogToOutputWindow;
 
         // Get document info
         var documentInfo = this.runningDocumentTable.GetDocumentInfo(docCookie);
@@ -98,7 +103,7 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         // Compile the file asynchronously
         ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
-            await this.CompileFileAsync(filePath, optionsPage);
+            await this.CompileFileAsync(filePath, showSuccessNotifications, showErrorNotifications, logToOutputWindow);
         }).FileAndForget("settex/auto-compile");
 
         return VSConstants.S_OK;
@@ -126,15 +131,17 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
     /// Compiles a Settex file asynchronously.
     /// </summary>
     /// <param name="filePath">Path to the .settex file.</param>
-    /// <param name="options">Extension options.</param>
+    /// <param name="showSuccessNotifications">Whether to show success notifications.</param>
+    /// <param name="showErrorNotifications">Whether to show error notifications.</param>
+    /// <param name="logToOutputWindow">Whether to log to output window.</param>
     /// <returns>Task.</returns>
-    private async Task CompileFileAsync(string filePath, SettexOptionsPage options)
+    private async Task CompileFileAsync(string filePath, bool showSuccessNotifications, bool showErrorNotifications, bool logToOutputWindow)
     {
         try
         {
             var fileName = Path.GetFileName(filePath);
 
-            if (options.LogToOutputWindow)
+            if (logToOutputWindow)
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.outputPane.OutputString($"[Settex] Compiling {fileName}...\n");
@@ -144,13 +151,13 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
 
             if (result)
             {
-                if (options.LogToOutputWindow)
+                if (logToOutputWindow)
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     this.outputPane.OutputString($"[Settex] Successfully compiled {fileName}\n");
                 }
 
-                if (options.ShowSuccessNotifications)
+                if (showSuccessNotifications)
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     VsShellUtilities.ShowMessageBox(
@@ -164,21 +171,44 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             }
             else
             {
-                if (options.LogToOutputWindow)
+                if (logToOutputWindow)
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     this.outputPane.OutputString($"[Settex] Failed to compile {fileName}\n");
                 }
 
-                // Error notification is handled by the build service
+                // Show error notification if enabled
+                if (showErrorNotifications)
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    VsShellUtilities.ShowMessageBox(
+                        this.package,
+                        $"Failed to compile {fileName}. Check the Settex output pane for details.",
+                        "Settex Auto-Compile Error",
+                        OLEMSGICON.OLEMSGICON_CRITICAL,
+                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                }
             }
         }
         catch (Exception ex)
         {
-            if (options.LogToOutputWindow)
+            if (logToOutputWindow)
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.outputPane.OutputString($"[Settex] Error: {ex.Message}\n");
+            }
+
+            if (showErrorNotifications)
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                VsShellUtilities.ShowMessageBox(
+                    this.package,
+                    $"Error compiling {Path.GetFileName(filePath)}: {ex.Message}",
+                    "Settex Auto-Compile Error",
+                    OLEMSGICON.OLEMSGICON_CRITICAL,
+                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             }
         }
     }

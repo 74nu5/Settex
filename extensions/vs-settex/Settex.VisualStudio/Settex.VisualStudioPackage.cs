@@ -14,8 +14,6 @@ using Task = System.Threading.Tasks.Task;
 /// </summary>
 [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 [Guid(PackageGuidString)]
-[ProvideLanguageService(typeof(SettexLanguageClient), "Settex", 0, ShowHotURLs = false, DefaultToNonHotURLs = true, EnableCommenting = true, MatchBraces = true, ShowMatchingBrace = true)]
-[ProvideLanguageExtension(typeof(SettexLanguageClient), ".settex")]
 [ProvideOptionPage(typeof(SettexOptionsPage), "Settex", "General", 0, 0, true)]
 public sealed class SettexVisualStudioPackage : AsyncPackage
 {
@@ -93,8 +91,22 @@ public sealed class SettexVisualStudioPackage : AsyncPackage
     {
         if (disposing)
         {
-            ThreadHelper.ThrowIfNotOnUIThread();
-            this.documentEventHandler?.Unsubscribe();
+            if (this.documentEventHandler != null)
+            {
+                if (ThreadHelper.CheckAccess())
+                {
+                    this.documentEventHandler.Unsubscribe();
+                }
+                else
+                {
+                    this.JoinableTaskFactory.Run(
+                        async delegate
+                        {
+                            await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                            this.documentEventHandler.Unsubscribe();
+                        });
+                }
+            }
         }
 
         base.Dispose(disposing);
