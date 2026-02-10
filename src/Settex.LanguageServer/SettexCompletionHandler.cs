@@ -338,7 +338,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
 
         // Extraire seulement le dernier "mot.mot.mot" avant le curseur
         // Par ex: "Server.Port = 5000\n  Server.Host = " → on veut "Server.Host"
-        var tokens = path.Split(new[] { ' ', '\t', '=', ',', '[', ']', '{', '}', '(', ')', '"' }, 
+        var tokens = path.Split(new[] { ' ', '\t', '=', ',', '[', ']', '{', '}', '(', ')', '"', ';' }, 
             System.StringSplitOptions.RemoveEmptyEntries);
         
         if (tokens.Length == 0)
@@ -413,6 +413,23 @@ public class SettexCompletionHandler : CompletionHandlerBase
             // Naviguer dans l'objet base pour trouver les propriétés
             if (baseSettings != null)
             {
+                // Log base settings structure for debugging
+                if (path == "Comparison")
+                {
+                    this.logger.LogInformation("[COMPLETION-DEBUG] Base settings keys: {Keys}", 
+                        string.Join(", ", baseSettings.Select(p => p.Key)));
+                    
+                    if (baseSettings.ContainsKey("Comparison"))
+                    {
+                        var comp = baseSettings["Comparison"] as JsonObject;
+                        if (comp != null)
+                        {
+                            this.logger.LogInformation("[COMPLETION-DEBUG] Comparison in base has properties: {Props}", 
+                                string.Join(", ", comp.Select(p => p.Key)));
+                        }
+                    }
+                }
+                
                 var baseObject = this.NavigateToObject(baseSettings, path);
                 if (baseObject != null)
                 {
@@ -452,8 +469,40 @@ public class SettexCompletionHandler : CompletionHandlerBase
     {
         try
         {
+            // Log the AST structure
+            this.logger.LogInformation("[COMPLETION-EVAL] Evaluating AST with {Count} statements", ast.Statements.Count);
+            var settingsBlocks = ast.Statements.OfType<SettingsBlockNode>().Count();
+            var envBlocks = ast.Statements.OfType<EnvBlockNode>().Count();
+            var letStatements = ast.Statements.OfType<LetNode>().Count();
+            this.logger.LogInformation("[COMPLETION-EVAL] AST contains: {Settings} settings blocks, {Env} env blocks, {Let} let statements", 
+                settingsBlocks, envBlocks, letStatements);
+            
+            // Log settings block structure
+            var settingsBlock = ast.Statements.OfType<SettingsBlockNode>().FirstOrDefault();
+            if (settingsBlock != null)
+            {
+                var assignments = settingsBlock.Block.Statements.OfType<AssignmentNode>().ToList();
+                this.logger.LogInformation("[COMPLETION-EVAL] Settings block has {Count} assignments", assignments.Count);
+                
+                // Log each assignment path
+                foreach (var assignment in assignments)
+                {
+                    var path = string.Join(".", assignment.Path.Segments);
+                    this.logger.LogInformation("[COMPLETION-EVAL] Assignment: {Path}", path);
+                }
+            }
+            
             var evaluator = new Evaluator();
             var model = evaluator.Evaluate(ast);
+            
+            this.logger.LogInformation("[COMPLETION-EVAL] Evaluation complete. Base has {BaseCount} properties", 
+                model.BaseSettings?.Count ?? 0);
+            if (model.BaseSettings != null)
+            {
+                var keys = string.Join(", ", model.BaseSettings.Select(p => p.Key));
+                this.logger.LogInformation("[COMPLETION-EVAL] Base properties: {Keys}", keys);
+            }
+            
             return (model.BaseSettings, model.EnvironmentOverlays);
         }
         catch (System.Exception ex)
