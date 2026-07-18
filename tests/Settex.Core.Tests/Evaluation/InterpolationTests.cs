@@ -14,7 +14,7 @@ public class InterpolationTests
 {
     private static JsonNode? CompileSource(string source)
     {
-        var lexer = new Lexer(source);
+        var lexer = new Lexer(source, "test.settex");
         var tokens = lexer.Tokenize();
         var parser = new Parser(tokens, "test.settex");
         var ast = parser.Parse();
@@ -187,5 +187,45 @@ public class InterpolationTests
         var json = CompileSource(source);
         await Assert.That(json).IsNotNull();
         await Assert.That(json!["Message"]!.GetValue<string>()).IsEqualTo("Object value: 42");
+    }
+
+    [Test]
+    public async Task Evaluate_InterpolationWithTrailingTokens_ThrowsAnchoredError()
+    {
+        // "${a b}" must be rejected: previously the parser kept only 'a' and
+        // silently dropped 'b'. The error must also point at the interpolated
+        // string in the real file, not a phantom line 1 / column 1.
+        var source = """
+            let a = 1
+            let b = 2
+
+            settings {
+                X = "${a b}"
+            }
+            """;
+
+        var ex = await Assert.ThrowsAsync<ParserException>(() => Task.FromResult(CompileSource(source)));
+        await Assert.That(ex!.Message).Contains("unexpected 'b'");
+        await Assert.That(ex.Location.FilePath).IsEqualTo("test.settex");
+        await Assert.That(ex.Location.Line).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task Evaluate_ErrorInsideInterpolation_IsAnchoredToStringLocation()
+    {
+        // An error raised while parsing the embedded expression must be reported
+        // at the interpolated string's location, not at the sub-lexer's origin.
+        var source = """
+            let port = 8080
+
+            settings {
+                Url = "x${port +}y"
+            }
+            """;
+
+        var ex = await Assert.ThrowsAsync<ParserException>(() => Task.FromResult(CompileSource(source)));
+        await Assert.That(ex!.Message).Contains("Invalid interpolation expression");
+        await Assert.That(ex.Location.FilePath).IsEqualTo("test.settex");
+        await Assert.That(ex.Location.Line).IsEqualTo(4);
     }
 }
