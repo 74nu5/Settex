@@ -648,11 +648,35 @@ public class Parser(List<Token> tokens, string? filePath = null)
             // Extract expression source (between ${ and })
             var exprSource = str.Substring(exprStart, exprPos - exprStart - 1);
 
-            // Parse the expression
-            var exprLexer = new Lexer(exprSource);
-            var exprTokens = exprLexer.Tokenize();
-            var exprParser = new Parser(exprTokens);
-            var expr = exprParser.ParseExpression();
+            // Parse the embedded expression. The sub-tokens' positions are relative
+            // to exprSource, so any lex/parse error is re-anchored to the interpolated
+            // string's location in the real file rather than reported at a phantom
+            // line 1 / column 1.
+            IExpression expr;
+            Parser exprParser;
+
+            try
+            {
+                var exprLexer = new Lexer(exprSource, this.filePath);
+                var exprTokens = exprLexer.Tokenize();
+                exprParser = new Parser(exprTokens, this.filePath);
+                expr = exprParser.ParseExpression();
+            }
+            catch (Exception ex) when (ex is ParserException or LexerException)
+            {
+                throw new ParserException(
+                    $"Invalid interpolation expression '${{{exprSource.Trim()}}}': {ex.Message}",
+                    location);
+            }
+
+            // The whole ${...} must be exactly one expression. Reject leftover tokens
+            // (e.g. "${a b}") instead of silently ignoring everything after the first.
+            if (!exprParser.IsAtEnd)
+            {
+                throw new ParserException(
+                    $"Invalid interpolation expression '${{{exprSource.Trim()}}}': unexpected '{exprParser.Current.Text}'",
+                    location);
+            }
 
             segments.Add(new ExpressionSegment(expr));
 

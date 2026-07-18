@@ -93,7 +93,7 @@
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
     <div class="score"><div class="big">228</div><div class="lbl">Tests · 100 % au vert</div></div>
-    <div class="score"><div class="big">2</div><div class="lbl">bugs restants (3 corrigés ✅)</div></div>
+    <div class="score"><div class="big">1</div><div class="lbl">bugs restants (4 corrigés ✅)</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
 
@@ -151,10 +151,10 @@
     <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs (EvaluateNestedBlock)</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">🟠 Moyen — Interpolation : jetons en trop ignorés, diagnostics faux</div>
-    <code>ParseInterpolatedString</code> appelle <code>ParseExpression()</code> (pas <code>Parse()</code>) : <code class="sx">"${a b}"</code> parse <code>a</code> et <strong>ignore <code>b</code> sans erreur</strong>. Le sous-lexer est créé sans <code>filePath</code> ni offset → toute erreur dans un <code>${…}</code> pointe une localisation erronée.
-    <div class="fp">src/Settex.Core/Parser/Parser.cs:598-663</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Interpolation : jetons en trop ignorés, diagnostics faux</div>
+    <code>ParseInterpolatedString</code> gardait uniquement <code>a</code> dans <code class="sx">"${a b}"</code> et <strong>ignorait <code>b</code> silencieusement</strong> ; le sous-lexer était créé sans <code>filePath</code> → toute erreur dans un <code>${…}</code> pointait une localisation fantôme (ligne 1/col 1). <strong>Corrigé</strong> : après <code>ParseExpression()</code>, tout jeton résiduel lève une erreur (<code class="sx">"${a b}"</code> → « unexpected 'b' ») ; le <code>filePath</code> est propagé et toute erreur d'interpolation est <strong>ré-ancrée sur la localisation réelle de la chaîne</strong>. Vérifié : <code class="sx">"${a b}"</code> échoue à la bonne ligne, <code class="sx">"${port + 100}"</code> fonctionne, erreur interne ré-ancrée ; 2 tests de non-régression ajoutés.
+    <div class="fp">src/Settex.Core/Parser/Parser.cs (ParseInterpolatedString)</div>
   </div>
 
   <div class="callout warn">
@@ -174,7 +174,7 @@
 
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés</span><div class="bar"><i style="width:70%"></i></div></div>
-    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">deep-merge OK, mais bugs de portée/interpolation</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">deep-merge OK ; portée &amp; interpolation corrigées</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 4.5/10 <span style="color:var(--muted);font-size:.85rem">prototype avancé, concurrence &amp; heuristiques fragiles</span><div class="bar"><i style="width:45%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 5.5/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save solide, mais 2 bugs LSP</span><div class="bar"><i style="width:55%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 2/10 <span style="color:var(--muted);font-size:.85rem">VSIX non fonctionnel à l'installation</span><div class="bar"><i style="width:20%"></i></div></div>
@@ -227,6 +227,7 @@
       <tr><td>Pas de <code>else</code>/<code>elif</code></td><td>Conditionnelles verbeuses (fallback + surcharge)</td></tr>
       <tr><td>Fichiers d'env auto-suffisants</td><td>Base dupliquée dans chaque <code>appsettings.{Env}.json</code> → diffs bruyants, redondance</td></tr>
       <tr><td><s>Fuite de portée des <code>let</code> imbriqués</s> ✅ corrigé</td><td>Le scope enfant empêche désormais l'écrasement du global</td></tr>
+      <tr><td><s>Interpolation : jetons en trop ignorés</s> ✅ corrigé</td><td>Parse complet + erreur sur jeton résiduel, diagnostics ré-ancrés sur la chaîne</td></tr>
     </tbody>
   </table>
 
@@ -253,7 +254,7 @@
       <tr><td>3</td><td><s>Vrai block-scoping : <code>CreateChild()</code> par bloc imbriqué + tests</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Client LSP VS : drainer <code>stderr</code>, stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>LSP : généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref), protéger les logs par <code>IsEnabled</code>, remplacer <code>UriToFilePath</code>/<code>LocationToRange</code> par les utilitaires OmniSharp + EndLine/EndColumn dans <code>SourceLocation</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>6</td><td>Fiabiliser l'interpolation (parse complet + propagation filePath/offset), rattraper <code>OverflowException</code> en erreur localisée, borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> — <strong>fait ✅</strong>. Reste : rattraper <code>OverflowException</code> en erreur localisée, borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>8</td><td>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie), assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message), cas CRLF/overflow/sans-espaces/scope</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>9</td><td>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET) — décision de design</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
