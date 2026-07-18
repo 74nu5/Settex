@@ -1,4 +1,4 @@
-<Project Sdk="CodingWithCalvin.VsixSdk/1.0.0">
+<Project Sdk="CodingWithCalvin.VsixSdk/0.4.0">
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
@@ -6,41 +6,99 @@
     <Platforms>AnyCPU</Platforms>
     <Platform>AnyCPU</Platform>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <Version>1.0.0</Version>
+    <Version>1.2.0</Version>
     <RootNamespace>Settex.VisualStudio</RootNamespace>
     <AssemblyName>Settex.VisualStudio</AssemblyName>
+    <!--
+      VSSDK007 flags JoinableTaskFactory.RunAsync results even when they are
+      handled with the recommended .FileAndForget() fire-and-forget pattern.
+      The solution treats warnings as errors, so suppress this analyzer opinion
+      for the extension only.
+    -->
+    <NoWarn>$(NoWarn);VSSDK007</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.SDK" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" />
+    <PackageReference Include="StreamJsonRpc" />
+    <PackageReference Include="EnvDTE" />
+  </ItemGroup>
+
+  <!--
+    Assets shipped inside the VSIX. This SDK only packages files declared as
+    <Content> with IncludeInVSIX=true; plain <None> items are copied to the
+    output but never added to the VSIX archive, so grammars/snippets/pkgdef
+    must be Content to actually reach the installed extension.
+  -->
+  <ItemGroup>
+    <Content Include="Grammars\settex.tmLanguage.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Grammars\settex-language-configuration.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Settex.pkgdef">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Grammars\settex.tmLanguage.json">
+    <Content Include="Snippets\*.snippet">
+      <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="Grammars\settex-language-configuration.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="Settex.pkgdef">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="LICENSE.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="README.md">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="CHANGELOG.md">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
+    </Content>
   </ItemGroup>
+
+  <!--
+    Embed the .NET runtime binaries the extension shells out to (the language
+    server and the CLI) inside the VSIX so an installed extension is self
+    contained. They target net10.0 and are launched with `dotnet <dll>`, so we
+    publish them framework-dependent and ship the whole publish folder
+    (dll + deps.json + runtimeconfig.json + dependencies) under LanguageServer/
+    and Cli/. The .NET 10 runtime must be present on the machine.
+  -->
+  <PropertyGroup>
+    <SettexLanguageServerProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.LanguageServer\Settex.LanguageServer.csproj</SettexLanguageServerProject>
+    <SettexCliProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.Cli\Settex.Cli.csproj</SettexCliProject>
+  </PropertyGroup>
+
+  <Target Name="PublishSettexRuntimeBinaries"
+          BeforeTargets="GetVsixSourceItems"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <!-- Stage under obj/ (IntermediateOutputPath is only resolved once targets run,
+         so this must be computed here, not in an evaluation-time PropertyGroup). -->
+    <PropertyGroup>
+      <SettexRuntimeStage>$(IntermediateOutputPath)SettexRuntime\</SettexRuntimeStage>
+    </PropertyGroup>
+
+    <Exec Command="dotnet publish &quot;$(SettexLanguageServerProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)LanguageServer&quot; --nologo" />
+    <Exec Command="dotnet publish &quot;$(SettexCliProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)Cli&quot; --nologo" />
+
+    <ItemGroup>
+      <SettexLanguageServerFiles Include="$(SettexRuntimeStage)LanguageServer\**\*" Exclude="$(SettexRuntimeStage)LanguageServer\**\*.pdb;$(SettexRuntimeStage)LanguageServer\**\*.exe" />
+      <SettexCliFiles Include="$(SettexRuntimeStage)Cli\**\*" Exclude="$(SettexRuntimeStage)Cli\**\*.pdb;$(SettexRuntimeStage)Cli\**\*.exe" />
+
+      <Content Include="@(SettexLanguageServerFiles)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <VSIXSubPath>LanguageServer\%(RecursiveDir)</VSIXSubPath>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Content>
+      <Content Include="@(SettexCliFiles)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <VSIXSubPath>Cli\%(RecursiveDir)</VSIXSubPath>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
 
 </Project>

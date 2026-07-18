@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <Commands package="guidSettexPackage">
+    <Groups>
+      <Group guid="guidSettexPackageCmdSet" id="SettexMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidSettexPackageCmdSet" id="CompileSettexCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidSettexPackageCmdSet" id="SettexMenuGroup" />
+        <Strings>
+          <ButtonText>Compile Settex File</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="guidSettexPackage" value="{CF2F7AA1-CFD1-4FBD-9A5E-6BA5B3FE5ED8}" />
+
+    <GuidSymbol name="guidSettexPackageCmdSet" value="{8E1C8B95-8F5D-4C3E-B5A1-8D5E6F7A8B9C}">
+      <IDSymbol name="SettexMenuGroup" value="0x1020" />
+      <IDSymbol name="CompileSettexCommandId" value="0x0100" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

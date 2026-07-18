@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="TUnit.Assertions" />
+  </ItemGroup>
+
+  <!--
+    The Visual Studio extension targets .NET Framework 4.7.2 and depends on the
+    VS SDK, which cannot be referenced from a modern .NET test project. Instead we
+    compile the single, SDK-free source file that builds the CLI invocation, so the
+    test exercises the exact production code path without pulling in the VS SDK.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\extensions\vs-settex\Settex.VisualStudio\SettexCliInvocation.cs"
+             Link="SettexCliInvocation.cs" />
+  </ItemGroup>
+
+</Project>

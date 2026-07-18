@@ -37,8 +37,11 @@ A Visual Studio extension providing syntax highlighting and editor support for V
 - ✅ Bracket matching and auto-closing
 - ✅ Auto-indentation
 - ✅ Comment toggling
-- 🔄 Language server integration (planned)
-- 🔄 Build integration (planned)
+- ✅ Code snippets (11 built-in snippets)
+- ✅ Language Server integration (IntelliSense)
+- ✅ Build integration (manual + automatic on save)
+- ✅ Options page for configuration
+- 🔄 MSBuild integration (via Settex.Build package)
 
 **Installation**:
 - From Visual Studio Marketplace: Search for "Settex"
@@ -55,12 +58,15 @@ A Visual Studio extension providing syntax highlighting and editor support for V
 | Feature | VS Code Extension | Visual Studio Extension |
 |---------|------------------|------------------------|
 | Syntax Highlighting | ✅ | ✅ |
-| Language Server | ✅ | 🔄 Planned |
-| Code Completion | ✅ | 🔄 Planned |
-| Diagnostics | ✅ | 🔄 Planned |
-| Build Integration | ✅ | 🔄 Planned |
+| Language Server | ✅ | ✅ |
+| Code Completion | ✅ | ✅ |
+| Diagnostics | ✅ | ✅ |
+| Code Snippets | ✅ | ✅ |
+| Build Integration | ✅ | ✅ (Manual + Auto) |
+| Auto-Compile on Save | ❌ | ✅ |
+| Options/Settings | ❌ | ✅ |
 | Platforms | All | Windows only |
-| Status | Stable | Initial release |
+| Status | Stable | Latest (v1.2.0) |
 
 Legend: ✅ = Available, 🔄 = Planned, ❌ = Not supported
 

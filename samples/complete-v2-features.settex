@@ -142,10 +142,10 @@ settings {
     # Null coalescing operator (??)
     OptionalValue = null ?? "default_value"
 
-    # Complex expressions
-    # Complex.Arithmetic = (10 + 5) * 2 - 3
-    # Complex.Logical = (true or false) and not false
-    # Complex.Mixed = (basePort + 100) > 8000 and environment == "Base"
+    # Complex expressions (parentheses now supported)
+    Complex.Arithmetic = (10 + 5) * 2 - 3
+    Complex.Logical = (true or false) and not false
+    Complex.Mixed = (basePort + 100) > 8000 and environment == "Base"
 
     # Nested blocks with variables
     Redis {

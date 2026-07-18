@@ -135,6 +135,57 @@ Check that the following are highlighted correctly:
   - Type `settings {` and press Enter
   - Next line should be indented automatically
 
+### 5. Test Auto-Compile on Save (v1.2.0+)
+
+1. **Verify Output Pane**:
+   - Go to **View > Output** (Ctrl+Alt+O)
+   - Select "Settex" from the dropdown
+   - You should see the Settex output pane
+
+2. **Test Auto-Compile**:
+   - Create or open a `.settex` file
+   - Make a change and save (Ctrl+S)
+   - Check the "Settex" output pane - you should see:
+     ```
+     [Settex] Compiling test.settex...
+     [Settex] Successfully compiled test.settex
+     ```
+   - Verify `appsettings.json` files are generated in the same directory
+
+3. **Test Options Page**:
+   - Go to **Tools > Options > Settex > General**
+   - Verify you see these options:
+     - Compile on Save (checked by default)
+     - Show Success Notifications (unchecked by default)
+     - Show Error Notifications (checked by default)
+     - Log to Output Window (checked by default)
+
+4. **Test Disabling Auto-Compile**:
+   - Uncheck "Compile on Save" in options
+   - Click OK
+   - Edit and save a `.settex` file
+   - Verify NO compilation occurs (no output messages)
+
+5. **Test Notifications**:
+   - Enable "Show Success Notifications" in options
+   - Save a `.settex` file
+   - Verify you get a success message box
+
+6. **Test Error Handling**:
+   - Create invalid syntax in a `.settex` file (e.g., `settings {` without closing `}`)
+   - Save the file
+   - Check output pane for error message
+   - Verify error notification appears (if enabled)
+
+### 6. Test Manual Compilation
+
+1. **Open a .settex file**
+2. **Go to Tools > Compile Settex File**
+3. **Verify**:
+   - Success message box appears
+   - `appsettings*.json` files are generated
+   - No error dialogs (unless there's an actual error)
+
 ## Installing Built Extension
 
 ### 1. Build the Extension
@@ -272,3 +323,90 @@ If you find issues:
 ---
 
 **Happy Testing!** 🚀
+
+---
+
+## Testing New Features (v1.1.0)
+
+### Code Snippets Testing
+
+1. **Open a .settex file** in the experimental instance
+2. **Test each snippet**:
+   - Type `settings` + Tab → Should expand to settings block
+   - Type `env` + Tab → Should expand to environment overlay with parameter
+   - Type `let` + Tab → Should expand to variable declaration
+   - Type `for` + Tab → Should expand to for loop
+   - Type `include` + Tab → Should expand to include statement
+   - Type `interp` + Tab → Should expand to string interpolation
+   - Type `tag` + Tab → Should expand to tagged object
+   - Type `array` + Tab → Should expand to array
+   - Type `setif` + Tab → Should expand to set-if-missing operator
+   - Type `block` + Tab → Should expand to nested block
+   - Type `settex` + Tab → Should expand to complete file template
+
+3. **Verify Tab Order**:
+   - After expanding, press Tab to move between placeholders
+   - Placeholders should be highlighted and editable
+
+### Language Server Testing
+
+**Prerequisites**: Ensure Settex.LanguageServer is built and accessible
+
+1. **Open a .settex file**
+2. **Test Code Completion**:
+   - Type `let ` → IntelliSense should appear
+   - Type `env ` → Should suggest environment names
+   - Inside `settings {}`, type to see completions
+
+3. **Test Hover Information**:
+   - Declare a variable: `let port = 8000`
+   - Hover over `port` later in the file
+   - Should show tooltip with value
+
+4. **Test Diagnostics**:
+   - Type invalid syntax (e.g., `let = value`)
+   - Red squiggle should appear
+   - Hover to see error message
+
+5. **Check Output Window**:
+   - Go to View > Output
+   - Select "Settex Language Server" from dropdown
+   - Should show LSP initialization messages
+
+### Build Integration Testing
+
+1. **Test Manual Compilation**:
+   - Open a `.settex` file (e.g., `test.settex`)
+   - Go to **Tools > Compile Settex File**
+   - Should show success message
+   - Check directory for `appsettings.json`, `appsettings.Development.json`, etc.
+
+2. **Test Error Handling**:
+   - Create invalid syntax in .settex file
+   - Try to compile
+   - Should show error message dialog
+
+3. **Verify Generated Files**:
+   - Open generated `appsettings.json`
+   - Verify content matches expected output
+   - Check environment-specific files
+
+### Visual Studio 2026 Compatibility
+
+If testing on Visual Studio 2026:
+1. Verify extension installs successfully
+2. Verify all features work as expected
+3. Check for any warnings or errors in Output window
+
+### Regression Testing
+
+Ensure original features still work:
+- ✅ Syntax highlighting
+- ✅ Bracket matching
+- ✅ Auto-indentation
+- ✅ Comment toggling
+- ✅ File extension association
+
+---
+
+**v1.1.0 Testing Complete!** 🎉

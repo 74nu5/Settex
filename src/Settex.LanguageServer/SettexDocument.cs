@@ -9,76 +9,94 @@ namespace Settex.LanguageServer;
 
 /// <summary>
 /// Représente un document Settex ouvert dans l'éditeur.
-/// Gère l'analyse incrémentale (Lexer + Parser) et les diagnostics.
+/// Gère l'analyse (Lexer + Parser + résolution des includes) et les diagnostics.
+///
+/// Thread-safety : l'état analysé est conservé dans un <see cref="Snapshot"/>
+/// immuable référencé par un champ <c>volatile</c>. <see cref="Update"/> calcule
+/// un nouveau snapshot et remplace la référence de façon atomique, si bien que les
+/// handlers (completion, hover, …) qui lisent le document en parallèle voient
+/// toujours un état cohérent, jamais partiellement mis à jour.
 /// </summary>
 public class SettexDocument
 {
     private readonly string uri;
-    private string text;
-    private List<Token> tokens;
-    private FileNode? ast;
-    private List<Diagnostic> diagnostics;
+    private volatile Snapshot current;
 
     public SettexDocument(string uri, string text)
     {
         this.uri = uri;
-        this.text = text;
-        this.tokens = new List<Token>();
-        this.diagnostics = new List<Diagnostic>();
-        this.Reparse();
+        this.current = Parse(uri, text);
     }
 
     public string Uri => this.uri;
-    public string Text => this.text;
-    public IReadOnlyList<Token> Tokens => this.tokens;
-    public FileNode? Ast => this.ast;
-    public IReadOnlyList<Diagnostic> Diagnostics => this.diagnostics;
+    public string Text => this.current.Text;
+    public IReadOnlyList<Token> Tokens => this.current.Tokens;
+    public FileNode? Ast => this.current.Ast;
+    public IReadOnlyList<Diagnostic> Diagnostics => this.current.Diagnostics;
 
     /// <summary>
-    /// Met à jour le texte du document et re-parse.
+    /// The current immutable snapshot. Capture this once when a handler needs a
+    /// consistent view across several properties (e.g. Text and Ast together),
+    /// rather than reading the individual properties, which may observe different
+    /// snapshots if the document is updated concurrently.
+    /// </summary>
+    internal Snapshot Current => this.current;
+
+    /// <summary>
+    /// Met à jour le texte du document et re-parse, en remplaçant atomiquement
+    /// le snapshot courant.
     /// </summary>
     public void Update(string newText)
     {
-        this.text = newText;
-        this.Reparse();
+        this.current = Parse(this.uri, newText);
     }
 
     /// <summary>
-    /// Re-parse le document complet (Lexer + Parser + Include resolution).
+    /// Snapshot immuable de l'état analysé d'un document.
     /// </summary>
-    private void Reparse()
+    internal sealed record Snapshot(
+        string Text,
+        IReadOnlyList<Token> Tokens,
+        FileNode? Ast,
+        IReadOnlyList<Diagnostic> Diagnostics);
+
+    /// <summary>
+    /// Analyse complète du document (Lexer + Parser + résolution des includes)
+    /// et production d'un snapshot immuable.
+    /// </summary>
+    private static Snapshot Parse(string uri, string text)
     {
-        this.diagnostics.Clear();
-        this.tokens.Clear();
-        this.ast = null;
+        var diagnostics = new List<Diagnostic>();
+        IReadOnlyList<Token> tokens = Array.Empty<Token>();
+        FileNode? ast = null;
 
         try
         {
             // Phase 1: Lexer
-            var lexer = new Core.Lexer.Lexer(this.text, this.uri);
-            this.tokens = lexer.Tokenize().ToList();
+            var lexer = new Core.Lexer.Lexer(text, uri);
+            tokens = lexer.Tokenize().ToList();
 
             // Phase 2: Parser
-            var parser = new Parser(this.tokens);
+            var parser = new Parser(tokens.ToList());
             var parsedAst = parser.Parse();
 
             // Phase 2.5: Resolve includes (if file is saved to disk)
-            var filePath = UriToFilePath(this.uri);
+            var filePath = UriToFilePath(uri);
             if (filePath != null)
             {
                 try
                 {
                     var includeResolver = new IncludeResolver();
                     var resolvedStatements = includeResolver.ResolveIncludes(parsedAst, filePath);
-                    
+
                     // Rebuild AST with resolved includes
-                    this.ast = new FileNode(resolvedStatements, parsedAst.Location);
+                    ast = new FileNode(resolvedStatements, parsedAst.Location);
                 }
                 catch (IncludeException ex)
                 {
                     // Include resolution failed, use original AST and report error
-                    this.ast = parsedAst;
-                    this.diagnostics.Add(new Diagnostic
+                    ast = parsedAst;
+                    diagnostics.Add(new Diagnostic
                     {
                         Range = ex.Location != null ? LocationToRange(ex.Location) : new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(new Position(0, 0), new Position(0, 0)),
                         Severity = DiagnosticSeverity.Error,
@@ -91,13 +109,13 @@ public class SettexDocument
             else
             {
                 // File not on disk (unsaved), use original AST without includes
-                this.ast = parsedAst;
+                ast = parsedAst;
             }
         }
         catch (LexerException ex)
         {
             // Erreur de lexer
-            this.diagnostics.Add(new Diagnostic
+            diagnostics.Add(new Diagnostic
             {
                 Range = LocationToRange(ex.Location),
                 Severity = DiagnosticSeverity.Error,
@@ -109,7 +127,7 @@ public class SettexDocument
         catch (ParserException ex)
         {
             // Erreur de parser
-            this.diagnostics.Add(new Diagnostic
+            diagnostics.Add(new Diagnostic
             {
                 Range = LocationToRange(ex.Location),
                 Severity = DiagnosticSeverity.Error,
@@ -121,10 +139,10 @@ public class SettexDocument
         catch (Exception ex)
         {
             //Range inattendue
-            this.diagnostics.Add(new Diagnostic
+            diagnostics.Add(new Diagnostic
             {
                 Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                    new Position(0, 0), 
+                    new Position(0, 0),
                     new Position(0, 0)
                 ),
                 Severity = DiagnosticSeverity.Error,
@@ -133,6 +151,8 @@ public class SettexDocument
                 Message = $"Unexpected error: {ex.Message}"
             });
         }
+
+        return new Snapshot(text, tokens, ast, diagnostics);
     }
 
     /// <summary>
@@ -158,16 +178,16 @@ public class SettexDocument
         {
             // file:///d:/path/to/file.settex -> d:/path/to/file.settex
             var path = uri.Substring(8);
-            
+
             // On Windows, convertir les / en \
             if (Path.DirectorySeparatorChar == '\\')
             {
                 path = path.Replace('/', '\\');
             }
-            
+
             return path;
         }
-        
+
         return null;
     }
 }

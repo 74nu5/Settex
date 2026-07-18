@@ -26,24 +26,24 @@ public static class HoverOverlayFormatter
     /// <returns>Formatted markdown string or null if path not found.</returns>
     public static string? FormatAssignmentWithOverlay(FileNode ast, string path, string? currentEnvName, ILogger? logger = null)
     {
-        logger?.LogInformation("[FORMATTER] Starting format for path='{Path}', currentEnv='{CurrentEnv}'", path, currentEnvName ?? "(base)");
+        logger?.LogTrace("[FORMATTER] Starting format for path='{Path}', currentEnv='{CurrentEnv}'", path, currentEnvName ?? "(base)");
         
         // Evaluate all settings
         var evaluation = EvaluateAllSettings(ast, logger);
         if (evaluation == null)
         {
-            logger?.LogWarning("[FORMATTER] EvaluateAllSettings returned null");
+            logger?.LogTrace("[FORMATTER] EvaluateAllSettings returned null");
             return null;
         }
 
         var (baseSettings, environmentOverlays) = evaluation.Value;
-        logger?.LogInformation("[FORMATTER] Evaluation successful. BaseSettings={HasBase}, Overlays count={Count}", 
+        logger?.LogTrace("[FORMATTER] Evaluation successful. BaseSettings={HasBase}, Overlays count={Count}", 
             baseSettings != null ? "present" : "null", 
             environmentOverlays.Count);
 
         // Get base value
         var baseValue = GetValueAtPath(baseSettings, path, logger);
-        logger?.LogInformation("[FORMATTER] Base value for '{Path}': {HasValue}", path, baseValue != null ? "FOUND" : "NULL");
+        logger?.LogTrace("[FORMATTER] Base value for '{Path}': {HasValue}", path, baseValue != null ? "FOUND" : "NULL");
 
         // Build result
         var result = new StringBuilder();
@@ -53,10 +53,10 @@ public static class HoverOverlayFormatter
         // If we're in base block (no env), just show base value
         if (currentEnvName == null)
         {
-            logger?.LogInformation("[FORMATTER] In base block, returning base value only");
+            logger?.LogTrace("[FORMATTER] In base block, returning base value only");
             if (baseValue == null)
             {
-                logger?.LogWarning("[FORMATTER] Base value is null, returning null");
+                logger?.LogTrace("[FORMATTER] Base value is null, returning null");
                 return null;
             }
 
@@ -65,11 +65,11 @@ public static class HoverOverlayFormatter
             result.AppendLine(FormatJsonValue(baseValue));
             result.AppendLine("```");
             var baseResult = result.ToString();
-            logger?.LogDebug("[FORMATTER] Base result:\n{Result}", baseResult);
+            logger?.LogTrace("[FORMATTER] Base result:\n{Result}", baseResult);
             return baseResult;
         }
 
-        logger?.LogInformation("[FORMATTER] In environment block, showing all environments");
+        logger?.LogTrace("[FORMATTER] In environment block, showing all environments");
         // We're in an environment - show base + all envs
         result.AppendLine("| Environment | Value |");
         result.AppendLine("|-------------|-------|");
@@ -80,35 +80,35 @@ public static class HoverOverlayFormatter
 
         // Merge base with each overlay to get final values
         var merger = new Merger();
-        logger?.LogInformation("[FORMATTER] Processing {Count} environment overlays", environmentOverlays.Count);
+        logger?.LogTrace("[FORMATTER] Processing {Count} environment overlays", environmentOverlays.Count);
 
         foreach (var kvp in environmentOverlays.OrderBy(e => e.Key))
         {
             var envName = kvp.Key;
             var overlay = kvp.Value;
-            logger?.LogInformation("[FORMATTER] Processing overlay for env='{EnvName}'", envName);
+            logger?.LogTrace("[FORMATTER] Processing overlay for env='{EnvName}'", envName);
 
             // Merge base + overlay to get final value for this environment
             JsonObject mergedSettings;
             if (baseSettings != null)
             {
-                logger?.LogDebug("[FORMATTER] Merging base with overlay for env='{EnvName}'", envName);
+                logger?.LogTrace("[FORMATTER] Merging base with overlay for env='{EnvName}'", envName);
                 mergedSettings = merger.Merge(baseSettings, overlay);
             }
             else
             {
-                logger?.LogDebug("[FORMATTER] No base settings, using overlay only for env='{EnvName}'", envName);
+                logger?.LogTrace("[FORMATTER] No base settings, using overlay only for env='{EnvName}'", envName);
                 mergedSettings = overlay;
             }
 
             var envValue = GetValueAtPath(mergedSettings, path, logger);
             var envFormatted = envValue != null ? FormatJsonValue(envValue) : "*(not set)*";
-            logger?.LogInformation("[FORMATTER] Env '{EnvName}' value for '{Path}': {Formatted}", envName, path, envFormatted);
+            logger?.LogTrace("[FORMATTER] Env '{EnvName}' value for '{Path}': {Formatted}", envName, path, envFormatted);
 
             // Highlight current environment
             if (envName == currentEnvName)
             {
-                logger?.LogInformation("[FORMATTER] Highlighting current environment: {EnvName}", envName);
+                logger?.LogTrace("[FORMATTER] Highlighting current environment: {EnvName}", envName);
                 result.AppendLine($"| **{envName}** ✓ | `{envFormatted}` |");
             }
             else
@@ -118,7 +118,7 @@ public static class HoverOverlayFormatter
         }
 
         var finalResult = result.ToString();
-        logger?.LogDebug("[FORMATTER] Final result:\n{Result}", finalResult);
+        logger?.LogTrace("[FORMATTER] Final result:\n{Result}", finalResult);
         return finalResult;
     }
 
@@ -132,24 +132,24 @@ public static class HoverOverlayFormatter
     /// <returns>Formatted markdown string or null if object not found.</returns>
     public static string? FormatObjectWithOverlay(FileNode ast, string objectPath, string? currentEnvName, ILogger? logger = null)
     {
-        logger?.LogInformation("[FORMATTER-OBJ] Starting format for object path='{Path}', currentEnv='{CurrentEnv}'", objectPath, currentEnvName ?? "(base)");
+        logger?.LogTrace("[FORMATTER-OBJ] Starting format for object path='{Path}', currentEnv='{CurrentEnv}'", objectPath, currentEnvName ?? "(base)");
         
         // Evaluate all settings
         var evaluation = EvaluateAllSettings(ast, logger);
         if (evaluation == null)
         {
-            logger?.LogWarning("[FORMATTER-OBJ] EvaluateAllSettings returned null");
+            logger?.LogTrace("[FORMATTER-OBJ] EvaluateAllSettings returned null");
             return null;
         }
 
         var (baseSettings, environmentOverlays) = evaluation.Value;
-        logger?.LogInformation("[FORMATTER-OBJ] Evaluation successful. BaseSettings={HasBase}, Overlays count={Count}", 
+        logger?.LogTrace("[FORMATTER-OBJ] Evaluation successful. BaseSettings={HasBase}, Overlays count={Count}", 
             baseSettings != null ? "present" : "null", 
             environmentOverlays.Count);
 
         // Get base object (may be null if only defined in environments)
         var baseObject = GetValueAtPath(baseSettings, objectPath, logger);
-        logger?.LogInformation("[FORMATTER-OBJ] Base object for '{Path}': {HasValue}, type={Type}", 
+        logger?.LogTrace("[FORMATTER-OBJ] Base object for '{Path}': {HasValue}, type={Type}", 
             objectPath, 
             baseObject != null ? "FOUND" : "NULL",
             baseObject?.GetType().Name ?? "null");
@@ -205,7 +205,7 @@ public static class HoverOverlayFormatter
         // If no properties found anywhere, the object doesn't exist
         if (allPropertyNames.Count == 0)
         {
-            logger?.LogWarning("[FORMATTER-OBJ] Object '{Path}' has no properties in any environment", objectPath);
+            logger?.LogTrace("[FORMATTER-OBJ] Object '{Path}' has no properties in any environment", objectPath);
             return null;
         }
 
@@ -217,7 +217,7 @@ public static class HoverOverlayFormatter
         // If we're in base block (no env), just show base properties
         if (currentEnvName == null)
         {
-            logger?.LogInformation("[FORMATTER-OBJ] In base block, showing base properties only");
+            logger?.LogTrace("[FORMATTER-OBJ] In base block, showing base properties only");
             
             // If object doesn't exist in base, show message
             if (baseJsonObject == null)
@@ -230,7 +230,7 @@ public static class HoverOverlayFormatter
                     result.AppendLine($"- {envName}");
                 }
                 var baseResult = result.ToString();
-                logger?.LogDebug("[FORMATTER-OBJ] Base result (no base object):\n{Result}", baseResult);
+                logger?.LogTrace("[FORMATTER-OBJ] Base result (no base object):\n{Result}", baseResult);
                 return baseResult;
             }
             
@@ -253,12 +253,12 @@ public static class HoverOverlayFormatter
             }
 
             var baseResult2 = result.ToString();
-            logger?.LogDebug("[FORMATTER-OBJ] Base result:\n{Result}", baseResult2);
+            logger?.LogTrace("[FORMATTER-OBJ] Base result:\n{Result}", baseResult2);
             return baseResult2;
         }
 
         // We're in an environment - show properties across all environments
-        logger?.LogInformation("[FORMATTER-OBJ] In environment block, showing all environments");
+        logger?.LogTrace("[FORMATTER-OBJ] In environment block, showing all environments");
         
         // Create header with environment names
         result.Append("| Property | Base |");
@@ -318,7 +318,7 @@ public static class HoverOverlayFormatter
         }
 
         var finalResult = result.ToString();
-        logger?.LogDebug("[FORMATTER-OBJ] Final object result:\n{Result}", finalResult);
+        logger?.LogTrace("[FORMATTER-OBJ] Final object result:\n{Result}", finalResult);
         return finalResult;
     }
 
@@ -327,25 +327,15 @@ public static class HoverOverlayFormatter
     /// </summary>
     private static (JsonObject? BaseSettings, Dictionary<string, JsonObject> EnvironmentOverlays)? EvaluateAllSettings(FileNode ast, ILogger? logger)
     {
-        logger?.LogInformation("[FORMATTER-EVAL] Starting evaluation of AST");
+        logger?.LogTrace("[FORMATTER-EVAL] Starting evaluation of AST");
         try
         {
             var evaluator = new Evaluator();
             var model = evaluator.Evaluate(ast);
-            logger?.LogInformation("[FORMATTER-EVAL] Evaluation successful. BaseSettings={HasBase}, Overlays={Count}", 
+            logger?.LogTrace("[FORMATTER-EVAL] Evaluation successful. BaseSettings={HasBase}, Overlays={Count}",
                 model.BaseSettings != null ? "present" : "null",
                 model.EnvironmentOverlays.Count);
-            
-            if (model.BaseSettings != null)
-            {
-                logger?.LogDebug("[FORMATTER-EVAL] Base settings JSON:\n{Json}", model.BaseSettings.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            }
-            
-            foreach (var kvp in model.EnvironmentOverlays)
-            {
-                logger?.LogDebug("[FORMATTER-EVAL] Overlay '{EnvName}' JSON:\n{Json}", kvp.Key, kvp.Value.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-            }
-            
+
             return (model.BaseSettings, model.EnvironmentOverlays);
         }
         catch (Exception ex)
@@ -360,16 +350,16 @@ public static class HoverOverlayFormatter
     /// </summary>
     private static JsonNode? GetValueAtPath(JsonObject? obj, string path, ILogger? logger = null)
     {
-        logger?.LogDebug("[FORMATTER-PATH] Getting value at path '{Path}' from {ObjState}", path, obj != null ? "JsonObject" : "null");
+        logger?.LogTrace("[FORMATTER-PATH] Getting value at path '{Path}' from {ObjState}", path, obj != null ? "JsonObject" : "null");
         
         if (obj == null || string.IsNullOrEmpty(path))
         {
-            logger?.LogDebug("[FORMATTER-PATH] Returning null - obj is null or path is empty");
+            logger?.LogTrace("[FORMATTER-PATH] Returning null - obj is null or path is empty");
             return null;
         }
 
         var parts = path.Split('.');
-        logger?.LogDebug("[FORMATTER-PATH] Path parts: {Parts}", string.Join(", ", parts));
+        logger?.LogTrace("[FORMATTER-PATH] Path parts: {Parts}", string.Join(", ", parts));
         JsonNode? current = obj;
 
         foreach (var part in parts)
@@ -378,12 +368,12 @@ public static class HoverOverlayFormatter
             {
                 if (objectNode.TryGetPropertyValue(part, out var value))
                 {
-                    logger?.LogDebug("[FORMATTER-PATH] Found property '{Part}', type={Type}", part, value?.GetType().Name ?? "null");
+                    logger?.LogTrace("[FORMATTER-PATH] Found property '{Part}', type={Type}", part, value?.GetType().Name ?? "null");
                     current = value;
                 }
                 else
                 {
-                    logger?.LogDebug("[FORMATTER-PATH] Property '{Part}' not found in object - available keys: {Keys}", 
+                    logger?.LogTrace("[FORMATTER-PATH] Property '{Part}' not found in object - available keys: {Keys}", 
                         part, 
                         string.Join(", ", objectNode.Select(p => p.Key)));
                     return null;
@@ -391,14 +381,14 @@ public static class HoverOverlayFormatter
             }
             else
             {
-                logger?.LogDebug("[FORMATTER-PATH] Current node is not an object (type={Type}), cannot navigate to '{Part}'", 
+                logger?.LogTrace("[FORMATTER-PATH] Current node is not an object (type={Type}), cannot navigate to '{Part}'", 
                     current?.GetType().Name ?? "null", 
                     part);
                 return null;
             }
         }
 
-        logger?.LogDebug("[FORMATTER-PATH] Final value found: {Value}", current?.ToJsonString() ?? "null");
+        logger?.LogTrace("[FORMATTER-PATH] Final value found: {Value}", current?.ToJsonString() ?? "null");
         return current;
     }
 

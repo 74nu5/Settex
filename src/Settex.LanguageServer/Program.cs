@@ -15,7 +15,10 @@ internal static class Program
                 .WithOutput(Console.OpenStandardOutput())
                 .ConfigureLogging(x => x
                     .AddLanguageProtocolLogging()
-                    .SetMinimumLevel(LogLevel.Debug))
+                    // Quiet by default: the verbose per-request instrumentation
+                    // logs at Trace and only surfaces when the client raises the
+                    // trace level.
+                    .SetMinimumLevel(LogLevel.Information))
                 .WithServices(services =>
                 {
                     // Register workspace as singleton

@@ -48,21 +48,25 @@ public class SettexCompletionHandler : CompletionHandlerBase
             return Task.FromResult(new CompletionList());
         }
 
+        // Capture a single immutable snapshot so the cursor offset (from Text) and
+        // the AST stay consistent even if the document is updated concurrently.
+        var snapshot = document.Current;
+
         var completions = new List<CompletionItem>();
 
         // Détection du contexte : est-on après un point pour une propriété d'objet ?
-        var textBeforeCursor = this.GetTextBeforeCursor(document, request.Position);
+        var textBeforeCursor = this.GetTextBeforeCursor(snapshot.Text, request.Position);
         var objectPath = this.ExtractObjectPath(textBeforeCursor);
 
         // Extraire le mot partiel en cours de frappe pour le filtrage
         var partialWord = this.ExtractPartialWord(textBeforeCursor);
-        this.logger.LogInformation("[COMPLETION] Partial word: '{PartialWord}'", partialWord ?? "(none)");
+        this.logger.LogTrace("[COMPLETION] Partial word: '{PartialWord}'", partialWord ?? "(none)");
 
         if (!string.IsNullOrEmpty(objectPath))
         {
             // Autocomplétion des propriétés d'objet
-            this.logger.LogInformation("[COMPLETION] Object property completion for path: {Path}", objectPath);
-            var properties = this.GetObjectProperties(document, objectPath);
+            this.logger.LogTrace("[COMPLETION] Object property completion for path: {Path}", objectPath);
+            var properties = this.GetObjectProperties(snapshot, objectPath);
             
             foreach (var (propertyName, environments) in properties)
             {
@@ -88,7 +92,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
             // Si on a des propriétés, on retourne uniquement celles-ci
             if (completions.Count > 0)
             {
-                this.logger.LogInformation("[COMPLETION] Returning {Count} property completions", completions.Count);
+                this.logger.LogTrace("[COMPLETION] Returning {Count} property completions", completions.Count);
                 return Task.FromResult(new CompletionList(completions));
             }
         }
@@ -96,8 +100,8 @@ public class SettexCompletionHandler : CompletionHandlerBase
         // Autocomplétion générale : keywords, variables, environments, et noms d'objets existants
 
         // Proposer les noms d'objets existants en priorité
-        this.logger.LogInformation("[COMPLETION] Adding existing object names");
-        var objectNames = this.GetAllObjectNames(document);
+        this.logger.LogTrace("[COMPLETION] Adding existing object names");
+        var objectNames = this.GetAllObjectNames(snapshot);
         
         foreach (var (objectName, environments) in objectNames)
         {
@@ -166,9 +170,9 @@ public class SettexCompletionHandler : CompletionHandlerBase
         }
 
         // Variables (extraction simple depuis l'AST)
-        if (document.Ast != null)
+        if (snapshot.Ast != null)
         {
-            var variables = ExtractVariables(document.Ast);
+            var variables = ExtractVariables(snapshot.Ast);
             foreach (var variable in variables)
             {
                 // Filtrer par le mot partiel
@@ -189,7 +193,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
 
             // Environnements
-            var environments = ExtractEnvironments(document.Ast);
+            var environments = ExtractEnvironments(snapshot.Ast);
             foreach (var env in environments)
             {
                 // Filtrer par le mot partiel
@@ -288,12 +292,12 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// <summary>
     /// Extrait le texte du document jusqu'à la position du curseur.
     /// </summary>
-    private string GetTextBeforeCursor(SettexDocument document, Position position)
+    private string GetTextBeforeCursor(string text, Position position)
     {
-        var lines = document.Text.Split('\n');
+        var lines = text.Split('\n');
         if (position.Line >= lines.Length)
         {
-            return document.Text;
+            return text;
         }
 
         var textBeforeCursor = string.Join("\n", lines.Take((int)position.Line));
@@ -354,7 +358,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
             return null;
         }
 
-        this.logger.LogInformation("[COMPLETION] Extracted object path: {Path}", lastToken);
+        this.logger.LogTrace("[COMPLETION] Extracted object path: {Path}", lastToken);
         return lastToken;
     }
 
@@ -389,11 +393,11 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// Récupère toutes les propriétés d'un objet donné depuis base + tous les environnements.
     /// Retourne un dictionnaire : PropertyName → Liste des environnements où elle existe.
     /// </summary>
-    private Dictionary<string, List<string>> GetObjectProperties(SettexDocument document, string path)
+    private Dictionary<string, List<string>> GetObjectProperties(SettexDocument.Snapshot snapshot, string path)
     {
         var properties = new Dictionary<string, List<string>>();
 
-        if (document.Ast == null)
+        if (snapshot.Ast == null)
         {
             return properties;
         }
@@ -401,10 +405,10 @@ public class SettexCompletionHandler : CompletionHandlerBase
         try
         {
             // Évaluer les settings base + overlays
-            var evaluation = this.EvaluateAllSettings(document.Ast);
+            var evaluation = this.EvaluateAllSettings(snapshot.Ast);
             if (evaluation == null)
             {
-                this.logger.LogWarning("[COMPLETION] EvaluateAllSettings returned null");
+                this.logger.LogTrace("[COMPLETION] EvaluateAllSettings returned null");
                 return properties;
             }
 
@@ -413,23 +417,6 @@ public class SettexCompletionHandler : CompletionHandlerBase
             // Naviguer dans l'objet base pour trouver les propriétés
             if (baseSettings != null)
             {
-                // Log base settings structure for debugging
-                if (path == "Comparison")
-                {
-                    this.logger.LogInformation("[COMPLETION-DEBUG] Base settings keys: {Keys}", 
-                        string.Join(", ", baseSettings.Select(p => p.Key)));
-                    
-                    if (baseSettings.ContainsKey("Comparison"))
-                    {
-                        var comp = baseSettings["Comparison"] as JsonObject;
-                        if (comp != null)
-                        {
-                            this.logger.LogInformation("[COMPLETION-DEBUG] Comparison in base has properties: {Props}", 
-                                string.Join(", ", comp.Select(p => p.Key)));
-                        }
-                    }
-                }
-                
                 var baseObject = this.NavigateToObject(baseSettings, path);
                 if (baseObject != null)
                 {
@@ -470,11 +457,11 @@ public class SettexCompletionHandler : CompletionHandlerBase
         try
         {
             // Log the AST structure
-            this.logger.LogInformation("[COMPLETION-EVAL] Evaluating AST with {Count} statements", ast.Statements.Count);
+            this.logger.LogTrace("[COMPLETION-EVAL] Evaluating AST with {Count} statements", ast.Statements.Count);
             var settingsBlocks = ast.Statements.OfType<SettingsBlockNode>().Count();
             var envBlocks = ast.Statements.OfType<EnvBlockNode>().Count();
             var letStatements = ast.Statements.OfType<LetNode>().Count();
-            this.logger.LogInformation("[COMPLETION-EVAL] AST contains: {Settings} settings blocks, {Env} env blocks, {Let} let statements", 
+            this.logger.LogTrace("[COMPLETION-EVAL] AST contains: {Settings} settings blocks, {Env} env blocks, {Let} let statements", 
                 settingsBlocks, envBlocks, letStatements);
             
             // Log settings block structure
@@ -482,25 +469,25 @@ public class SettexCompletionHandler : CompletionHandlerBase
             if (settingsBlock != null)
             {
                 var assignments = settingsBlock.Block.Statements.OfType<AssignmentNode>().ToList();
-                this.logger.LogInformation("[COMPLETION-EVAL] Settings block has {Count} assignments", assignments.Count);
+                this.logger.LogTrace("[COMPLETION-EVAL] Settings block has {Count} assignments", assignments.Count);
                 
                 // Log each assignment path
                 foreach (var assignment in assignments)
                 {
                     var path = string.Join(".", assignment.Path.Segments);
-                    this.logger.LogInformation("[COMPLETION-EVAL] Assignment: {Path}", path);
+                    this.logger.LogTrace("[COMPLETION-EVAL] Assignment: {Path}", path);
                 }
             }
             
             var evaluator = new Evaluator();
             var model = evaluator.Evaluate(ast);
             
-            this.logger.LogInformation("[COMPLETION-EVAL] Evaluation complete. Base has {BaseCount} properties", 
+            this.logger.LogTrace("[COMPLETION-EVAL] Evaluation complete. Base has {BaseCount} properties", 
                 model.BaseSettings?.Count ?? 0);
             if (model.BaseSettings != null)
             {
                 var keys = string.Join(", ", model.BaseSettings.Select(p => p.Key));
-                this.logger.LogInformation("[COMPLETION-EVAL] Base properties: {Keys}", keys);
+                this.logger.LogTrace("[COMPLETION-EVAL] Base properties: {Keys}", keys);
             }
             
             return (model.BaseSettings, model.EnvironmentOverlays);
@@ -517,7 +504,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// </summary>
     private JsonObject? NavigateToObject(JsonObject root, string path)
     {
-        this.logger.LogInformation("[COMPLETION-NAV] Navigating to path '{Path}'", path);
+        this.logger.LogTrace("[COMPLETION-NAV] Navigating to path '{Path}'", path);
         
         var segments = path.Split('.');
         JsonObject? current = root;
@@ -525,42 +512,42 @@ public class SettexCompletionHandler : CompletionHandlerBase
         for (int i = 0; i < segments.Length; i++)
         {
             var segment = segments[i];
-            this.logger.LogDebug("[COMPLETION-NAV] Looking for segment '{Segment}' (step {Step}/{Total})", 
+            this.logger.LogTrace("[COMPLETION-NAV] Looking for segment '{Segment}' (step {Step}/{Total})", 
                 segment, i + 1, segments.Length);
             
             if (current == null)
             {
-                this.logger.LogWarning("[COMPLETION-NAV] Current is null at segment '{Segment}'", segment);
+                this.logger.LogTrace("[COMPLETION-NAV] Current is null at segment '{Segment}'", segment);
                 return null;
             }
 
             if (current.TryGetPropertyValue(segment, out var value))
             {
-                this.logger.LogDebug("[COMPLETION-NAV] Found property '{Segment}', type: {Type}", 
+                this.logger.LogTrace("[COMPLETION-NAV] Found property '{Segment}', type: {Type}", 
                     segment, value?.GetType().Name ?? "null");
                 
                 if (value is JsonObject obj)
                 {
                     current = obj;
-                    this.logger.LogDebug("[COMPLETION-NAV] Navigated to object '{Segment}', properties: {Properties}", 
+                    this.logger.LogTrace("[COMPLETION-NAV] Navigated to object '{Segment}', properties: {Properties}", 
                         segment, string.Join(", ", obj.Select(p => p.Key)));
                 }
                 else
                 {
-                    this.logger.LogWarning("[COMPLETION-NAV] Property '{Segment}' is not an object (type: {Type})", 
+                    this.logger.LogTrace("[COMPLETION-NAV] Property '{Segment}' is not an object (type: {Type})", 
                         segment, value?.GetType().Name ?? "null");
                     return null;
                 }
             }
             else
             {
-                this.logger.LogWarning("[COMPLETION-NAV] Property '{Segment}' not found. Available: {Available}", 
+                this.logger.LogTrace("[COMPLETION-NAV] Property '{Segment}' not found. Available: {Available}", 
                     segment, string.Join(", ", current.Select(p => p.Key)));
                 return null;
             }
         }
 
-        this.logger.LogInformation("[COMPLETION-NAV] Successfully navigated to '{Path}', final object has {Count} properties", 
+        this.logger.LogTrace("[COMPLETION-NAV] Successfully navigated to '{Path}', final object has {Count} properties", 
             path, current?.Count ?? 0);
         return current;
     }
@@ -570,13 +557,13 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// </summary>
     private void CollectProperties(JsonObject obj, string environmentName, Dictionary<string, List<string>> properties)
     {
-        this.logger.LogInformation("[COMPLETION-COLLECT] Collecting properties from env '{Env}', object has {Count} properties", 
+        this.logger.LogTrace("[COMPLETION-COLLECT] Collecting properties from env '{Env}', object has {Count} properties", 
             environmentName, obj.Count);
         
         foreach (var property in obj)
         {
             var propertyName = property.Key;
-            this.logger.LogDebug("[COMPLETION-COLLECT] Found property '{Name}' (type: {Type}) in env '{Env}'", 
+            this.logger.LogTrace("[COMPLETION-COLLECT] Found property '{Name}' (type: {Type}) in env '{Env}'", 
                 propertyName, property.Value?.GetType().Name ?? "null", environmentName);
             
             if (!properties.ContainsKey(propertyName))
@@ -590,87 +577,27 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
         }
         
-        this.logger.LogInformation("[COMPLETION-COLLECT] Total unique properties collected: {Count}", properties.Count);
-    }
-
-    /// <summary>
-    /// Vérifie si on est dans un contexte settings{} ou env{} où on peut définir des objets.
-    /// </summary>
-    private bool IsInSettingsOrEnvBlock(string textBeforeCursor)
-    {
-        // Simple heuristique : on cherche si on a "settings {" ou "env X {" avant le curseur
-        // et qu'on n'est pas en train d'écrire une propriété (pas de point juste avant)
-        
-        var lines = textBeforeCursor.Split('\n');
-        var lastLine = lines[^1].TrimStart();
-        
-        this.logger.LogInformation("[COMPLETION-CONTEXT] Checking if in settings/env block. Last line: '{Line}'", lastLine);
-        
-        // Si la dernière ligne se termine par un point, on est dans une propriété
-        if (lastLine.TrimEnd().EndsWith('.'))
-        {
-            this.logger.LogInformation("[COMPLETION-CONTEXT] Last line ends with '.', not in settings/env block");
-            return false;
-        }
-        
-        // Si on est en train de taper après un identifiant suivi d'un point, ce n'est pas un nouveau nom d'objet
-        var trimmedLine = lastLine.TrimEnd();
-        if (trimmedLine.Contains('.'))
-        {
-            this.logger.LogInformation("[COMPLETION-CONTEXT] Line contains '.', likely in property path");
-            return false;
-        }
-        
-        // Chercher si on a un "settings {" ou "env X {" ouvert
-        int braceDepth = 0;
-        bool inSettingsOrEnv = false;
-        
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-            
-            // Vérifier si on entre dans un bloc settings ou env
-            if (trimmed.StartsWith("settings") && trimmed.Contains('{'))
-            {
-                inSettingsOrEnv = true;
-                this.logger.LogDebug("[COMPLETION-CONTEXT] Found 'settings {{' block");
-            }
-            else if (trimmed.StartsWith("env ") && trimmed.Contains('{'))
-            {
-                inSettingsOrEnv = true;
-                this.logger.LogDebug("[COMPLETION-CONTEXT] Found 'env {{' block");
-            }
-            
-            // Compter les accolades pour suivre la profondeur
-            braceDepth += trimmed.Count(c => c == '{');
-            braceDepth -= trimmed.Count(c => c == '}');
-        }
-        
-        var result = inSettingsOrEnv && braceDepth > 0;
-        this.logger.LogInformation("[COMPLETION-CONTEXT] In settings/env block: {Result} (inBlock={InBlock}, depth={Depth})", 
-            result, inSettingsOrEnv, braceDepth);
-        
-        return result;
+        this.logger.LogTrace("[COMPLETION-COLLECT] Total unique properties collected: {Count}", properties.Count);
     }
 
     /// <summary>
     /// Récupère tous les noms d'objets de premier niveau définis dans base + tous les environnements.
     /// </summary>
-    private Dictionary<string, List<string>> GetAllObjectNames(SettexDocument document)
+    private Dictionary<string, List<string>> GetAllObjectNames(SettexDocument.Snapshot snapshot)
     {
         var objectNames = new Dictionary<string, List<string>>();
         
-        if (document.Ast == null)
+        if (snapshot.Ast == null)
         {
             return objectNames;
         }
         
         try
         {
-            var evaluation = this.EvaluateAllSettings(document.Ast);
+            var evaluation = this.EvaluateAllSettings(snapshot.Ast);
             if (evaluation == null)
             {
-                this.logger.LogWarning("[COMPLETION] EvaluateAllSettings returned null");
+                this.logger.LogTrace("[COMPLETION] EvaluateAllSettings returned null");
                 return objectNames;
             }
             
@@ -693,7 +620,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
                 this.CollectObjectNames(mergedSettings, envName, objectNames);
             }
             
-            this.logger.LogInformation("[COMPLETION] Found {Count} object names", objectNames.Count);
+            this.logger.LogTrace("[COMPLETION] Found {Count} object names", objectNames.Count);
         }
         catch (System.Exception ex)
         {

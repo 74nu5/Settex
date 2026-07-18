@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>Complete Settex File Template</Title>
+      <Shortcut>settex</Shortcut>
+      <Description>Complete Settex file template</Description>
+      <Author>Settex</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>project</ID>
+          <ToolTip>Project name</ToolTip>
+          <Default>Project</Default>
+        </Literal>
+        <Literal>
+          <ID>appName</ID>
+          <ToolTip>Application name</ToolTip>
+          <Default>MyApp</Default>
+        </Literal>
+        <Literal>
+          <ID>version</ID>
+          <ToolTip>Version number</ToolTip>
+          <Default>1.0.0</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="settex">
+        <![CDATA[# $project$ Configuration
+
+let appName = "$appName$"
+let version = "$version$"
+
+settings {
+	ApplicationName = appName
+	Version = version
+	
+	$end$
+}
+
+env Development {
+	
+}
+
+env Production {
+	
+}]]>
+      </Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

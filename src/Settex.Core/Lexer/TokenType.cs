@@ -25,6 +25,8 @@ public enum TokenType
     RightBrace, // }
     LeftBracket, // [
     RightBracket, // ]
+    LeftParen, // (
+    RightParen, // )
     Equals, // =
     ColonEquals, // :=
     Dot, // .

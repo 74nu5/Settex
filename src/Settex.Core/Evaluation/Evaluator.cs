@@ -2,6 +2,7 @@ namespace Settex.Core.Evaluation;
 
 using System.Text.Json.Nodes;
 
+using Settex.Core.Merging;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Runtime;
 
@@ -24,32 +25,53 @@ public class Evaluator
         var globalScope = new VariableScope();
         this.EvaluateLetStatements(fileNode.Statements, globalScope);
 
-        // Find the settings block and env blocks
-        var settingsBlock = fileNode.Statements.OfType<SettingsBlockNode>().First();
+        // Collect settings blocks and env blocks. Multiple settings blocks may
+        // appear once includes are flattened; they are deep-merged in document
+        // order (later blocks win), which is what makes modular configuration
+        // via includes work.
+        var settingsBlocks = fileNode.Statements.OfType<SettingsBlockNode>().ToList();
         var envBlocks = fileNode.Statements.OfType<EnvBlockNode>().ToList();
 
         // Define implicit 'env' variable for base settings
         globalScope.Define("env", new StringValue("Base"));
 
-        // Evaluate base settings with global scope
-        var baseSettings = this.EvaluateBlock(settingsBlock.Block, globalScope, baseSettings: null);
+        var merger = new Merger();
 
-        // Evaluate environment overlays
+        // Evaluate and deep-merge all base settings blocks in document order.
+        // Each block sees the accumulated result as its base so that ':=' and
+        // nested-object merges behave as if the blocks were written together.
+        var baseSettings = new JsonObject();
+
+        foreach (var settingsBlock in settingsBlocks)
+        {
+            var context = baseSettings.Count > 0 ? baseSettings : null;
+            var evaluated = this.EvaluateBlock(settingsBlock.Block, globalScope, context);
+            baseSettings = merger.Merge(baseSettings, evaluated);
+        }
+
+        // Evaluate environment overlays, deep-merging blocks that target the
+        // same environment (again, so an include can contribute to an env).
         var environmentOverlays = new Dictionary<string, JsonObject>();
 
         foreach (var envBlock in envBlocks)
         {
             // Create child scope for this environment
             var envScope = globalScope.CreateChild();
-            
+
             // Define implicit 'env' variable with environment name
             envScope.Define("env", new StringValue(envBlock.EnvironmentName));
-            
-            // Evaluate let statements in env block (if any in the future)
-            // For now, env blocks only contain settings blocks
-            
-            var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope, baseSettings);
-            environmentOverlays[envBlock.EnvironmentName] = envSettings;
+
+            // Context for ':=' / nested merges: the base plus any overlay already
+            // accumulated for this same environment.
+            var context = environmentOverlays.TryGetValue(envBlock.EnvironmentName, out var prior)
+                ? merger.Merge(baseSettings, prior)
+                : baseSettings;
+
+            var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope, context);
+
+            environmentOverlays[envBlock.EnvironmentName] = prior is null
+                ? envSettings
+                : merger.Merge(prior, envSettings);
         }
 
         return new(baseSettings, environmentOverlays);
@@ -71,44 +93,23 @@ public class Evaluator
 
     /// <summary>
     ///     Validates the structure of the file:
-    ///     - Exactly one settings block at top level
-    ///     - No duplicate env names
+    ///     - At least one settings block at top level
     ///     - No duplicate let variable names at same scope level
+    ///     Multiple settings blocks and multiple env blocks with the same name
+    ///     are allowed: they are deep-merged in document order, which is what
+    ///     lets an included file contribute a settings block.
     /// </summary>
     private void ValidateStructure(FileNode fileNode)
     {
         var settingsBlocks = fileNode.Statements.OfType<SettingsBlockNode>().ToList();
 
-        // Must have exactly one settings block
+        // Must have at least one settings block (across the file and its includes)
         if (settingsBlocks.Count == 0)
         {
             throw new EvaluatorException(
-                "File must contain exactly one 'settings' block",
+                "File must contain at least one 'settings' block",
                 fileNode.Location
             );
-        }
-
-        if (settingsBlocks.Count > 1)
-        {
-            throw new EvaluatorException(
-                "File must contain exactly one 'settings' block, but found multiple",
-                settingsBlocks[1].Location
-            );
-        }
-
-        // Check for duplicate env names
-        var envBlocks = fileNode.Statements.OfType<EnvBlockNode>().ToList();
-        var envNames = new HashSet<string>();
-
-        foreach (var envBlock in envBlocks)
-        {
-            if (!envNames.Add(envBlock.EnvironmentName))
-            {
-                throw new EvaluatorException(
-                    $"Duplicate environment name '{envBlock.EnvironmentName}'",
-                    envBlock.Location
-                );
-            }
         }
 
         // Check for duplicate let variable names

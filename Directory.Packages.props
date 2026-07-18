@@ -19,5 +19,11 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
     <!-- Language Server -->
     <PackageVersion Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
+    <!-- Visual Studio Extension (17.13.x are the lowest versions still available on nuget.org) -->
+    <PackageVersion Include="Microsoft.VisualStudio.SDK" Version="17.13.40008" />
+    <PackageVersion Include="Microsoft.VSSDK.BuildTools" Version="17.13.2126" />
+    <PackageVersion Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.13.33" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.21.10" />
+    <PackageVersion Include="EnvDTE" Version="17.13.40008" />
   </ItemGroup>
 </Project>

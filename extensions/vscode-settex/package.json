@@ -19,7 +19,7 @@
     "json"
   ],
   "activationEvents": [
-    "*"
+    "onLanguage:settex"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -50,7 +50,8 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run bundle-server && npm run compile",
+    "bundle-server": "dotnet publish ../../src/Settex.LanguageServer/Settex.LanguageServer.csproj -c Release -o ./server --nologo",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
