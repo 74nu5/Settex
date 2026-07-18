@@ -168,7 +168,7 @@
       <tr><td><code>Settex.Cli</code></td><td>Outil en ligne de commande <code>settex build</code> (Spectre.Console)</td><td>~140 L</td><td><span class="badge b-ok">Fonctionnel</span></td></tr>
       <tr><td><code>Settex.Build</code></td><td>Tâche MSBuild (compilation automatique au build)</td><td>~130 L</td><td><span class="badge b-ok">Fonctionnel</span></td></tr>
       <tr><td><code>Settex.LanguageServer</code></td><td>Serveur LSP (OmniSharp) : complétion, hover, définition, références, symboles, diagnostics</td><td>~3 060 L</td><td><span class="badge b-warn">Riche mais fragile</span></td></tr>
-      <tr><td><code>vscode-settex</code></td><td>Extension VS Code (TypeScript) : coloration, snippets, client LSP</td><td>~0.1.0</td><td><span class="badge b-bad">Immature</span></td></tr>
+      <tr><td><code>vscode-settex</code></td><td>Extension VS Code (TypeScript) : coloration, snippets, client LSP avec serveur embarqué</td><td>~0.1.0</td><td><span class="badge b-warn">En progrès</span></td></tr>
       <tr><td><code>vs-settex</code></td><td>Extension Visual Studio 2022 (C#, net472) : coloration, snippets, LSP, build auto</td><td>v1.2.0</td><td><span class="badge b-warn">Plus mature</span></td></tr>
     </tbody>
   </table>
@@ -291,9 +291,9 @@
   </div>
 
   <div class="callout ok">
-    <div class="t">✅ Corrigé (côté VS) — Binaires embarqués dans le VSIX</div>
-    Le serveur LSP et le CLI (publiés framework-dependent net10.0) sont désormais <strong>embarqués dans le VSIX</strong> sous <code>LanguageServer/</code> et <code>Cli/</code> via une cible MSBuild, et résolus relativement au dossier de l'assembly de l'extension (et non <code>AppDomain.BaseDirectory</code>, qui pointe vers devenv). VSIX final ≈ 2,9 Mo, self-contained (le runtime .NET 10 doit être présent). Vérifié : le CLI et le serveur extraits du VSIX se lancent et fonctionnent via <code>dotnet</code>. <strong>Reste</strong> : l'extension <em>VS Code</em> garde son chemin serveur en dur (<code>extension.ts:28</code>) et n'embarque pas encore les binaires.
-    <div class="fp">extensions/vs-settex/…/Settex.VisualStudio.csproj (cible PublishSettexRuntimeBinaries) · SettexLanguageClient.cs · SettexBuildService.cs</div>
+    <div class="t">✅ Corrigé — Binaires embarqués dans les deux extensions</div>
+    <strong>Les deux extensions embarquent désormais leurs binaires.</strong> Côté <em>Visual Studio</em> : le serveur LSP et le CLI (publiés framework-dependent net10.0) sont embarqués dans le VSIX sous <code>LanguageServer/</code> et <code>Cli/</code> via une cible MSBuild, résolus relativement au dossier de l'assembly de l'extension (et non <code>AppDomain.BaseDirectory</code>, qui pointe vers devenv). Côté <em>VS Code</em> : le serveur est publié dans <code>server/</code> via un script <code>bundle-server</code> branché sur <code>vscode:prepublish</code>, et résolu depuis <code>context.asAbsolutePath</code> avec repli sur l'arbre source. VSIX ≈ 2,9 Mo (VS) et 2,19 Mo (VS Code), self-contained (le runtime .NET 10 doit être présent). Vérifié : CLI et serveur extraits des deux paquets se lancent et fonctionnent via <code>dotnet</code>.
+    <div class="fp">vs-settex : Settex.VisualStudio.csproj (PublishSettexRuntimeBinaries) · vscode-settex : package.json (bundle-server) · extension.ts</div>
   </div>
 
   <div class="callout warn">
@@ -349,7 +349,7 @@
     <tbody>
       <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + test de non-régression</s> — <strong>fait ✅</strong> (projet <code>Settex.VisualStudio.Tests</code>)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>3</td><td><s>Rendre l'extension VS déployable : builder le VSIX, embarquer serveur+CLI, résoudre les binaires par chemin relatif</s> — <strong>fait ✅</strong> ; reste à appliquer le même embarquement à l'extension VS Code</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>3</td><td><s>Rendre les extensions déployables : builder le VSIX, embarquer serveur+CLI, résoudre les binaires par chemin relatif (VS + VS Code)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code> (immutabilité ou verrou + versioning)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
