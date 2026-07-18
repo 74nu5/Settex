@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — Revue technique indépendante</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  }
+  :root[data-theme="dark"]{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  :root[data-theme="light"]{ --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:60px 24px 36px;border-bottom:1px solid var(--border);
+    background:radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:940px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.12rem;color:var(--muted);margin:0 0 22px;max-width:680px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.55rem;margin:52px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.05rem;margin-right:10px}
+  h3{font-size:1.12rem;margin:26px 0 6px}
+  p{margin:12px 0}.lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}.grid.cols-3{grid-template-columns:1fr 1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  .b-info{background:color-mix(in srgb,var(--info) 18%,transparent);color:var(--info)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  ul.tight{margin:12px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}.callout.warn{border-left-color:var(--warn)}.callout.ok{border-left-color:var(--ok)}.callout.info{border-left-color:var(--info)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin:32px 0}
+  .toc ol{margin:8px 0 0;padding-left:20px;columns:2;column-gap:32px}
+  .toc a{text-decoration:none;color:var(--text)}.toc a:hover{color:var(--accent)}
+  .bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+  code.sx{color:var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .verdict{font-size:1.12rem;font-weight:600}
+  pre.code{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;margin:10px 0}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Revue technique &amp; fonctionnelle · Regard indépendant</p>
+    <h1>Settex — seconde revue</h1>
+    <p class="subtitle">Analyse à froid de l'état actuel de <code>main</code>, menée comme si le projet était découvert : chaque affirmation forte a été rejouée contre le code et le CLI. Ce rapport <strong>révise à la baisse</strong> certaines conclusions du premier — il est plus sévère, et assumé comme tel.</p>
+    <div class="meta">
+      <span><b>Date</b> 18 juillet 2026</span>
+      <span><b>Méthode</b> revue adversariale + reproduction</span>
+      <span><b>Base</b> main @ 2ea3f72</span>
+      <span><b>Stack</b> .NET 10 (preview) · C#</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="score-band">
+    <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
+    <div class="score"><div class="big">222</div><div class="lbl">Tests · 100 % au vert</div></div>
+    <div class="score"><div class="big">5</div><div class="lbl">bugs réels reproduits</div></div>
+    <div class="score"><div class="big">1</div><div class="lbl">livrable non fonctionnel (VSIX VS Code)</div></div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Pourquoi cette note est plus basse que le premier rapport</div>
+    Le premier rapport (7,6) reflétait une phase de consolidation — mais il notait aussi, en partie, ses propres correctifs. Une passe <strong>adversariale</strong> révèle que la périphérie est plus fragile que ce chiffre : le serveur de langage a des incohérences de concurrence et des heuristiques peu fiables, <strong>l'extension VS Code packagée ne s'active pas</strong>, et le compilateur cache des bugs réels non testés. Le socle reste bon ; l'écart ambition ↔ robustesse subsiste.
+  </div>
+
+  <div class="callout">
+    <div class="t">Verdict en une phrase</div>
+    <span class="verdict">Un compilateur d'auteur au design propre et aux diagnostics soignés, mais encore en <strong>alpha</strong> : des bugs de langage réels non couverts, un serveur LSP « prototype avancé », et un écosystème d'extensions dont l'une est cassée à l'installation.</span>
+  </div>
+
+  <nav class="toc">
+    <strong>Sommaire</strong>
+    <ol>
+      <li><a href="#methode">Méthode &amp; périmètre</a></li>
+      <li><a href="#bugs">Bugs reproduits</a></li>
+      <li><a href="#technique">Évaluation technique par composant</a></li>
+      <li><a href="#fonctionnel">Évaluation fonctionnelle</a></li>
+      <li><a href="#critique">Évaluation critique</a></li>
+      <li><a href="#reco">Recommandations priorisées</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
+  <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
+  <ul class="tight">
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 222 tests (201 core + 15 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
+    <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
+  </ul>
+  <p>Le projet compte ~9 200 lignes (C#/Razor/TS) : compilateur (~3 510), serveur LSP (~2 985), extensions (~1 330), site de docs Blazor (~1 095), tests (~6 150).</p>
+
+  <!-- 2 -->
+  <h2 id="bugs"><span class="num">02</span>Bugs reproduits</h2>
+  <p>Défauts <strong>confirmés par reproduction</strong> — non couverts par les tests existants.</p>
+
+  <div class="callout bad">
+    <div class="t">🔴 Bloquant — L'extension VS Code ne s'active pas une fois installée</div>
+    <code>.vscodeignore</code> exclut <code>node_modules/**</code>, mais <code>out/extension.js</code> exécute <code>require("vscode-languageclient/node")</code> — une dépendance <strong>runtime</strong>. Le VSIX produit (<code>settex-0.1.0.vsix</code>) contient <strong>0</strong> entrée <code>node_modules</code> (vérifié). À l'activation : <code>Cannot find module 'vscode-languageclient/node'</code> → l'extension ne démarre pas. Le build est un simple <code>tsc</code> (pas de bundling esbuild/webpack). <em>À corriger : retirer <code>node_modules/**</code> de l'ignore (vsce élague alors les dev-deps) ou bundler.</em>
+    <div class="fp">extensions/vscode-settex/.vscodeignore:11 · out/extension.js · package.json (dependencies)</div>
+  </div>
+
+  <div class="callout bad">
+    <div class="t">🔴 Élevé — La soustraction sans espaces est cassée</div>
+    Le lexer rend tout <code>-</code> suivi d'un chiffre glouton en littéral négatif. <code class="sx">settings { R = 5-3 }</code> → <strong>erreur</strong> « Expected identifier… » (lexé en <code>5</code> puis <code>-3</code>). Seul <code class="sx">5 - 3</code> (espaces des deux côtés) donne <code>2</code>. Piège silencieux, aucun test ne l'attrape (tous écrivent avec espaces).
+    <div class="fp">src/Settex.Core/Lexer/Lexer.cs:362 (ScanMinusOrNumber)</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Moyen — Les <code>let</code> d'un bloc imbriqué fuient dans la portée parente</div>
+    Un <code class="sx">let</code> défini dans un bloc imbriqué est visible <strong>en dehors</strong> et <strong>écrase</strong> un homonyme global. Reproduit : <code class="sx">let host = "global"; settings { Box { let host = "inner" B = host } Top = host }</code> → <code>Top = "inner"</code>. <code>EvaluateBlock</code> ne crée jamais de scope enfant pour un bloc imbriqué (contrairement aux boucles <code>for</code>).
+    <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs:137, 274</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Moyen — Interpolation : jetons en trop ignorés, diagnostics faux</div>
+    <code>ParseInterpolatedString</code> appelle <code>ParseExpression()</code> (pas <code>Parse()</code>) : <code class="sx">"${a b}"</code> parse <code>a</code> et <strong>ignore <code>b</code> sans erreur</strong>. Le sous-lexer est créé sans <code>filePath</code> ni offset → toute erreur dans un <code>${…}</code> pointe une localisation erronée.
+    <div class="fp">src/Settex.Core/Parser/Parser.cs:598-663</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Moyen — Includes en losange non dédupliqués · robustesse récursion</div>
+    Le champ <code>visited</code> de l'IncludeResolver est du <strong>code mort</strong> (jamais consulté) : un include en losange (A→B, A→C, B→D, C→D) applique D <strong>deux fois</strong>. La détection de cycle est sensible à la casse (sur Windows <code>Inc.settex</code> ≠ <code>inc.settex</code> pour la comparaison → cycle raté possible). Aucune borne de profondeur → un fichier profondément imbriqué peut lever un <code>StackOverflowException</code> (non rattrapable).
+    <div class="fp">src/Settex.Core/Resolution/IncludeResolver.cs:12, 60</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Moyen — Overflow numérique → « Unexpected error » sans localisation</div>
+    Un littéral flottant hors plage <code>decimal</code> (ou une arithmétique qui déborde) lève une <code>OverflowException</code> non typée qui tombe dans le catch-all du compilateur → message générique <strong>sans ligne/colonne</strong>. Les entiers hors plage <code>long</code>, eux, sont bien rattrapés (« Invalid integer literal »).
+    <div class="fp">src/Settex.Core/Evaluation/ExpressionEvaluator.cs:44 · SettexCompiler.cs:162</div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="technique"><span class="num">03</span>Évaluation technique par composant</h2>
+
+  <div style="margin:8px 0 20px">
+    <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">deep-merge OK, mais bugs de portée/interpolation</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 4.5/10 <span style="color:var(--muted);font-size:.85rem">prototype avancé, concurrence &amp; heuristiques fragiles</span><div class="bar"><i style="width:45%"></i></div></div>
+    <div style="margin:12px 0"><b>Extension Visual Studio</b> — 5.5/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save solide, mais 2 bugs LSP</span><div class="bar"><i style="width:55%"></i></div></div>
+    <div style="margin:12px 0"><b>Extension VS Code</b> — 2/10 <span style="color:var(--muted);font-size:.85rem">VSIX non fonctionnel à l'installation</span><div class="bar"><i style="width:20%"></i></div></div>
+    <div style="margin:12px 0"><b>Site de documentation</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">propre, mais FOUC / SEO / i18n dupliqué</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Couverture de tests</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">large, mais angles morts &amp; assertions faibles</span><div class="bar"><i style="width:60%"></i></div></div>
+  </div>
+
+  <h3>Compilateur</h3>
+  <p><strong>Points forts réels :</strong> pipeline en phases isolées, exceptions typées par phase, records immuables, deep-merge multi-blocs correct et bien testé, écriture conditionnelle idempotente, et surtout des <strong>diagnostics de qualité</strong> (voir §04). <strong>Faiblesses :</strong> les bugs du §02, plus des choix ouverts — les fichiers <code>appsettings.{Env}.json</code> contiennent la config <strong>complète mergée</strong> (base dupliquée dans chaque fichier, redondant avec le layering natif de .NET), les <code>let</code> sont hoistés (utilisables avant déclaration), et du code mort subsiste (<code>Parser.ParseValue</code>, <code>Evaluator.EvaluateLiteral</code>, <code>IncludeResolver.visited</code>).</p>
+
+  <h3>Serveur de langage — la plus grande sur-évaluation du 1<sup>er</sup> rapport</h3>
+  <div class="callout info">
+    <div class="t">Correctif du 1<sup>er</sup> rapport à nuancer</div>
+    Le 1<sup>er</sup> rapport annonçait <code>SettexDocument</code> « rendu thread-safe ». C'est vrai pour l'infrastructure (snapshot immuable + <code>volatile</code>), mais le snapshot n'est capturé une fois que dans <strong>1 handler sur 4</strong> (la complétion). <strong>Hover, Definition et References lisent <code>Text</code> puis <code>Ast</code> en accès séparés</strong> → un <code>Update</code> concurrent peut apparier un texte N à un AST N+1. Le commentaire du fichier affirme le contraire.
+  </div>
+  <ul class="tight">
+    <li><strong>Heuristiques de position non fiables</strong> : <code>LocationToRange</code> est mono-ligne (<code>SourceLocation</code> n'a pas d'EndLine/EndColumn) → ranges de symboles/diagnostics faux dès qu'un nœud est multi-ligne. <code>ContainsPosition</code> avale ~1000 lignes en dur après le début d'un scope → résolution de portée incorrecte avec plusieurs <code>env</code>.</li>
+    <li><strong>Navigation cross-fichier cassée</strong> : les includes sont inlinés, mais Definition renvoie l'URI du fichier courant avec les lignes du fichier inclus → pointe au mauvais endroit.</li>
+    <li><strong>Performance</strong> : reparse complet + <code>File.ReadAllText</code> de tous les includes <strong>à chaque frappe</strong> ; évaluation complète du modèle deux fois par complétion, une par hover, sans cache ; et surtout des <strong>arguments de log <code>Trace</code> évalués systématiquement</strong> (<code>string.Join</code>, <code>ToJsonString</code>) même quand le trace est éteint — coût réel en production, à protéger par <code>IsEnabled</code>.</li>
+    <li><strong>URI → chemin</strong> maison (<code>Substring(8)</code>) : ne décode pas le percent-encoding, casse la racine <code>/</code> sur Linux, ignore l'UNC. <code>DocumentUri.GetFileSystemPath()</code> d'OmniSharp existe et n'est pas utilisé.</li>
+    <li><strong>Manques</strong> : rename, code actions, formatting, semantic tokens, folding, sync incrémental.</li>
+  </ul>
+
+  <h3>Extensions</h3>
+  <p><strong>Visual Studio</strong> (<code>net472</code>) : l'ingénierie difficile est de <strong>bonne qualité</strong> — le compile-on-save gère correctement la concurrence (disposal déterministe du CTS, remove atomique clé/valeur), le kill de process, un timeout de 60 s, la lecture concurrente des flux et le marshalling UI. Mais le <strong>client LSP a deux bugs réels</strong> : <code>stderr</code> est redirigé mais <strong>jamais drainé</strong> (le serveur peut se bloquer sur un buffer plein) et le process serveur n'est <strong>jamais stocké ni tué</strong> (fuite à la fermeture de VS). Aucune gestion d'erreur si <code>dotnet</code> est absent.</p>
+  <p><strong>VS Code</strong> : au-delà du VSIX cassé (§02), métadonnées placeholder (<code>github.com/yourusername/settex</code>), versionnage désaligné avec l'extension VS (0.1.0 vs 1.2.0), et fichiers parasites embarqués (<code>test.settex</code>, <code>TESTING.md</code>).</p>
+  <p><strong>Commun aux deux</strong> : dépendance dure au <strong>runtime .NET 10 (preview)</strong> sur la machine de l'utilisateur, sans détection ni message actionnable si absent — le principal frein d'adoption. Aucune CI de build/test/package pour les extensions.</p>
+
+  <h3>Site de documentation</h3>
+  <p>Proprement codé (service de localisation, composant de base, isolation build volontaire, config Azure SWA correcte, CI de déploiement). Mais : <strong>i18n par duplication</strong> (chaque page contient FR et EN en dur — dérive garantie à terme, pas de <code>.resx</code>), <strong>FOUC de langue</strong> (l'anglais s'affiche avant la bascule FR au chargement), <code>&lt;html lang="en"&gt;</code> figé, <strong>aucun SEO</strong> (WASM 100 % client, contenu documentaire invisible aux crawlers), et la classe <code>lang-*</code> de <code>CodeBlock</code> suggère une coloration syntaxique <strong>qui n'existe pas</strong> (aucun moteur branché).</p>
+
+  <!-- 4 -->
+  <h2 id="fonctionnel"><span class="num">04</span>Évaluation fonctionnelle</h2>
+  <p class="lead">Du point de vue de l'utilisateur : qu'est-ce qui marche vraiment, et est-ce agréable ?</p>
+
+  <h3>Ce qui fonctionne bien</h3>
+  <ul class="tight">
+    <li><strong>Le flux principal est solide.</strong> Un <code>.settex</code> réaliste (variables, expressions, interpolation, <code>for</code>, overlays, includes modulaires) compile de bout en bout et produit un JSON correct.</li>
+    <li><strong>Les diagnostics sont une vraie force</strong> (vérifié sur ~15 cas d'erreur) : localisation ligne/colonne précise et messages <em>lisibles</em> — variable non définie, condition non booléenne, division par zéro, include circulaire, accès membre sur non-objet, chaîne non terminée (« Unterminated string literal »), entier hors plage (« Invalid integer literal '…' »), token inconnu. Peu de langages d'auteur soignent autant ce point.</li>
+    <li><strong>La proposition de valeur est claire</strong> : DRY par overlays + deep-merge, syntaxe lisible, intégration MSBuild transparente.</li>
+  </ul>
+
+  <h3>Frictions &amp; limites du langage</h3>
+  <table>
+    <thead><tr><th>Limite</th><th>Impact utilisateur</th></tr></thead>
+    <tbody>
+      <tr><td>Soustraction <code>a-b</code> sans espaces cassée</td><td>Erreur déroutante ; discipline d'écriture imposée sans que la doc l'explique</td></tr>
+      <tr><td>Clés = identifiants uniquement</td><td>Impossible d'avoir une clé <code>env</code>, <code>for</code>, <code>if</code>… ou contenant <code>:</code> (or <code>Logging:LogLevel</code> est idiomatique en .NET)</td></tr>
+      <tr><td>Tableaux : remplacement seul</td><td>Pas d'ajout à une liste à travers les overlays (ex. étendre <code>AllowedHosts</code> par env)</td></tr>
+      <tr><td>Pas de <code>else</code>/<code>elif</code></td><td>Conditionnelles verbeuses (fallback + surcharge)</td></tr>
+      <tr><td>Fichiers d'env auto-suffisants</td><td>Base dupliquée dans chaque <code>appsettings.{Env}.json</code> → diffs bruyants, redondance</td></tr>
+      <tr><td>Fuite de portée des <code>let</code> imbriqués</td><td>Écrasement silencieux d'une variable globale — source de bugs difficiles</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Pertinence produit</h3>
+  <p>Settex concurrence des approches établies (transformations de config .NET, variables d'environnement + <code>dotnet user-secrets</code>, ou des langages comme CUE / Dhall / Jsonnet). Sa niche — un DSL lisible avec overlays et deep-merge pour .NET — est réelle mais étroite. Le choix de générer des fichiers d'env <em>complets</em> (plutôt que des deltas) le met en tension avec le modèle de superposition natif de .NET, ce qui mérite d'être tranché. L'adoption dépendra d'une expérience « ça marche du premier coup » irréprochable — que le bug de soustraction et le VSIX cassé compromettent aujourd'hui.</p>
+
+  <!-- 5 -->
+  <h2 id="critique"><span class="num">05</span>Évaluation critique</h2>
+  <p>Settex reste un <strong>projet d'auteur au-dessus de la moyenne sur l'ingénierie</strong> : découpage en phases textbook, code discipliné (<code>warnings-as-errors</code>), un serveur LSP maison avec un hover multi-environnement original, et une exigence rare sur les messages d'erreur. La consolidation récente est réelle : includes modulaires, expressions complètes, extensions <em>buildables</em>, doc réalignée et vérifiée.</p>
+  <p>Mais une lecture à froid ramène à la réalité d'un <strong>alpha</strong> : le périmètre <em>communiqué comme fini</em> cache des défauts de correction que le style de tests dissimule. Le motif est récurrent — l'infrastructure correcte existe (snapshot thread-safe, scoping par <code>VariableScope</code>, champ <code>visited</code> anti-losange) mais n'est <strong>pas branchée</strong> : le snapshot n'est utilisé qu'à un endroit, le block-scoping n'appelle jamais <code>CreateChild</code>, <code>visited</code> n'est jamais lu. Le code <em>ressemble</em> à ce qu'il devrait faire plus qu'il ne le fait — d'où l'importance de ne pas croire les commentaires.</p>
+  <div class="grid cols-3" style="margin-top:20px">
+    <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>Diagnostics précis &amp; lisibles</li><li>Deep-merge correct &amp; testé</li><li>Compile-on-save VS robuste</li><li>Discipline d'architecture</li></ul></div>
+    <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li>Bugs de langage non testés</li><li>Infra correcte mais non branchée</li><li>LSP heuristique &amp; concurrent</li><li>Tests à assertions faibles</li></ul></div>
+    <div class="card"><h3 style="color:var(--bad)">Ce qui bloque</h3><ul class="tight"><li>VSIX VS Code non fonctionnel</li><li>stderr LSP non drainé (VS)</li><li>Dépendance .NET 10 preview</li><li>Pas de publication marketplace</li></ul></div>
+  </div>
+
+  <!-- 6 -->
+  <h2 id="reco"><span class="num">06</span>Recommandations priorisées</h2>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Réparer le packaging VS Code (retirer <code>node_modules/**</code> de <code>.vscodeignore</code> ou bundler via esbuild) + un test de fumée qui installe/active le VSIX</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td>Corriger le lexer des négatifs (décider <code>-</code> binaire vs unaire selon le contexte d'opérande) + tests <code>a-b</code>, <code>a -1</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>3</td><td>Vrai block-scoping : <code>CreateChild()</code> par bloc imbriqué + tests de fuite/écrasement de <code>let</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>4</td><td>Client LSP VS : drainer <code>stderr</code> (ou ne pas le rediriger), stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td>LSP : généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref), protéger les logs par <code>IsEnabled</code>, remplacer <code>UriToFilePath</code>/<code>LocationToRange</code> par les utilitaires OmniSharp + EndLine/EndColumn dans <code>SourceLocation</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>6</td><td>Fiabiliser l'interpolation (parse complet + propagation filePath/offset), rattraper <code>OverflowException</code> en erreur localisée, borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>7</td><td>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>8</td><td>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie), assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message), cas CRLF/overflow/sans-espaces/scope</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>9</td><td>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET) — décision de design</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>10</td><td>Docs : mettre à jour <code>&lt;html lang&gt;</code> à la bascule, lire la langue avant le 1<sup>er</sup> rendu (anti-FOUC), brancher une vraie coloration ou retirer la classe <code>lang-*</code> ; envisager un pré-rendu pour le SEO</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok" style="margin-top:28px">
+    <div class="t">Conclusion</div>
+    Le socle mérite d'être poursuivi : peu de projets d'auteur atteignent ce niveau de soin architectural et de diagnostics. Mais pour prétendre à « prêt à l'usage », il faut fermer l'écart entre <em>ce que le code annonce</em> et <em>ce qu'il fait</em> — réparer le VSIX VS Code, éliminer les bugs de langage non testés, brancher l'infrastructure déjà écrite (snapshot, scoping, anti-losange), et durcir les tests là où ils ferment les yeux. La priorité n'est ni les fonctionnalités ni le polish : c'est la <strong>correction</strong>.
+  </div>
+
+  <footer>
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 222 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+  </footer>
+</div>
+</body>
+</html>
