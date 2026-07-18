@@ -278,10 +278,10 @@
   <!-- 6 -->
   <h2 id="bugs"><span class="num">06</span>Bugs &amp; dette prioritaires</h2>
 
-  <div class="callout bad">
-    <div class="t">🔴 Critique — Le build auto de l'extension VS ne peut pas fonctionner</div>
-    <code>SettexBuildService</code> invoque <code>dotnet "Settex.Cli.dll" compile "&lt;fichier&gt;"</code>, mais le CLI n'expose que la commande <code>build</code> (aucun <code>compile</code>). La compilation manuelle et le compile-on-save échouent donc systématiquement à l'exécution.
-    <div class="fp">extensions/vs-settex/Settex.VisualStudio/SettexBuildService.cs:70 · vs. src/Settex.Cli/Program.cs:15</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Le build auto de l'extension VS invoquait une commande CLI inexistante</div>
+    <code>SettexBuildService</code> invoquait <code>dotnet "Settex.Cli.dll" compile "&lt;fichier&gt;"</code>, mais le CLI n'expose que la commande <code>build</code> — la compilation manuelle et le compile-on-save échouaient systématiquement à l'exécution. <strong>Corrigé</strong> (<code>compile</code> → <code>build</code>) et validé end-to-end : l'invocation génère bien les fichiers <code>appsettings*.json</code> dans le répertoire du <code>.settex</code>.
+    <div class="fp">extensions/vs-settex/Settex.VisualStudio/SettexBuildService.cs:70 · src/Settex.Cli/Program.cs:15</div>
   </div>
 
   <div class="callout bad">
@@ -341,7 +341,7 @@
   <table>
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + ajouter un test de non-régression</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>)</s> — <strong>fait ✅</strong> ; reste à ajouter un test de non-régression</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td>Rendre les extensions déployables : embarquer serveur+CLI dans le package, résoudre les binaires par chemin relatif à l'extension installée</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
