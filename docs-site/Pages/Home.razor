@@ -1,71 +1,106 @@
 @page "/"
-<PageTitle>Settex — a human-friendly config language for .NET</PageTitle>
+@inherits LocalizedComponentBase
+<PageTitle>@(Fr ? "Settex — un langage de configuration convivial pour .NET" : "Settex — a human-friendly config language for .NET")</PageTitle>
 
-<section class="hero">
-    <div class="hero-kicker">Configuration language for .NET</div>
-    <h1>Write configuration that reads like configuration.</h1>
-    <p class="hero-sub">
-        Settex compiles a clean, concise <code>.settex</code> source file into
-        <code>appsettings.json</code> and per-environment overlays — with variables,
-        expressions, includes and deep merging built in.
-    </p>
-    <div class="hero-actions">
-        <a class="btn btn-primary" href="getting-started">Get started</a>
-        <a class="btn btn-ghost" href="language">Language guide</a>
-        <a class="btn btn-ghost" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
-    </div>
-</section>
+@if (Fr)
+{
+    <section class="hero">
+        <div class="hero-kicker">Langage de configuration pour .NET</div>
+        <h1>Écrivez une configuration qui se lit comme de la configuration.</h1>
+        <p class="hero-sub">
+            Settex compile un fichier source <code>.settex</code> clair et concis en
+            <code>appsettings.json</code> et en overlays par environnement — avec variables, expressions,
+            includes et fusion profonde intégrés.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="getting-started">Démarrer</a>
+            <a class="btn btn-ghost" href="language">Guide du langage</a>
+            <a class="btn btn-ghost" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="hero">
+        <div class="hero-kicker">Configuration language for .NET</div>
+        <h1>Write configuration that reads like configuration.</h1>
+        <p class="hero-sub">
+            Settex compiles a clean, concise <code>.settex</code> source file into
+            <code>appsettings.json</code> and per-environment overlays — with variables, expressions,
+            includes and deep merging built in.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="getting-started">Get started</a>
+            <a class="btn btn-ghost" href="language">Language guide</a>
+            <a class="btn btn-ghost" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+        </div>
+    </section>
+}
 
 <section class="split">
     <CodeBlock Title="appsettings.settex" Code="@Source" />
-    <CodeBlock Title="appsettings.Production.json (generated)" Lang="json" Code="@Generated" />
+    <CodeBlock Title="@(Fr ? "appsettings.Production.json (généré)" : "appsettings.Production.json (generated)")" Lang="json" Code="@Generated" />
 </section>
 
-<h2>Why Settex</h2>
+<h2>@(Fr ? "Pourquoi Settex" : "Why Settex")</h2>
 <div class="feature-grid">
     <div class="feature">
         <div class="feature-icon">🔀</div>
-        <h3>Environment overlays</h3>
-        <p>Define base settings once, override only what changes per environment. Objects deep-merge, arrays replace.</p>
+        <h3>@(Fr ? "Overlays d'environnement" : "Environment overlays")</h3>
+        <p>@(Fr ? "Définissez les réglages de base une fois, ne redéfinissez que ce qui change par environnement. Les objets fusionnent, les tableaux sont remplacés." : "Define base settings once, override only what changes per environment. Objects deep-merge, arrays replace.")</p>
     </div>
     <div class="feature">
         <div class="feature-icon">🧮</div>
-        <h3>Variables &amp; expressions</h3>
-        <p><code>let</code> bindings, arithmetic, logic, comparisons, null-coalescing, parentheses and string concatenation.</p>
+        <h3>@(Fr ? "Variables &amp; expressions" : "Variables &amp; expressions")</h3>
+        <p>@(Fr ? "Liaisons let, arithmétique, logique, comparaisons, coalescence de null, parenthèses et concaténation de chaînes." : "let bindings, arithmetic, logic, comparisons, null-coalescing, parentheses and string concatenation.")</p>
     </div>
     <div class="feature">
         <div class="feature-icon">💬</div>
-        <h3>String interpolation</h3>
-        <p>Embed variables and expressions directly in strings: <code>"${protocol}://${host}:${port}"</code>.</p>
+        <h3>@(Fr ? "Interpolation de chaînes" : "String interpolation")</h3>
+        <p>@(Fr ? "Intégrez variables et expressions directement dans les chaînes :" : "Embed variables and expressions directly in strings:") <code>"${protocol}://${host}:${port}"</code>.</p>
     </div>
     <div class="feature">
         <div class="feature-icon">📂</div>
-        <h3>Modular includes</h3>
-        <p>Split configuration across files. Included <code>settings</code> and <code>env</code> blocks deep-merge into the main file.</p>
+        <h3>@(Fr ? "Includes modulaires" : "Modular includes")</h3>
+        <p>@(Fr ? "Répartissez la configuration sur plusieurs fichiers. Les blocs settings et env inclus fusionnent dans le fichier principal." : "Split configuration across files. Included settings and env blocks deep-merge into the main file.")</p>
     </div>
     <div class="feature">
         <div class="feature-icon">🛠️</div>
-        <h3>MSBuild &amp; CLI</h3>
-        <p>Compile automatically during build, or from a standalone CLI with precise, clickable diagnostics.</p>
+        <h3>@(Fr ? "MSBuild &amp; CLI" : "MSBuild &amp; CLI")</h3>
+        <p>@(Fr ? "Compilez automatiquement au build, ou depuis une CLI autonome avec des diagnostics précis et cliquables." : "Compile automatically during build, or from a standalone CLI with precise, clickable diagnostics.")</p>
     </div>
     <div class="feature">
         <div class="feature-icon">🧩</div>
-        <h3>Editor support</h3>
-        <p>Visual Studio and VS Code extensions provide syntax highlighting, snippets and a language server.</p>
+        <h3>@(Fr ? "Support éditeur" : "Editor support")</h3>
+        <p>@(Fr ? "Les extensions Visual Studio et VS Code offrent coloration syntaxique, snippets et un serveur de langage." : "Visual Studio and VS Code extensions provide syntax highlighting, snippets and a language server.")</p>
     </div>
 </div>
 
-<h2>How it works</h2>
-<ol class="steps">
-    <li><strong>Write</strong> an <code>appsettings.settex</code> file describing your base settings and <code>env</code> overlays.</li>
-    <li><strong>Compile</strong> it — on build via the <code>Settex.Build</code> MSBuild package, or with the <code>settex</code> CLI.</li>
-    <li><strong>Ship</strong> the generated <code>appsettings.json</code> and <code>appsettings.{Environment}.json</code> files, consumed by .NET configuration as usual.</li>
-</ol>
-
-<div class="callout callout-note">
-    New to the syntax? Start with <a href="getting-started">Getting started</a>, then browse the
-    full <a href="language">Language guide</a>. Keep the <a href="cheatsheet">cheat sheet</a> handy.
-</div>
+<h2>@(Fr ? "Comment ça marche" : "How it works")</h2>
+@if (Fr)
+{
+    <ol class="steps">
+        <li><strong>Écrivez</strong> un fichier <code>appsettings.settex</code> décrivant vos réglages de base et vos overlays <code>env</code>.</li>
+        <li><strong>Compilez-le</strong> — au build via le paquet MSBuild <code>Settex.Build</code>, ou avec la CLI <code>settex</code>.</li>
+        <li><strong>Livrez</strong> les fichiers <code>appsettings.json</code> et <code>appsettings.{Environment}.json</code> générés, consommés par la configuration .NET comme d'habitude.</li>
+    </ol>
+    <div class="callout callout-note">
+        Nouveau sur la syntaxe ? Commencez par le <a href="getting-started">Démarrage</a>, puis parcourez le
+        <a href="language">Guide du langage</a>. Gardez l'<a href="cheatsheet">aide-mémoire</a> sous la main.
+    </div>
+}
+else
+{
+    <ol class="steps">
+        <li><strong>Write</strong> an <code>appsettings.settex</code> file describing your base settings and <code>env</code> overlays.</li>
+        <li><strong>Compile</strong> it — on build via the <code>Settex.Build</code> MSBuild package, or with the <code>settex</code> CLI.</li>
+        <li><strong>Ship</strong> the generated <code>appsettings.json</code> and <code>appsettings.{Environment}.json</code> files, consumed by .NET configuration as usual.</li>
+    </ol>
+    <div class="callout callout-note">
+        New to the syntax? Start with <a href="getting-started">Getting started</a>, then browse the
+        full <a href="language">Language guide</a>. Keep the <a href="cheatsheet">cheat sheet</a> handy.
+    </div>
+}
 
 @code {
     private const string Source = """

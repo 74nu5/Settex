@@ -121,7 +121,30 @@ kbd {
     font-size: 0.95rem;
 }
 .brand-name { font-size: 1.1rem; }
-.topbar-gh { margin-left: auto; color: var(--muted); font-size: 0.9rem; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.topbar-gh { color: var(--muted); font-size: 0.9rem; }
+
+.lang-switch {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+}
+.lang-btn {
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1.4;
+}
+.lang-btn:hover { color: var(--text); }
+.lang-btn.active { background: var(--accent-soft); color: var(--accent); }
+.lang-btn + .lang-btn { border-left: 1px solid var(--border); }
 
 .sidebar {
     position: fixed;

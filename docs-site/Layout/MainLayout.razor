@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject LocalizationState Loc
 
 <div class="layout">
     <input type="checkbox" id="nav-toggle" class="nav-toggle" />
@@ -10,7 +12,13 @@
             <span class="brand-mark">{&nbsp;}</span>
             <span class="brand-name">Settex</span>
         </a>
-        <a class="topbar-gh" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+        <div class="topbar-right">
+            <div class="lang-switch" role="group" aria-label="Language">
+                <button class="@LangClass("en")" @onclick="@(() => SetLang("en"))">EN</button>
+                <button class="@LangClass("fr")" @onclick="@(() => SetLang("fr"))">FR</button>
+            </div>
+            <a class="topbar-gh" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+        </div>
     </header>
 
     <aside class="sidebar">
@@ -22,8 +30,24 @@
             @Body
         </article>
         <footer class="doc-footer">
-            <span>Settex — a human-friendly configuration language for .NET.</span>
-            <span>Built with Blazor WebAssembly · MIT License</span>
+            <span>@(Fr ? "Settex — un langage de configuration convivial pour .NET." : "Settex — a human-friendly configuration language for .NET.")</span>
+            <span>@(Fr ? "Réalisé avec Blazor WebAssembly · Licence MIT" : "Built with Blazor WebAssembly · MIT License")</span>
         </footer>
     </main>
 </div>
+
+@code {
+    private bool Fr => Loc.IsFrench;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Loc.OnChange += StateHasChanged;
+        await Loc.InitializeAsync();
+    }
+
+    private string LangClass(string lang) => Loc.Language == lang ? "lang-btn active" : "lang-btn";
+
+    private async Task SetLang(string lang) => await Loc.SetLanguageAsync(lang);
+
+    public void Dispose() => Loc.OnChange -= StateHasChanged;
+}
