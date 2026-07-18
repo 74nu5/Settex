@@ -183,10 +183,6 @@ public class SettexReferencesHandler : ReferencesHandlerBase
     /// </summary>
     private static ScopeInfo? FindScopeAtLocation(ScopeInfo rootScope, Core.Diagnostics.SourceLocation location)
     {
-        // Convertir SourceLocation en position LSP (1-based → 0-based)
-        var position = new Position(location.Line - 1, location.Column - 1);
-        
-        // Utiliser la méthode récursive existante
         return FindScopeAtRecursive(rootScope, location.Line, location.Column);
     }
 

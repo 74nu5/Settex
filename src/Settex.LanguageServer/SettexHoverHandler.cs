@@ -93,14 +93,14 @@ public class SettexHoverHandler : HoverHandlerBase
                         // Le mot survolé est un objet (ex: "Server" dans "Server.Port")
                         // Construire le path de l'objet (tous les segments jusqu'au mot inclus)
                         var objectPath = string.Join(".", assignment.Path.Segments.Take(wordIndex + 1));
-                        this.logger.LogInformation("[HOVER-OVERLAY] Formatting OBJECT for path='{ObjectPath}', envName='{EnvName}', word='{Word}'", objectPath, envName ?? "(base)", word);
+                        this.logger.LogTrace("[HOVER-OVERLAY] Formatting OBJECT for path='{ObjectPath}', envName='{EnvName}', word='{Word}'", objectPath, envName ?? "(base)", word);
                         
                         var objectHover = HoverOverlayFormatter.FormatObjectWithOverlay(document.Ast, objectPath, envName, this.logger);
                         
-                        this.logger.LogInformation("[HOVER-OVERLAY] Object result: {IsNull}, length={Length}", objectHover == null ? "NULL" : "NOT NULL", objectHover?.Length ?? 0);
+                        this.logger.LogTrace("[HOVER-OVERLAY] Object result: {IsNull}, length={Length}", objectHover == null ? "NULL" : "NOT NULL", objectHover?.Length ?? 0);
                         if (objectHover != null)
                         {
-                            this.logger.LogDebug("[HOVER-OVERLAY] Object content:\n{Content}", objectHover);
+                            this.logger.LogTrace("[HOVER-OVERLAY] Object content:\n{Content}", objectHover);
                             return Task.FromResult<Hover?>(new Hover
                             {
                                 Contents = new MarkedStringsOrMarkupContent(new MarkupContent
@@ -114,14 +114,14 @@ public class SettexHoverHandler : HoverHandlerBase
                     else
                     {
                         // Le mot survolé est la valeur finale (ex: "Port" dans "Server.Port")
-                        this.logger.LogInformation("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
+                        this.logger.LogTrace("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
                         
                         var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName, this.logger);
                         
-                        this.logger.LogInformation("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
+                        this.logger.LogTrace("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
                         if (overlayHover != null)
                         {
-                            this.logger.LogDebug("[HOVER-OVERLAY] Content:\n{Content}", overlayHover);
+                            this.logger.LogTrace("[HOVER-OVERLAY] Content:\n{Content}", overlayHover);
                         }
                         
                         if (overlayHover != null)
@@ -253,13 +253,6 @@ public class SettexHoverHandler : HoverHandlerBase
             ":=" => "**Set-if-missing operator**\n\nSets the value only if the path doesn't exist.\n\n```settex\nApp.Port := 8000  // Only if App.Port is not already set\n```",
             _ => null
         };
-    }
-
-    private static Core.Parser.Ast.LetNode? FindVariable(Core.Parser.Ast.FileNode ast, string name)
-    {
-        return ast.Statements
-            .OfType<Core.Parser.Ast.LetNode>()
-            .FirstOrDefault(let => let.Name == name);
     }
 
     private static Core.Parser.Ast.EnvBlockNode? FindEnvironment(Core.Parser.Ast.FileNode ast, string name)
