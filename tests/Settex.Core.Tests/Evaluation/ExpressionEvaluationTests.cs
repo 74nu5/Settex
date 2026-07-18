@@ -416,8 +416,9 @@ public class ExpressionEvaluationTests
     }
 
     [Test]
-    public async Task Evaluate_StringPlusNumber_ThrowsException()
+    public async Task Evaluate_StringPlusNumber_Concatenates()
     {
+        // '+' concatenates when either operand is a string, coercing the number.
         var source = """
             let result = "hello" + 5
 
@@ -426,7 +427,8 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<string>()).IsEqualTo("hello5");
     }
 
     [Test]
@@ -543,5 +545,120 @@ public class ExpressionEvaluationTests
             """;
 
         await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+    }
+
+    [Test]
+    public async Task Evaluate_Parentheses_OverridePrecedence()
+    {
+        var source = """
+            settings {
+                WithParens = (10 + 5) * 2
+                WithoutParens = 10 + 5 * 2
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["WithParens"]!.GetValue<long>()).IsEqualTo(30L);
+        await Assert.That(json!["WithoutParens"]!.GetValue<long>()).IsEqualTo(20L);
+    }
+
+    [Test]
+    public async Task Evaluate_NestedParentheses_EvaluateInnerFirst()
+    {
+        var source = """
+            settings {
+                Value = ((2 + 3) * (4 - 1)) - 5
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<long>()).IsEqualTo(10L);
+    }
+
+    [Test]
+    public async Task Evaluate_ParenthesesGroupLogicalExpression()
+    {
+        var source = """
+            settings {
+                Value = (true or false) and not false
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<bool>()).IsEqualTo(true);
+    }
+
+    [Test]
+    public async Task Evaluate_UnclosedParenthesis_ThrowsException()
+    {
+        var source = """
+            settings {
+                Value = (10 + 5
+            }
+            """;
+
+        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+    }
+
+    [Test]
+    public async Task Evaluate_StringConcatenation_JoinsStrings()
+    {
+        var source = """
+            let version = "2"
+
+            settings {
+                Value = "v" + version + ".0"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<string>()).IsEqualTo("v2.0");
+    }
+
+    [Test]
+    public async Task Evaluate_StringConcatenation_CoercesNumberAndBool()
+    {
+        var source = """
+            let port = 8080
+
+            settings {
+                WithNumber = "port:" + port
+                WithNumberLeftNumber = 1 + "-suffix"
+                WithBool = "enabled=" + true
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["WithNumber"]!.GetValue<string>()).IsEqualTo("port:8080");
+        await Assert.That(json!["WithNumberLeftNumber"]!.GetValue<string>()).IsEqualTo("1-suffix");
+        await Assert.That(json!["WithBool"]!.GetValue<string>()).IsEqualTo("enabled=true");
+    }
+
+    [Test]
+    public async Task Evaluate_NumericAddition_StillNumeric()
+    {
+        var source = """
+            settings {
+                Value = 8000 + 80
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<long>()).IsEqualTo(8080L);
+    }
+
+    [Test]
+    public async Task Evaluate_ParenthesesInsideInterpolation()
+    {
+        var source = """
+            let basePort = 8000
+
+            settings {
+                Value = "port=${(basePort + 100) * 2}"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Value"]!.GetValue<string>()).IsEqualTo("port=16200");
     }
 }

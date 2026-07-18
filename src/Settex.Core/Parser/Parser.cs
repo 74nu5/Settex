@@ -306,6 +306,15 @@ public class Parser(List<Token> tokens, string? filePath = null)
             return this.ParseArray();
         }
 
+        // Parenthesized (grouped) expression
+        if (this.Check(TokenType.LeftParen))
+        {
+            this.Advance(); // consume '('
+            var inner = this.ParseExpression();
+            this.Expect(TokenType.RightParen, "Expected ')' after expression");
+            return inner;
+        }
+
         throw new ParserException(
             $"Expected expression, but got '{this.Current.Text}'",
             this.Current.Location

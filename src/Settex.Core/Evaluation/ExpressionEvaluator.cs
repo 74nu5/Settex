@@ -236,7 +236,29 @@ public class ExpressionEvaluator
             return new NumberValue(leftNum.Value + rightNum.Value);
         }
 
-        throw new EvaluatorException($"Operator '+' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
+        // String concatenation: if either side is a string, concatenate, coercing
+        // numbers and booleans to their string form (as string interpolation does).
+        if (left is StringValue || right is StringValue)
+        {
+            return new StringValue(ToConcatString(left, location) + ToConcatString(right, location));
+        }
+
+        throw new EvaluatorException($"Operator '+' requires two numbers or a string operand, got {left.GetType().Name} and {right.GetType().Name}", location);
+    }
+
+    /// <summary>
+    ///     Coerces a value to its string form for concatenation with '+'.
+    ///     Mirrors the formatting used by string interpolation.
+    /// </summary>
+    private static string ToConcatString(RuntimeValue value, SourceLocation location)
+    {
+        return value switch
+        {
+            StringValue s => s.Value,
+            NumberValue n => n.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            BoolValue b => b.Value ? "true" : "false",
+            _ => throw new EvaluatorException($"Cannot concatenate value of type {value.GetType().Name} with '+'", location),
+        };
     }
 
     private RuntimeValue EvaluateSubtraction(RuntimeValue left, RuntimeValue right, SourceLocation location)

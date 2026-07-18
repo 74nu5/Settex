@@ -404,12 +404,32 @@ settings {
 ```
 
 **Supported operators**:
-- Arithmetic: `+`, `-`, `*`, `/` (numeric operands only — `+` does not concatenate strings)
+- Arithmetic: `+`, `-`, `*`, `/`
 - Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=` (numeric operands for the ordering operators)
 - Logical: `and`, `or`, `not`
 - Null coalescing: `??`
 
-> **No parentheses.** Expressions are evaluated with operator precedence but grouping with `( ... )` is not supported. Introduce intermediate `let` variables to control evaluation order.
+**Grouping with parentheses** overrides the default precedence:
+
+```settex
+settings {
+  A = (10 + 5) * 2      # 30, not 20
+  B = (true or false) and not false
+}
+```
+
+**`+` concatenates when either operand is a string**, coercing numbers and booleans to their string form (as interpolation does); with two numbers it adds:
+
+```settex
+let version = "2"
+let port = 8080
+
+settings {
+  Label = "v" + version + ".0"   # "v2.0"
+  Url = "http://host:" + port     # "http://host:8080"
+  Sum = 8000 + 80                 # 8080 (numeric)
+}
+```
 
 ### String Interpolation
 
