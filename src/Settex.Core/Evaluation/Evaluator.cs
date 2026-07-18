@@ -280,8 +280,12 @@ public class Evaluator
         {
             baseNestedObject = baseValue as JsonObject;
         }
-        
-        var childObject = this.EvaluateBlock(nestedBlock.Block, scope, baseNestedObject);
+
+        // Evaluate the nested block in a child scope so that 'let' bindings declared
+        // inside it stay local (they can still read outer variables, but no longer
+        // leak into — and overwrite — the parent/global scope).
+        var childScope = scope.CreateChild();
+        var childObject = this.EvaluateBlock(nestedBlock.Block, childScope, baseNestedObject);
         target[nestedBlock.Name] = childObject;
     }
 
