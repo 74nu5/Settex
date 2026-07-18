@@ -93,7 +93,7 @@
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
     <div class="score"><div class="big">228</div><div class="lbl">Tests · 100 % au vert</div></div>
-    <div class="score"><div class="big">1</div><div class="lbl">bugs restants (4 corrigés ✅)</div></div>
+    <div class="score"><div class="big">0</div><div class="lbl">bugs restants (5 corrigés ✅)</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
 
@@ -123,7 +123,7 @@
   <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
   <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
   <ul class="tight">
-    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 228 tests (207 core + 15 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 233 tests (212 core + 15 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
     <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
     <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
   </ul>
@@ -163,10 +163,10 @@
     <div class="fp">src/Settex.Core/Resolution/IncludeResolver.cs:12, 60</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">🟠 Moyen — Overflow numérique → « Unexpected error » sans localisation</div>
-    Un littéral flottant hors plage <code>decimal</code> (ou une arithmétique qui déborde) lève une <code>OverflowException</code> non typée qui tombe dans le catch-all du compilateur → message générique <strong>sans ligne/colonne</strong>. Les entiers hors plage <code>long</code>, eux, sont bien rattrapés (« Invalid integer literal »).
-    <div class="fp">src/Settex.Core/Evaluation/ExpressionEvaluator.cs:44 · SettexCompiler.cs:162</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Overflow numérique → « Unexpected error » sans localisation</div>
+    Un littéral flottant hors plage <code>decimal</code> (ou une arithmétique qui débordait) levait une <code>OverflowException</code> non typée tombant dans le catch-all du compilateur → message générique <strong>sans ligne/colonne</strong>. <strong>Corrigé</strong> : un helper <code>CheckedNumber</code> enveloppe le cast littéral et les quatre opérations (<code>+ − × ÷</code>) et convertit l'<code>OverflowException</code> en <code>EvaluatorException</code> <strong>localisée</strong>. Vérifié : littéral hors plage → erreur à <code>(2,9)</code>, <code class="sx">big * 1000.0</code> → erreur à l'opération, décimal large mais valide toujours accepté ; 3 tests de non-régression ajoutés.
+    <div class="fp">src/Settex.Core/Evaluation/ExpressionEvaluator.cs (CheckedNumber)</div>
   </div>
 
   <!-- 3 -->
@@ -240,7 +240,7 @@
   <p>Mais une lecture à froid ramène à la réalité d'un <strong>alpha</strong> : le périmètre <em>communiqué comme fini</em> cache des défauts de correction que le style de tests dissimule. Le motif est récurrent — l'infrastructure correcte existe (snapshot thread-safe, scoping par <code>VariableScope</code>, champ <code>visited</code> anti-losange) mais n'est <strong>pas branchée</strong> : le snapshot n'est utilisé qu'à un endroit, le block-scoping n'appelle jamais <code>CreateChild</code>, <code>visited</code> n'est jamais lu. Le code <em>ressemble</em> à ce qu'il devrait faire plus qu'il ne le fait — d'où l'importance de ne pas croire les commentaires.</p>
   <div class="grid cols-3" style="margin-top:20px">
     <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>Diagnostics précis &amp; lisibles</li><li>Deep-merge correct &amp; testé</li><li>Compile-on-save VS robuste</li><li>Discipline d'architecture</li></ul></div>
-    <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li>Bugs de langage non testés</li><li>Infra correcte mais non branchée</li><li>LSP heuristique &amp; concurrent</li><li>Tests à assertions faibles</li></ul></div>
+    <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li><s>Bugs de langage non testés</s> ✅</li><li>Infra correcte mais non branchée</li><li>LSP heuristique &amp; concurrent</li><li>Tests à assertions faibles</li></ul></div>
     <div class="card"><h3 style="color:var(--bad)">Ce qui bloque</h3><ul class="tight"><li><s>VSIX VS Code non fonctionnel</s> ✅</li><li><s>stderr LSP non drainé (VS)</s> ✅</li><li>Dépendance .NET 10 preview</li><li>Pas de publication marketplace</li></ul></div>
   </div>
 
@@ -254,7 +254,7 @@
       <tr><td>3</td><td><s>Vrai block-scoping : <code>CreateChild()</code> par bloc imbriqué + tests</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Client LSP VS : drainer <code>stderr</code>, stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>LSP : généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref), protéger les logs par <code>IsEnabled</code>, remplacer <code>UriToFilePath</code>/<code>LocationToRange</code> par les utilitaires OmniSharp + EndLine/EndColumn dans <code>SourceLocation</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> — <strong>fait ✅</strong>. Reste : rattraper <code>OverflowException</code> en erreur localisée, borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> · <s>rattraper <code>OverflowException</code> en erreur localisée</s> — <strong>fait ✅</strong>. Reste : borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>8</td><td>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie), assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message), cas CRLF/overflow/sans-espaces/scope</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>9</td><td>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET) — décision de design</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
@@ -268,7 +268,7 @@
   </div>
 
   <footer>
-    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 228 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 233 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
   </footer>
 </div>
 </body>

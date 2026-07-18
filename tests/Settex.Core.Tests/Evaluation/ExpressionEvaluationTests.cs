@@ -698,4 +698,56 @@ public class ExpressionEvaluationTests
         var json = CompileSource(source);
         await Assert.That(json!["Value"]!.GetValue<string>()).IsEqualTo("port=16200");
     }
+
+    [Test]
+    public async Task Evaluate_DecimalOverflowLiteral_ThrowsLocatedError()
+    {
+        // A float literal beyond decimal range used to crash the (decimal)d cast
+        // and surface as a generic "Unexpected error" without a location.
+        var source = """
+            settings {
+                Big = 100000000000000000000000000000000000.0
+            }
+            """;
+
+        var ex = await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
+        await Assert.That(ex!.Message).Contains("out of range for a decimal");
+        await Assert.That(ex.Location).IsNotNull();
+        await Assert.That(ex.Location!.Line).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Evaluate_ArithmeticOverflow_ThrowsLocatedError()
+    {
+        // Arithmetic that overflows decimal must also be a located error, anchored
+        // to the operation rather than crashing the compiler.
+        var source = """
+            let big = 7900000000000000000000000000.0
+
+            settings {
+                Product = big * 1000.0
+            }
+            """;
+
+        var ex = await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
+        await Assert.That(ex!.Message).Contains("out of range for a decimal");
+        await Assert.That(ex.Location).IsNotNull();
+        await Assert.That(ex.Location!.Line).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task Evaluate_LargeInRangeDecimal_Succeeds()
+    {
+        // A large but in-range decimal must still compile (guard against an
+        // over-eager range check).
+        var source = """
+            settings {
+                Big = 79000000000000000000000000.0
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json).IsNotNull();
+        await Assert.That(json!["Big"]).IsNotNull();
+    }
 }
