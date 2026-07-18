@@ -2,6 +2,8 @@
 
 **Settex** is a human-friendly configuration language for .NET that compiles to `appsettings.json` files. It provides a clean, concise syntax with support for environment-specific overlays and deep merging.
 
+📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
+
 ## ✨ Features
 
 - 🎯 **Simple, intuitive syntax** - No complex markup, just clean configuration
@@ -958,6 +960,7 @@ Contributions welcome! Please open an issue or pull request.
 
 ## 🔗 Links
 
+- [Documentation](https://settex.74nu5.dev)
 - [GitHub Repository](https://github.com/74nu5/Settex)
 - [NuGet Package (Build)](https://nuget.org/packages/Settex.Build)
 - [NuGet Package (CLI)](https://nuget.org/packages/Settex.Cli)
