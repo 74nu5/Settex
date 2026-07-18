@@ -68,7 +68,6 @@
     and Cli/. The .NET 10 runtime must be present on the machine.
   -->
   <PropertyGroup>
-    <SettexRuntimeStage>$(IntermediateOutputPath)SettexRuntime\</SettexRuntimeStage>
     <SettexLanguageServerProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.LanguageServer\Settex.LanguageServer.csproj</SettexLanguageServerProject>
     <SettexCliProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.Cli\Settex.Cli.csproj</SettexCliProject>
   </PropertyGroup>
@@ -76,6 +75,12 @@
   <Target Name="PublishSettexRuntimeBinaries"
           BeforeTargets="GetVsixSourceItems"
           Condition="'$(DesignTimeBuild)' != 'true'">
+    <!-- Stage under obj/ (IntermediateOutputPath is only resolved once targets run,
+         so this must be computed here, not in an evaluation-time PropertyGroup). -->
+    <PropertyGroup>
+      <SettexRuntimeStage>$(IntermediateOutputPath)SettexRuntime\</SettexRuntimeStage>
+    </PropertyGroup>
+
     <Exec Command="dotnet publish &quot;$(SettexLanguageServerProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)LanguageServer&quot; --nologo" />
     <Exec Command="dotnet publish &quot;$(SettexCliProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)Cli&quot; --nologo" />
 

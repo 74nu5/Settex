@@ -7,3 +7,7 @@ obj/
 .vs/
 *.vsix
 *.vsixmanifest.cache
+
+# Source-generator output (regenerated on build)
+Generated/
+SettexRuntime/
