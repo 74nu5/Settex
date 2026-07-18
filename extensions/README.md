@@ -2,6 +2,8 @@
 
 This directory contains editor extensions for Settex, providing IDE support for `.settex` configuration files.
 
+📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
+
 ## Available Extensions
 
 ### 1. Visual Studio Code Extension
