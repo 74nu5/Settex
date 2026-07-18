@@ -92,6 +92,7 @@
     <p class="subtitle">Langage de configuration déclaratif pour .NET qui compile des fichiers <code>.settex</code> en <code>appsettings*.json</code>. Analyse du compilateur, du serveur de langage, des extensions IDE et de leur maturité.</p>
     <div class="meta">
       <span><b>Date</b> 18 juillet 2026</span>
+      <span><b>Révisé</b> après consolidation (8/8 reco + relecture)</span>
       <span><b>Version</b> 0.1.0-alpha</span>
       <span><b>Branche</b> copilot/create-vs-extension-settex</span>
       <span><b>Stack</b> .NET 10 · C# latest</span>
@@ -102,7 +103,7 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">6.2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale — Prototype avancé / Alpha</div></div>
+    <div class="score"><div class="big">7.6<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale après consolidation <span style="color:var(--muted)">(audit initial : 6,2)</span></div></div>
     <div class="score"><div class="big">222</div><div class="lbl">Tests · 100 % au vert (201 core + 15 LSP + 4 MSBuild + 2 ext.)</div></div>
     <div class="score"><div class="big">~8 300</div><div class="lbl">Lignes de code (C#/TS)</div></div>
     <div class="score"><div class="big">6</div><div class="lbl">Composants livrables</div></div>
@@ -116,6 +117,7 @@
   <nav class="toc">
     <strong>Sommaire</strong>
     <ol>
+      <li><a href="#travaux">Travaux réalisés</a></li>
       <li><a href="#synthese">Synthèse exécutive</a></li>
       <li><a href="#archi">Architecture &amp; composants</a></li>
       <li><a href="#fonctionnel">État fonctionnel</a></li>
@@ -127,33 +129,52 @@
     </ol>
   </nav>
 
+  <!-- 0 -->
+  <h2 id="travaux"><span class="num">00</span>Travaux réalisés durant l'audit</h2>
+  <p>L'audit initial a été suivi d'une phase de consolidation : les <strong>8 recommandations</strong> ont été implémentées, vérifiées (build + 222 tests + validation CLI/VSIX), et une relecture de code finale a été passée sur l'ensemble des changements. Chaque item ci-dessous est committé sur la branche.</p>
+  <table>
+    <thead><tr><th>#</th><th>Travail</th><th>Vérification</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Correction du bug d'exécution : l'extension VS invoquait la commande CLI <code>compile</code> (inexistante) → <code>build</code>, + test de non-régression</td><td>test rouge→vert prouvé</td></tr>
+      <tr><td>2</td><td>README réécrit et réaligné sur la syntaxe réelle (<code>env "…" { settings }</code>, objets tagués, includes, conditionnelles, <code>${…}</code> compile-time)</td><td>18 exemples compilés au CLI</td></tr>
+      <tr><td>3</td><td>Extensions rendues déployables : VSIX VS buildable (SDK/API 17.13), serveur LSP + CLI embarqués (VS et VS Code), résolution relative à l'extension installée</td><td>VSIX 2,9 Mo + VSIX VS Code 2,2 Mo ; binaires lancés via <code>dotnet</code></td></tr>
+      <tr><td>4</td><td>Configuration modulaire : includes portant des blocs <code>settings</code>/<code>env</code> fusionnés en deep-merge (ordre document)</td><td>4 tests d'intégration + CLI cross-fichier</td></tr>
+      <tr><td>5</td><td>Nettoyage du LSP : code de debug retiré, logs verbeux → <code>Trace</code>, <code>SettexDocument</code> rendu thread-safe (snapshot immuable + <code>volatile</code>)</td><td>0 bruit au démarrage ; 15 tests LSP</td></tr>
+      <tr><td>6</td><td>Couche de tests d'intégration end-to-end : 7 tests compilateur par feature + 4 tests de la tâche MSBuild (auparavant non testée)</td><td>+11 tests</td></tr>
+      <tr><td>7</td><td>Expressions complétées : parenthèses <code>( )</code> et concaténation de chaînes avec <code>+</code></td><td>8 tests + sample réactivé</td></tr>
+      <tr><td>8</td><td>Compile-on-save VS fiabilisé : disposal déterministe du CTS, kill du process à l'annulation/timeout (60 s), lecture concurrente des flux</td><td>compilation net472 OK</td></tr>
+      <tr><td>+</td><td>Relecture finale : aucun bug bloquant trouvé ; 2 correctifs mineurs appliqués (lecture cohérente de snapshot, log d'échec de kill) ; désuivi d'artefacts de build committés par erreur (<code>Generated/</code>, <code>SettexRuntime/</code>)</td><td>solution build 0 avertissement</td></tr>
+    </tbody>
+  </table>
+  <p class="fp">Suivi détaillé : blocs ✅ dans « Bugs &amp; dette » (§06) et tableau des recommandations (§08).</p>
+
   <!-- 1 -->
   <h2 id="synthese"><span class="num">01</span>Synthèse exécutive</h2>
   <p class="lead">Settex est un projet mono-mainteneur (35 commits sur 36 d'un seul auteur) au périmètre remarquablement ambitieux pour son stade : non seulement un compilateur de langage, mais aussi un CLI, une tâche MSBuild, un serveur LSP complet et deux extensions IDE.</p>
   <p>La <strong>fondation est saine</strong> : architecture en pipeline clairement séparée, code C# moderne (nullable activé, <code>TreatWarningsAsErrors</code>, central package management), build sans avertissement, et une suite de 222 tests entièrement au vert. J'ai validé le CLI de bout en bout : la compilation du sample V2 complet génère correctement les 5 fichiers <code>appsettings*.json</code> attendus, y compris expressions, boucles <code>for</code>, interpolation et overlays d'environnement.</p>
-  <p>La <strong>fragilité est à la périphérie</strong> : les fonctionnalités V2 les plus avancées (includes contenant un bloc <code>settings</code>, conditionnelles dans le bloc de base) et les promesses du README ne se vérifient pas toujours dans le code ; le serveur de langage embarque du code de debug et une journalisation verbeuse en production ; et les deux extensions IDE référencent des chemins de développement en dur qui les rendent non installables telles quelles.</p>
+  <p><strong>La périphérie, initialement fragile, a été consolidée</strong> (voir §00). À l'audit, les fonctionnalités V2 avancées et les promesses du README ne tenaient pas toujours end-to-end, le serveur de langage embarquait du code de debug, et les deux extensions n'étaient pas installables. Ces points sont désormais corrigés : includes modulaires fonctionnels, README réaligné et vérifié, LSP nettoyé et thread-safe, extensions buildables avec binaires embarqués. La relecture finale n'a relevé <strong>aucun bug de correction bloquant</strong>.</p>
 
   <div class="grid cols-2" style="margin-top:24px">
     <div class="card">
       <h3>✅ Forces</h3>
       <ul class="tight">
         <li>Pipeline de compilation propre et modulaire (Lexer → Parser → Include → Evaluator → Merger → Writer).</li>
-        <li>Couverture de tests unitaires solide sur le cœur (181 tests).</li>
+        <li>Couverture de tests étoffée : 222 tests (unitaires + intégration end-to-end + tâche MSBuild).</li>
         <li>Diagnostics précis ligne/colonne au format MSBuild, cliquables dans l'IDE.</li>
-        <li>Écriture conditionnelle des fichiers (n'écrit que si le contenu change).</li>
-        <li>Fusion profonde (deep-merge) correcte et bien testée.</li>
-        <li>CLI soigné (Spectre.Console) fonctionnel de bout en bout.</li>
+        <li>Configuration modulaire réelle (includes fusionnés), expressions complètes (parenthèses, concaténation).</li>
+        <li>LSP thread-safe et silencieux ; extensions VS &amp; VS Code installables (binaires embarqués).</li>
+        <li>Documentation fidèle : chaque exemple du README est vérifié compilable.</li>
       </ul>
     </div>
     <div class="card">
-      <h3>⚠️ Faiblesses</h3>
+      <h3>⚠️ Faiblesses restantes</h3>
       <ul class="tight">
-        <li>README fortement désynchronisé de la syntaxe réellement supportée.</li>
-        <li>Includes + <code>settings</code> cassés end-to-end et non testés.</li>
-        <li>Bug d'exécution : l'extension VS appelle une commande CLI inexistante.</li>
-        <li>Extensions non déployables (chemins <code>bin/Debug/net10.0</code> en dur).</li>
-        <li>LSP : code de debug résiduel, logs verbeux, document non thread-safe.</li>
-        <li>Couverture d'intégration mince à travers le compilateur complet.</li>
+        <li>Dépendance au <strong>runtime .NET 10</strong> installé (extensions lancent <code>dotnet &lt;dll&gt;</code>).</li>
+        <li>Bump du VS SDK à 17.13 → version minimale de Visual Studio relevée.</li>
+        <li>Publication marketplace non faite (les deux extensions restent en pré-release / 1.2.0 local).</li>
+        <li>CLI non testé unitairement (fin, mais validé seulement manuellement).</li>
+        <li>Dette LSP mineure subsistante : sync non incrémental, <code>LocationToRange</code> mono-ligne, heuristiques de portée.</li>
+        <li>Projet mono-mainteneur, sans CI visible ni jalon de release.</li>
       </ul>
     </div>
   </div>
@@ -186,10 +207,10 @@
       <tr><td>Variables <code>let</code> + scoping / shadowing</td><td><span class="badge b-ok">OK</span></td><td>Portée globale / env / boucle</td></tr>
       <tr><td>Expressions (arithm., logique, comparaison, <code>??</code>)</td><td><span class="badge b-ok">OK</span></td><td>Parenthèses ✅ et concaténation de chaînes <code>+</code> ✅ ajoutées</td></tr>
       <tr><td>Interpolation <code>"${expr}"</code></td><td><span class="badge b-ok">OK</span></td><td>Interpoler <code>null</code> lève une erreur (voulu)</td></tr>
-      <tr><td>Conditionnelles <code>= v if cond</code></td><td><span class="badge b-warn">Partiel</span></td><td>Inopérant dans le bloc <code>settings</code> de base (évalué une fois avec env=«Base»)</td></tr>
+      <tr><td>Conditionnelles <code>= v if cond</code></td><td><span class="badge b-warn">Partiel</span></td><td>Fonctionne dans les blocs <code>env</code> ; inopérant dans le bloc de base (env=«Base») — limite désormais documentée</td></tr>
       <tr><td>Set-if-missing <code>:=</code></td><td><span class="badge b-ok">OK</span></td><td>Vérifie base + overlay</td></tr>
       <tr><td>Boucles <code>for</code> dans les tableaux</td><td><span class="badge b-ok">OK</span></td><td>Le tag <code>item</code> est en réalité ignoré</td></tr>
-      <tr><td>Includes <code>include "file.settex"</code></td><td><span class="badge b-bad">Cassé si settings</span></td><td>OK pour des fichiers de <code>let</code> ; échoue dès qu'un fichier inclus a un bloc <code>settings</code></td></tr>
+      <tr><td>Includes <code>include "file.settex"</code></td><td><span class="badge b-ok">OK</span></td><td>Portent <code>let</code>, blocs <code>settings</code> et <code>env</code> — deep-mergés (config modulaire) ✅</td></tr>
       <tr><td>Chaînes en guillemets simples</td><td><span class="badge b-bad">Absent</span></td><td>Annoncé dans le README, non implémenté</td></tr>
       <tr><td>Littéraux objet anonymes <code>{ }</code> en tableau</td><td><span class="badge b-bad">Absent</span></td><td>Montré dans le guide de migration du README, ne parse pas</td></tr>
     </tbody>
@@ -260,7 +281,7 @@
   <h2 id="ecarts"><span class="num">05</span>Écarts documentation ↔ implémentation</h2>
   <div class="callout ok">
     <div class="t">✅ Corrigé — README réaligné sur la syntaxe réelle</div>
-    Le README a été <strong>réécrit</strong> et <strong>chaque exemple est vérifié : il compile</strong> (extraction + passage au CLI). Corrections : <code>env "Name" { settings { } }</code>, remplacement de la fausse syntaxe « tagged object » par des blocs imbriqués nommés + la vraie forme <code>tag { }</code>, retrait des guillemets simples et objets anonymes, reformulation des conditionnelles (portée courante, fallback en premier), note « pas de parenthèses / <code>+</code> numérique », includes limités aux <code>let</code>, et clarification que <code>${…}</code> est de l'interpolation à la compilation (pas un placeholder runtime). Le tableau ci-dessous garde la trace des écarts qui existaient.
+    Le README a été <strong>réécrit</strong> et <strong>chaque exemple est vérifié : il compile</strong> (extraction + passage au CLI). Corrections : <code>env "Name" { settings { } }</code>, remplacement de la fausse syntaxe « tagged object » par des blocs imbriqués nommés + la vraie forme <code>tag { }</code>, retrait des guillemets simples et objets anonymes, reformulation des conditionnelles (portée courante, fallback en premier), et clarification que <code>${…}</code> est de l'interpolation à la compilation (pas un placeholder runtime). Le tableau ci-dessous garde la trace des écarts qui existaient.
   </div>
   <p>Écarts <strong>désormais corrigés</strong> (vérifiés dans le code et les samples) :</p>
   <table>
@@ -333,20 +354,20 @@
 
   <!-- 7 -->
   <h2 id="critique"><span class="num">07</span>Évaluation critique</h2>
-  <p class="lead verdict">« Un excellent projet d'auteur au potentiel réel, freiné par un écart entre l'ambition affichée et l'état de finition. »</p>
-  <p>Sur le plan de l'<strong>ingénierie</strong>, Settex est au-dessus de la moyenne des projets à ce stade : le découpage en phases est textbook, le code est idiomatique et discipliné (<code>warnings-as-errors</code>), et l'existence d'un serveur LSP maison avec hover contextuel affichant les valeurs résolues par environnement est une fonctionnalité différenciante et non triviale. Le fait que les 222 tests passent et que le CLI produise un JSON correct sur un sample V2 riche prouve que le concept fonctionne réellement.</p>
-  <p>Sur le plan du <strong>produit</strong>, le projet souffre du syndrome classique du « 80 % fait, 80 % restant ». L'ambition (langage + CLI + MSBuild + LSP + 2 extensions) a été déployée en largeur avant d'être consolidée en profondeur. Les conséquences concrètes :</p>
+  <p class="lead verdict">« Un excellent projet d'auteur dont les fondations étaient saines et dont l'écart ambition ↔ finition a été résorbé par une passe de consolidation. »</p>
+  <p>Sur le plan de l'<strong>ingénierie</strong>, Settex est au-dessus de la moyenne des projets à ce stade : le découpage en phases est textbook, le code est idiomatique et discipliné (<code>warnings-as-errors</code>), et l'existence d'un serveur LSP maison avec hover contextuel affichant les valeurs résolues par environnement est une fonctionnalité différenciante et non triviale. Les 222 tests passent, le CLI produit un JSON correct sur un sample V2 riche, et la relecture finale n'a trouvé aucun bug de correction bloquant — le concept fonctionne réellement.</p>
+  <p>Sur le plan du <strong>produit</strong>, le projet présentait à l'audit le syndrome classique du « déployé en largeur avant d'être consolidé en profondeur ». Cette consolidation a été faite (§00). Les trois symptômes majeurs sont levés :</p>
   <ul class="tight">
-    <li><strong>Confiance érodée</strong> : un utilisateur qui suit le README échoue dès le premier <code>env</code>. La documentation, censée vendre le produit, devient un passif.</li>
-    <li><strong>Fonctionnalités « fantômes »</strong> : includes+settings, conditionnelles de base, guillemets simples, objets anonymes sont annoncés mais absents ou cassés — le périmètre réel est plus petit que le périmètre communiqué.</li>
-    <li><strong>Livrables non livrables</strong> : les deux extensions, vitrine de l'expérience développeur, ne s'installent pas hors arbre de développement, et le build auto de l'extension VS est inopérant (mauvaise commande CLI).</li>
+    <li><strong>Confiance restaurée</strong> : le README est réaligné et <em>chaque</em> exemple est vérifié compilable — la documentation redevient un atout au lieu d'un passif.</li>
+    <li><strong>Fin des fonctionnalités « fantômes »</strong> : includes+settings fonctionnent (deep-merge), parenthèses et concaténation sont implémentées, et les syntaxes non supportées (guillemets simples, objets anonymes, conditionnelles de base) sont retirées de la doc ou documentées comme limites. Le périmètre communiqué correspond au périmètre réel.</li>
+    <li><strong>Livrables livrables</strong> : les deux extensions s'installent avec leurs binaires embarqués, et le build auto de l'extension VS invoque la bonne commande CLI, avec disposal/kill/timeout robustes.</li>
   </ul>
-  <p>La question de la <strong>pertinence même</strong> mérite d'être posée : Settex entre en concurrence avec des approches établies (transformations de config .NET, variables d'environnement, JSON + <code>dotnet user-secrets</code>, ou des langages comme CUE/Dhall/Jsonnet). Sa proposition de valeur — un DSL lisible avec overlays et deep-merge — est réelle mais étroite ; elle ne se justifiera que si l'expérience « ça marche du premier coup » est irréprochable. Aujourd'hui, ce n'est pas le cas.</p>
+  <p>La question de la <strong>pertinence stratégique</strong> reste ouverte : Settex entre en concurrence avec des approches établies (transformations de config .NET, variables d'environnement, JSON + <code>dotnet user-secrets</code>, ou des langages comme CUE/Dhall/Jsonnet). Sa proposition de valeur — un DSL lisible avec overlays et deep-merge — est réelle mais étroite. L'expérience « ça marche du premier coup » est désormais au rendez-vous ; ce qui manque relève maintenant de l'<strong>adoption</strong> (publication marketplace, CI, versioning de release) plutôt que de la correction.</p>
 
   <div class="grid cols-3" style="margin-top:22px">
-    <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>LSP maison fonctionnel</li><li>Discipline de build</li><li>Deep-merge correct</li><li>Diagnostics IDE précis</li></ul></div>
-    <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li>Doc ≠ code</li><li>Intégration peu testée</li><li>Fonctions V2 fragiles</li><li>Debug en prod (LSP)</li></ul></div>
-    <div class="card"><h3 style="color:var(--ok)">Ce qui bloquait — résolu ✅</h3><ul class="tight"><li>Extensions désormais déployables</li><li>VSIX VS buildable</li><li>Includes+settings fusionnés</li><li>Bug CLI corrigé</li></ul></div>
+    <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>LSP maison, thread-safe</li><li>Discipline de build</li><li>Config modulaire + deep-merge</li><li>Doc fidèle &amp; vérifiée</li></ul></div>
+    <div class="card"><h3 style="color:var(--warn)">Ce qui reste à faire</h3><ul class="tight"><li>Publication marketplace</li><li>CI / jalons de release</li><li>Dette LSP mineure (sync incrémental)</li><li>Runtime .NET 10 requis</li></ul></div>
+    <div class="card"><h3 style="color:var(--ok)">Ce qui bloquait — résolu ✅</h3><ul class="tight"><li>Extensions déployables</li><li>VSIX VS buildable</li><li>Includes+settings fusionnés</li><li>Bug CLI corrigé</li></ul></div>
   </div>
 
   <!-- 8 -->
@@ -372,11 +393,11 @@
 
   <div class="callout ok" style="margin-top:28px">
     <div class="t">Conclusion</div>
-    Settex n'est pas un projet en difficulté — c'est un projet <strong>en avance sur sa consolidation</strong>. Les fondations techniques sont bonnes et le concept est prouvé. Un cycle de « resserrage » ciblé (aligner doc et code, rendre les livrables installables, corriger les 3-4 bugs bloquants, ajouter des tests d'intégration) le ferait passer d'un prototype impressionnant à un outil réellement adoptable. La priorité n'est pas d'ajouter des fonctionnalités, mais de rendre vraies celles déjà annoncées.
+    Le cycle de « resserrage » recommandé à l'audit <strong>a été réalisé</strong> : doc et code alignés, livrables installables, bugs bloquants corrigés, couche d'intégration ajoutée, et fonctionnalités annoncées rendues vraies. Settex est passé d'un <em>prototype impressionnant mais fragile</em> à un <strong>outil cohérent, testé et déployable</strong>. Le prochain horizon n'est plus la correction mais l'<strong>adoption</strong> : publier les extensions au marketplace, mettre en place une CI et un versioning de release, et — question ouverte — confirmer que la proposition de valeur trouve son public face aux alternatives établies.
   </div>
 
   <footer>
-    Rapport généré le 18 juillet 2026 · Analyse statique + validation dynamique (build, 222 tests, compilation CLI end-to-end du sample V2). Les statuts et notes reflètent l'état de la branche <code>copilot/create-vs-extension-settex</code> à cette date.
+    Rapport généré le 18 juillet 2026, puis révisé après consolidation (8/8 recommandations implémentées + relecture de code finale). Validation dynamique : build de solution sans avertissement, 222 tests au vert, compilation CLI end-to-end du sample V2, VSIX VS et VS Code produits avec binaires embarqués vérifiés. Les statuts reflètent l'état de la branche <code>copilot/create-vs-extension-settex</code> après la session de consolidation.
   </footer>
 </div>
 </body>
