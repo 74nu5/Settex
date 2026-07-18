@@ -35,6 +35,14 @@ public class SettexDocument
     public IReadOnlyList<Diagnostic> Diagnostics => this.current.Diagnostics;
 
     /// <summary>
+    /// The current immutable snapshot. Capture this once when a handler needs a
+    /// consistent view across several properties (e.g. Text and Ast together),
+    /// rather than reading the individual properties, which may observe different
+    /// snapshots if the document is updated concurrently.
+    /// </summary>
+    internal Snapshot Current => this.current;
+
+    /// <summary>
     /// Met à jour le texte du document et re-parse, en remplaçant atomiquement
     /// le snapshot courant.
     /// </summary>
@@ -46,7 +54,7 @@ public class SettexDocument
     /// <summary>
     /// Snapshot immuable de l'état analysé d'un document.
     /// </summary>
-    private sealed record Snapshot(
+    internal sealed record Snapshot(
         string Text,
         IReadOnlyList<Token> Tokens,
         FileNode? Ast,

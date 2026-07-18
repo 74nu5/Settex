@@ -48,10 +48,14 @@ public class SettexCompletionHandler : CompletionHandlerBase
             return Task.FromResult(new CompletionList());
         }
 
+        // Capture a single immutable snapshot so the cursor offset (from Text) and
+        // the AST stay consistent even if the document is updated concurrently.
+        var snapshot = document.Current;
+
         var completions = new List<CompletionItem>();
 
         // Détection du contexte : est-on après un point pour une propriété d'objet ?
-        var textBeforeCursor = this.GetTextBeforeCursor(document, request.Position);
+        var textBeforeCursor = this.GetTextBeforeCursor(snapshot.Text, request.Position);
         var objectPath = this.ExtractObjectPath(textBeforeCursor);
 
         // Extraire le mot partiel en cours de frappe pour le filtrage
@@ -62,7 +66,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
         {
             // Autocomplétion des propriétés d'objet
             this.logger.LogTrace("[COMPLETION] Object property completion for path: {Path}", objectPath);
-            var properties = this.GetObjectProperties(document, objectPath);
+            var properties = this.GetObjectProperties(snapshot, objectPath);
             
             foreach (var (propertyName, environments) in properties)
             {
@@ -97,7 +101,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
 
         // Proposer les noms d'objets existants en priorité
         this.logger.LogTrace("[COMPLETION] Adding existing object names");
-        var objectNames = this.GetAllObjectNames(document);
+        var objectNames = this.GetAllObjectNames(snapshot);
         
         foreach (var (objectName, environments) in objectNames)
         {
@@ -166,9 +170,9 @@ public class SettexCompletionHandler : CompletionHandlerBase
         }
 
         // Variables (extraction simple depuis l'AST)
-        if (document.Ast != null)
+        if (snapshot.Ast != null)
         {
-            var variables = ExtractVariables(document.Ast);
+            var variables = ExtractVariables(snapshot.Ast);
             foreach (var variable in variables)
             {
                 // Filtrer par le mot partiel
@@ -189,7 +193,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
 
             // Environnements
-            var environments = ExtractEnvironments(document.Ast);
+            var environments = ExtractEnvironments(snapshot.Ast);
             foreach (var env in environments)
             {
                 // Filtrer par le mot partiel
@@ -288,12 +292,12 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// <summary>
     /// Extrait le texte du document jusqu'à la position du curseur.
     /// </summary>
-    private string GetTextBeforeCursor(SettexDocument document, Position position)
+    private string GetTextBeforeCursor(string text, Position position)
     {
-        var lines = document.Text.Split('\n');
+        var lines = text.Split('\n');
         if (position.Line >= lines.Length)
         {
-            return document.Text;
+            return text;
         }
 
         var textBeforeCursor = string.Join("\n", lines.Take((int)position.Line));
@@ -389,11 +393,11 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// Récupère toutes les propriétés d'un objet donné depuis base + tous les environnements.
     /// Retourne un dictionnaire : PropertyName → Liste des environnements où elle existe.
     /// </summary>
-    private Dictionary<string, List<string>> GetObjectProperties(SettexDocument document, string path)
+    private Dictionary<string, List<string>> GetObjectProperties(SettexDocument.Snapshot snapshot, string path)
     {
         var properties = new Dictionary<string, List<string>>();
 
-        if (document.Ast == null)
+        if (snapshot.Ast == null)
         {
             return properties;
         }
@@ -401,7 +405,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
         try
         {
             // Évaluer les settings base + overlays
-            var evaluation = this.EvaluateAllSettings(document.Ast);
+            var evaluation = this.EvaluateAllSettings(snapshot.Ast);
             if (evaluation == null)
             {
                 this.logger.LogTrace("[COMPLETION] EvaluateAllSettings returned null");
@@ -579,18 +583,18 @@ public class SettexCompletionHandler : CompletionHandlerBase
     /// <summary>
     /// Récupère tous les noms d'objets de premier niveau définis dans base + tous les environnements.
     /// </summary>
-    private Dictionary<string, List<string>> GetAllObjectNames(SettexDocument document)
+    private Dictionary<string, List<string>> GetAllObjectNames(SettexDocument.Snapshot snapshot)
     {
         var objectNames = new Dictionary<string, List<string>>();
         
-        if (document.Ast == null)
+        if (snapshot.Ast == null)
         {
             return objectNames;
         }
         
         try
         {
-            var evaluation = this.EvaluateAllSettings(document.Ast);
+            var evaluation = this.EvaluateAllSettings(snapshot.Ast);
             if (evaluation == null)
             {
                 this.logger.LogTrace("[COMPLETION] EvaluateAllSettings returned null");

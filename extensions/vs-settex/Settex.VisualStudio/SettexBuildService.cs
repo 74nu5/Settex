@@ -102,9 +102,11 @@ internal class SettexBuildService : ISettexBuildService
                             process.Kill();
                         }
                     }
-                    catch
+                    catch (Exception killEx)
                     {
-                        // Process already exited or could not be killed; nothing to do.
+                        // Process already exited or could not be killed. Log it: a genuine
+                        // kill failure is the only way WaitForExit could hang indefinitely.
+                        Debug.WriteLine($"Settex: failed to kill compiler process: {killEx.Message}");
                     }
                 }))
                 {
