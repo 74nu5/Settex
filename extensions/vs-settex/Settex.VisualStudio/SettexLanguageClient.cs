@@ -19,8 +19,10 @@ using Microsoft.VisualStudio.Utilities;
 /// </summary>
 [ContentType("settex")]
 [Export(typeof(ILanguageClient))]
-public class SettexLanguageClient : ILanguageClient
+public class SettexLanguageClient : ILanguageClient, IDisposable
 {
+    private Process? serverProcess;
+
     /// <summary>
     /// Gets the name of the language client.
     /// </summary>
@@ -90,12 +92,48 @@ public class SettexLanguageClient : ILanguageClient
             CreateNoWindow = true,
         };
 
-        var process = Process.Start(processStartInfo);
+        Process? process;
+
+        try
+        {
+            process = Process.Start(processStartInfo);
+        }
+        catch (Exception ex)
+        {
+            // 'dotnet' not found or the process could not be started: disable LSP
+            // features gracefully rather than letting the exception surface.
+            Debug.WriteLine($"Failed to start Settex Language Server (is the .NET runtime installed?): {ex.Message}");
+            return null;
+        }
 
         if (process == null)
         {
             return null;
         }
+
+        // Keep a handle so the server can be terminated on shutdown, and clear it
+        // when the process exits on its own.
+        this.serverProcess = process;
+        process.EnableRaisingEvents = true;
+        process.Exited += (_, _) =>
+        {
+            if (ReferenceEquals(this.serverProcess, process))
+            {
+                this.serverProcess = null;
+            }
+        };
+
+        // stderr is redirected, so it MUST be drained continuously: a server that
+        // writes to it would otherwise fill the OS pipe buffer and block. Forward
+        // each line to the debug output.
+        process.ErrorDataReceived += (_, e) =>
+        {
+            if (!string.IsNullOrEmpty(e.Data))
+            {
+                Debug.WriteLine($"[Settex LSP] {e.Data}");
+            }
+        };
+        process.BeginErrorReadLine();
 
         return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
     }
@@ -207,5 +245,36 @@ public class SettexLanguageClient : ILanguageClient
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Terminates the language server process if it is still running. Prevents an
+    /// orphaned 'dotnet' process when the client is torn down or Visual Studio exits.
+    /// </summary>
+    public void Dispose()
+    {
+        var process = this.serverProcess;
+        this.serverProcess = null;
+
+        if (process == null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
+        }
+        catch
+        {
+            // Process already exited or could not be killed; nothing to do.
+        }
+        finally
+        {
+            process.Dispose();
+        }
     }
 }
