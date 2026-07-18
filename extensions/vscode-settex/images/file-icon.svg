@@ -1,20 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Background circle -->
-  <circle cx="64" cy="64" r="60" fill="#007ACC"/>
-  
-  <!-- Settex logo - stylized "S" and curly braces -->
-  <g fill="#FFFFFF">
-    <!-- Left brace -->
-    <path d="M 30 40 Q 25 50, 25 64 Q 25 78, 30 88" stroke="#FFFFFF" stroke-width="6" fill="none"/>
-    
-    <!-- Letter S -->
-    <path d="M 50 45 Q 60 40, 70 45 Q 75 50, 70 55 L 55 65 Q 50 70, 55 75 Q 60 80, 70 75 Q 80 70, 85 75" 
-          stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round"/>
-    
-    <!-- Right brace -->
-    <path d="M 98 40 Q 103 50, 103 64 Q 103 78, 98 88" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Settex file">
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f1ece6"/>
+    </linearGradient>
+  </defs>
+  <!-- document -->
+  <path d="M30 10 h44 l24 24 v84 a6 6 0 0 1 -6 6 H30 a6 6 0 0 1 -6 -6 V16 a6 6 0 0 1 6 -6 z"
+        fill="url(#page)" stroke="#d9d2c8" stroke-width="2"/>
+  <!-- folded corner -->
+  <path d="M74 10 v18 a6 6 0 0 0 6 6 h18 z" fill="#e4ddd2"/>
+
+  <!-- braces -->
+  <g fill="none" stroke="#b5462b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 58 C43 58 43 63 43 69 C43 74 40 78 36 78 C40 78 43 82 43 87 C43 93 43 98 50 98"/>
+    <path d="M78 58 C85 58 85 63 85 69 C85 74 88 78 92 78 C88 78 85 82 85 87 C85 93 85 98 78 98"/>
   </g>
-  
-  <!-- Small "settex" text -->
-  <text x="64" y="110" font-family="Arial, sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">settex</text>
+  <!-- layers -->
+  <g fill="#b5462b">
+    <rect x="54" y="67" width="20" height="6.5" rx="3.25" opacity="0.55"/>
+    <rect x="51.5" y="76" width="25" height="6.5" rx="3.25" opacity="0.8"/>
+    <rect x="54" y="85" width="20" height="6.5" rx="3.25"/>
+  </g>
 </svg>

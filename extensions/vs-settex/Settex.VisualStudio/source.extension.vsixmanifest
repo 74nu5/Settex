@@ -8,6 +8,7 @@
     <License>LICENSE.txt</License>
     <GettingStartedGuide>https://github.com/74nu5/Settex#readme</GettingStartedGuide>
     <ReleaseNotes>https://github.com/74nu5/Settex/releases</ReleaseNotes>
+    <Icon>Resources\Icon.png</Icon>
     <Tags>settex;configuration;appsettings;json;language;syntax;highlighting;intellisense;snippets</Tags>
   </Metadata>
   <Installation>
