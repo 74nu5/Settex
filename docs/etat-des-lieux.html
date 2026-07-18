@@ -242,7 +242,7 @@
     <div style="margin:14px 0"><b>Compilateur (cœur V1)</b> — 8.5/10<div class="bar"><i style="width:85%"></i></div></div>
     <div style="margin:14px 0"><b>Compilateur (fonctions V2)</b> — 6/10<div class="bar"><i style="width:60%"></i></div></div>
     <div style="margin:14px 0"><b>CLI + tâche MSBuild</b> — 7.5/10<div class="bar"><i style="width:75%"></i></div></div>
-    <div style="margin:14px 0"><b>Serveur de langage (LSP)</b> — 6/10<div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:14px 0"><b>Serveur de langage (LSP)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(debug retiré, document thread-safe)</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:14px 0"><b>Extension Visual Studio 2022</b> — 5.5/10<div class="bar"><i style="width:55%"></i></div></div>
     <div style="margin:14px 0"><b>Extension VS Code</b> — 4/10<div class="bar"><i style="width:40%"></i></div></div>
     <div style="margin:14px 0"><b>Documentation (README/specs)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(README réaligné &amp; vérifié)</span><div class="bar"><i style="width:70%"></i></div></div>
@@ -307,26 +307,28 @@
     <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs · tests/Settex.Core.Tests/Compilation/SettexCompilerTests.cs</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">🟠 Majeur — Serveur LSP : code de debug en production</div>
-    Bloc de debug codé en dur sur la valeur littérale <code>"Comparison"</code> dans la complétion, journalisation très verbeuse au niveau <code>Information</code> (dont la sérialisation JSON complète du modèle à chaque survol), et <code>SetMinimumLevel(LogLevel.Debug)</code> — bruit et coût significatifs.
-    <div class="fp">src/Settex.LanguageServer/SettexCompletionHandler.cs · HoverOverlayFormatter.cs · Program.cs:18</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Serveur LSP : code de debug retiré, logs silencieux</div>
+    Le bloc de debug hardcodé sur <code>"Comparison"</code> et la sérialisation JSON complète du modèle à chaque survol (dont l'argument était évalué même sans log actif) sont <strong>supprimés</strong>. L'instrumentation verbeuse (<code>[FORMATTER]</code>/<code>[COMPLETION]</code>… et les logs de cycle de vie par frappe) est passée en <code>Trace</code>, et le plancher du serveur relevé de <code>Debug</code> à <code>Information</code> : silence par défaut sauf opt-in du client. Vérifié : au démarrage, plus aucun bruit de debug émis.
+    <div class="fp">src/Settex.LanguageServer/Program.cs · SettexCompletionHandler.cs · HoverOverlayFormatter.cs</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">🟠 Majeur — Document LSP non thread-safe</div>
-    <code>SettexDocument</code> est muté par <code>Reparse()</code> (passe <code>ast</code> à <code>null</code> puis réassigne) pendant que complétion/hover lisent l'AST en concurrence, sans synchronisation ni versioning. Le « sync incrémental » annoncé est en réalité un full-reparse à chaque frappe, avec relecture disque des includes.
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Document LSP thread-safe</div>
+    <code>SettexDocument</code> ne mute plus son état en place : l'état analysé est un <code>Snapshot</code> immuable référencé par un champ <code>volatile</code> ; <code>Update</code> calcule un nouveau snapshot et remplace la référence de façon atomique. Les handlers concurrents (complétion, hover) voient toujours un état cohérent, jamais l'AST momentanément <code>null</code>.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs</div>
   </div>
 
   <h3>Dette technique diffuse</h3>
   <ul class="tight">
-    <li>Code mort dans le LSP (méthodes jamais appelées, variables inutilisées, logique dupliquée entre <code>ScopeResolver</code> et <code>SettexReferencesHandler</code>).</li>
+    <li><s>Code mort dans le LSP (méthodes jamais appelées, variables inutilisées)</s> — <strong>retiré ✅</strong> (<code>IsInSettingsOrEnvBlock</code>, <code>FindVariable</code>, variable inutilisée).</li>
     <li>Heuristiques de portée codées en dur (<code>line ≤ start + 1000</code>) faute de position de fin dans <code>SourceLocation</code>.</li>
     <li><code>LocationToRange</code> suppose que tout tient sur une seule ligne → ranges faux pour les nœuds multi-lignes.</li>
+    <li>Le « sync incrémental » annoncé reste un full-reparse à chaque frappe (avec relecture disque des includes) — correct mais non optimisé.</li>
     <li>Conversions numériques <code>double ↔ decimal ↔ long</code> potentiellement lossy.</li>
     <li>Pas d'écriture atomique des fichiers de sortie (pas de temp + rename).</li>
     <li><code>catch {}</code> vides masquant des erreurs (disposal, PATH).</li>
-    <li>Commande de démo <code>helloWorld</code> laissée dans l'extension VS Code.</li>
+    <li><s>Commande de démo <code>helloWorld</code> laissée dans l'extension VS Code</s> — <strong>retirée ✅</strong>.</li>
   </ul>
 
   <!-- 7 -->
@@ -357,7 +359,7 @@
       <tr><td>2</td><td><s>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</s> — <strong>fait ✅</strong> (chaque exemple vérifié compilable)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Rendre les extensions déployables : builder le VSIX, embarquer serveur+CLI, résoudre les binaires par chemin relatif (VS + VS Code)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td><s>Décider du sort des includes+<code>settings</code></s> — <strong>fait ✅</strong> : choix « les faire fonctionner » (deep-merge des blocs <code>settings</code>/<code>env</code>) + 4 tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>5</td><td>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code> (immutabilité ou verrou + versioning)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td><s>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code></s> — <strong>fait ✅</strong> (snapshot immuable + <code>volatile</code>, logs en Trace, plancher Information, code mort retiré)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>7</td><td>Compléter les expressions (parenthèses, concaténation de chaînes) et corriger les conditionnelles de base, ou documenter la limite</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>8</td><td>Fiabiliser le compile-on-save VS : chaîner le disposal sur la vraie tâche (au lieu du délai 100 ms), tuer le process à l'annulation, ajouter un timeout</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
