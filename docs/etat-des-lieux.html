@@ -245,7 +245,7 @@
     <div style="margin:14px 0"><b>Serveur de langage (LSP)</b> — 6/10<div class="bar"><i style="width:60%"></i></div></div>
     <div style="margin:14px 0"><b>Extension Visual Studio 2022</b> — 5.5/10<div class="bar"><i style="width:55%"></i></div></div>
     <div style="margin:14px 0"><b>Extension VS Code</b> — 4/10<div class="bar"><i style="width:40%"></i></div></div>
-    <div style="margin:14px 0"><b>Documentation (README/specs)</b> — 4.5/10<div class="bar"><i style="width:45%"></i></div></div>
+    <div style="margin:14px 0"><b>Documentation (README/specs)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(README réaligné &amp; vérifié)</span><div class="bar"><i style="width:70%"></i></div></div>
   </div>
 
   <h3>Concurrence &amp; robustesse (extension VS)</h3>
@@ -258,13 +258,18 @@
 
   <!-- 5 -->
   <h2 id="ecarts"><span class="num">05</span>Écarts documentation ↔ implémentation</h2>
-  <p>C'est le point le plus problématique pour l'adoption : un nouvel utilisateur qui suit le README écrira du code qui <strong>ne compile pas</strong>. Écarts vérifiés dans le code et les samples :</p>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — README réaligné sur la syntaxe réelle</div>
+    Le README a été <strong>réécrit</strong> et <strong>chaque exemple est vérifié : il compile</strong> (extraction + passage au CLI). Corrections : <code>env "Name" { settings { } }</code>, remplacement de la fausse syntaxe « tagged object » par des blocs imbriqués nommés + la vraie forme <code>tag { }</code>, retrait des guillemets simples et objets anonymes, reformulation des conditionnelles (portée courante, fallback en premier), note « pas de parenthèses / <code>+</code> numérique », includes limités aux <code>let</code>, et clarification que <code>${…}</code> est de l'interpolation à la compilation (pas un placeholder runtime). Le tableau ci-dessous garde la trace des écarts qui existaient.
+  </div>
+  <p>Écarts <strong>désormais corrigés</strong> (vérifiés dans le code et les samples) :</p>
   <table>
     <thead><tr><th>Sujet</th><th>README annonce</th><th>Code exige réellement</th></tr></thead>
     <tbody>
       <tr><td>Syntaxe <code>env</code></td><td><code>env Development { Log = "x" }</code></td><td><code>env "Development" { settings { Log = "x" } }</code> (nom entre guillemets + bloc <code>settings</code> interne)</td></tr>
       <tr><td>Includes</td><td>Un bloc <code>settings</code> dans chaque fichier inclus</td><td>Échoue : « multiple settings block ». Seuls les <code>let</code> sont sûrs dans un include</td></tr>
-      <tr><td>Conditionnelles de base</td><td><code>Log = "Debug" if env == "Development"</code> dans <code>settings</code></td><td>Sans effet dans le bloc de base (env vaut toujours «Base»)</td></tr>
+      <tr><td>Conditionnelles de base</td><td><code>Log = "Debug" if env == "Development"</code> dans <code>settings</code></td><td>Sans effet dans le bloc de base (<code>env</code> vaut toujours «Base»)</td></tr>
+      <tr><td>Interpolation runtime</td><td><code>Secret = "${JWT_SECRET}"</code> (variable d'env)</td><td><code>${…}</code> = interpolation Settex à la compilation → « variable non définie »</td></tr>
       <tr><td>Guillemets simples</td><td>Chaînes <code>'…'</code> supportées</td><td>Non implémenté → erreur de lexer</td></tr>
       <tr><td>Objets anonymes en tableau</td><td><code>[ { Name = "x" } ]</code></td><td>Ne parse pas (seuls objets tagués <code>id { }</code>)</td></tr>
       <tr><td>URLs projet</td><td><code>github.com/yourusername/settex</code></td><td>Placeholders jamais renseignés (aussi dans <code>Directory.Build.props</code>)</td></tr>
@@ -348,7 +353,7 @@
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
       <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + test de non-régression</s> — <strong>fait ✅</strong> (projet <code>Settex.VisualStudio.Tests</code>)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td><s>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</s> — <strong>fait ✅</strong> (chaque exemple vérifié compilable)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Rendre les extensions déployables : builder le VSIX, embarquer serveur+CLI, résoudre les binaires par chemin relatif (VS + VS Code)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code> (immutabilité ou verrou + versioning)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
