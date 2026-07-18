@@ -3,6 +3,8 @@
 A static documentation website for Settex, built with **Blazor WebAssembly** and hosted on
 **Azure Static Web Apps**.
 
+**Live:** https://settex.74nu5.dev
+
 ## Run locally
 
 ```bash
