@@ -4,11 +4,11 @@
     <Identity Id="Settex.VisualStudio.0A84A5C9-8EF5-4C2E-BB59-5650C105306A" Version="1.2.0" Language="en-US" Publisher="74nu5" />
     <DisplayName>Settex Language Support</DisplayName>
     <Description>Visual Studio extension for Settex configuration language - Provides syntax highlighting, IntelliSense, code snippets, and build integration for .settex files.</Description>
-    <Tags>settex;configuration;appsettings;json;language;syntax;highlighting;intellisense;snippets</Tags>
     <MoreInfo>https://github.com/74nu5/Settex</MoreInfo>
     <License>LICENSE.txt</License>
-    <ReleaseNotes>https://github.com/74nu5/Settex/releases</ReleaseNotes>
     <GettingStartedGuide>https://github.com/74nu5/Settex#readme</GettingStartedGuide>
+    <ReleaseNotes>https://github.com/74nu5/Settex/releases</ReleaseNotes>
+    <Tags>settex;configuration;appsettings;json;language;syntax;highlighting;intellisense;snippets</Tags>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 19.0)">

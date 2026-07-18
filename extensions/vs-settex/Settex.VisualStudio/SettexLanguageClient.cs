@@ -42,21 +42,30 @@ public class SettexLanguageClient : ILanguageClient
     public IEnumerable<string> FilesToWatch => Array.Empty<string>();
 
     /// <summary>
+    /// Gets a value indicating whether to show a notification to the user when initialization fails.
+    /// </summary>
+    public bool ShowNotificationOnInitializeFailed => true;
+
+    /// <summary>
     /// Event raised when the language server is starting.
     /// </summary>
-    public event AsyncEventHandler<EventArgs> StartAsync;
+    public event AsyncEventHandler<EventArgs>? StartAsync;
 
+    // StopAsync is required by ILanguageClient but is never raised by this client;
+    // the server lifecycle is owned by Visual Studio. Suppress the unused-event warning.
+#pragma warning disable CS0067
     /// <summary>
     /// Event raised when the language server has stopped.
     /// </summary>
-    public event AsyncEventHandler<EventArgs> StopAsync;
+    public event AsyncEventHandler<EventArgs>? StopAsync;
+#pragma warning restore CS0067
 
     /// <summary>
     /// Activates the language client.
     /// </summary>
     /// <param name="token">Cancellation token.</param>
     /// <returns>Task representing the async operation.</returns>
-    public async Task<Connection> ActivateAsync(CancellationToken token)
+    public async Task<Connection?> ActivateAsync(CancellationToken token)
     {
         await Task.Yield();
 
@@ -67,7 +76,7 @@ public class SettexLanguageClient : ILanguageClient
         {
             // Language server not found - return null to disable LSP features
             Debug.WriteLine("Settex Language Server not found. IntelliSense features will be disabled.");
-            return null!;
+            return null;
         }
 
         var processStartInfo = new ProcessStartInfo
@@ -85,7 +94,7 @@ public class SettexLanguageClient : ILanguageClient
 
         if (process == null)
         {
-            return null!;
+            return null;
         }
 
         return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
@@ -106,12 +115,19 @@ public class SettexLanguageClient : ILanguageClient
     /// <summary>
     /// Called when the server initialization has failed.
     /// </summary>
-    /// <param name="exception">Exception that caused the failure.</param>
-    /// <returns>Task representing the async operation.</returns>
-    public Task OnServerInitializeFailedAsync(Exception exception)
+    /// <param name="initializationState">Information about the initialization failure.</param>
+    /// <returns>Task producing the failure context, or null to use default handling.</returns>
+    public Task<InitializationFailureContext?> OnServerInitializeFailedAsync(ILanguageClientInitializationInfo initializationState)
     {
-        Debug.WriteLine($"Settex Language Server initialization failed: {exception.Message}");
-        return Task.CompletedTask;
+        var message = initializationState.InitializationException?.Message ?? initializationState.StatusMessage;
+        Debug.WriteLine($"Settex Language Server initialization failed: {message}");
+
+        var failureContext = new InitializationFailureContext
+        {
+            FailureMessage = $"Settex Language Server failed to initialize: {message}",
+        };
+
+        return Task.FromResult<InitializationFailureContext?>(failureContext);
     }
 
     /// <summary>

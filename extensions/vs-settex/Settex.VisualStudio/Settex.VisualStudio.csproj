@@ -1,4 +1,4 @@
-<Project Sdk="CodingWithCalvin.VsixSdk/1.0.0">
+<Project Sdk="CodingWithCalvin.VsixSdk/0.4.0">
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
@@ -9,6 +9,13 @@
     <Version>1.2.0</Version>
     <RootNamespace>Settex.VisualStudio</RootNamespace>
     <AssemblyName>Settex.VisualStudio</AssemblyName>
+    <!--
+      VSSDK007 flags JoinableTaskFactory.RunAsync results even when they are
+      handled with the recommended .FileAndForget() fire-and-forget pattern.
+      The solution treats warnings as errors, so suppress this analyzer opinion
+      for the extension only.
+    -->
+    <NoWarn>$(NoWarn);VSSDK007</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,45 +26,37 @@
     <PackageReference Include="EnvDTE" />
   </ItemGroup>
 
+  <!--
+    Assets shipped inside the VSIX. This SDK only packages files declared as
+    <Content> with IncludeInVSIX=true; plain <None> items are copied to the
+    output but never added to the VSIX archive, so grammars/snippets/pkgdef
+    must be Content to actually reach the installed extension.
+  -->
   <ItemGroup>
-    <VSCTCompile Include="SettexCommands.vsct">
-      <ResourceName>Menus.ctmenu</ResourceName>
-    </VSCTCompile>
+    <Content Include="Grammars\settex.tmLanguage.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Grammars\settex-language-configuration.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="Settex.pkgdef">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="LICENSE.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Grammars\settex.tmLanguage.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="Grammars\settex-language-configuration.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="Settex.pkgdef">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="LICENSE.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="README.md">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-    <None Include="CHANGELOG.md">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Snippets\*.snippet">
+    <Content Include="Snippets\*.snippet">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

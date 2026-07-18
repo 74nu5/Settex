@@ -28,6 +28,7 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
     private readonly ISettexBuildService buildService;
     private readonly IVsOutputWindowPane outputPane;
     private RunningDocumentTable runningDocumentTable = null!;
+    private uint runningDocumentTableCookie;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> activeCompilations = new ConcurrentDictionary<string, CancellationTokenSource>();
 
     /// <summary>
@@ -52,7 +53,7 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
         
         this.runningDocumentTable = new RunningDocumentTable(this.package);
-        this.runningDocumentTable.Advise(this);
+        this.runningDocumentTableCookie = this.runningDocumentTable.Advise(this);
     }
 
     /// <summary>
@@ -64,7 +65,12 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
         
         if (this.runningDocumentTable != null)
         {
-            this.runningDocumentTable.Dispose();
+            if (this.runningDocumentTableCookie != 0)
+            {
+                this.runningDocumentTable.Unadvise(this.runningDocumentTableCookie);
+                this.runningDocumentTableCookie = 0;
+            }
+
             this.runningDocumentTable = null!;
         }
 
@@ -143,7 +149,7 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
                     {
                         // Ignore disposal errors - token may have already been disposed
                     }
-                });
+                }).Forget();
                 
                 return newCts;
             });
