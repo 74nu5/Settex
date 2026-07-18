@@ -344,27 +344,56 @@ public sealed class EvaluatorTests
     }
 
     [Test]
-    public async Task Evaluate_MultipleSettingsBlocks_ThrowsException()
+    public async Task Evaluate_MultipleSettingsBlocks_MergesInDocumentOrder()
     {
-        // Arrange
+        // Multiple settings blocks (as produced once includes are flattened) are
+        // deep-merged in document order; the later block wins on conflicts while
+        // non-conflicting keys are preserved.
         var source = """
                      settings {
                        Port = 8080
+                       Host = "localhost"
                      }
 
                      settings {
                        Port = 9090
+                       Extra = true
                      }
                      """;
 
-        // Act & Assert
-        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(this.ParseAndEvaluate(source)));
+        var model = this.ParseAndEvaluate(source);
+
+        await Assert.That(model.BaseSettings["Port"]!.GetValue<long>()).IsEqualTo(9090L);
+        await Assert.That(model.BaseSettings["Host"]!.GetValue<string>()).IsEqualTo("localhost");
+        await Assert.That(model.BaseSettings["Extra"]!.GetValue<bool>()).IsEqualTo(true);
     }
 
     [Test]
-    public async Task Evaluate_DuplicateEnvNames_ThrowsException()
+    public async Task Evaluate_MultipleSettingsBlocks_DeepMergeNestedObjects()
     {
-        // Arrange
+        // Nested objects across blocks merge deeply rather than replacing.
+        var source = """
+                     settings {
+                       Database { Host = "localhost" Port = 5432 }
+                     }
+
+                     settings {
+                       Database { Port = 6543 Ssl = true }
+                     }
+                     """;
+
+        var model = this.ParseAndEvaluate(source);
+
+        var db = model.BaseSettings["Database"] as JsonObject;
+        await Assert.That(db!["Host"]!.GetValue<string>()).IsEqualTo("localhost");
+        await Assert.That(db["Port"]!.GetValue<long>()).IsEqualTo(6543L);
+        await Assert.That(db["Ssl"]!.GetValue<bool>()).IsEqualTo(true);
+    }
+
+    [Test]
+    public async Task Evaluate_DuplicateEnvNames_MergeOverlays()
+    {
+        // Two env blocks with the same name merge their overlays in document order.
         var source = """
                      settings {
                        Port = 8080
@@ -373,18 +402,24 @@ public sealed class EvaluatorTests
                      env "Development" {
                        settings {
                          Port = 5000
+                         A = 1
                        }
                      }
 
                      env "Development" {
                        settings {
                          Port = 5001
+                         B = 2
                        }
                      }
                      """;
 
-        // Act & Assert
-        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(this.ParseAndEvaluate(source)));
+        var model = this.ParseAndEvaluate(source);
+
+        var dev = model.EnvironmentOverlays["Development"];
+        await Assert.That(dev["Port"]!.GetValue<long>()).IsEqualTo(5001L);
+        await Assert.That(dev["A"]!.GetValue<long>()).IsEqualTo(1L);
+        await Assert.That(dev["B"]!.GetValue<long>()).IsEqualTo(2L);
     }
 
     [Test]

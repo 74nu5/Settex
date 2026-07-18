@@ -303,4 +303,183 @@ settings {
             this.CleanupDirectory(tempDir);
         }
     }
+
+    [Test]
+    public async Task Compile_IncludedFileWithSettingsBlock_MergesIntoBase()
+    {
+        // An included file that carries its own settings block is deep-merged
+        // into the including file's base settings (modular configuration).
+        var compiler = new SettexCompiler();
+        var tempDir = this.GetTempDirectory();
+        var outputDir = Path.Combine(tempDir, "output");
+
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "logging.settex"), """
+                                                                              settings {
+                                                                                Logging { LogLevel { Default = "Information" } }
+                                                                              }
+                                                                              """);
+
+        var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+        await File.WriteAllTextAsync(sourceFile, """
+                                                 include "./logging.settex"
+
+                                                 settings {
+                                                   ApplicationName = "MyApp"
+                                                 }
+                                                 """);
+
+        try
+        {
+            var result = compiler.Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json")));
+            var root = doc.RootElement;
+            await Assert.That(root.GetProperty("ApplicationName").GetString()).IsEqualTo("MyApp");
+            await Assert.That(root.GetProperty("Logging").GetProperty("LogLevel").GetProperty("Default").GetString())
+                        .IsEqualTo("Information");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_IncludedSettingsBlock_MainOverridesInclude()
+    {
+        // On a key conflict the including file (later in document order) wins.
+        var compiler = new SettexCompiler();
+        var tempDir = this.GetTempDirectory();
+        var outputDir = Path.Combine(tempDir, "output");
+
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "defaults.settex"), """
+                                                                               settings {
+                                                                                 Server { Host = "localhost" Port = 8080 }
+                                                                               }
+                                                                               """);
+
+        var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+        await File.WriteAllTextAsync(sourceFile, """
+                                                 include "./defaults.settex"
+
+                                                 settings {
+                                                   Server { Port = 9090 }
+                                                 }
+                                                 """);
+
+        try
+        {
+            var result = compiler.Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json")));
+            var server = doc.RootElement.GetProperty("Server");
+            await Assert.That(server.GetProperty("Host").GetString()).IsEqualTo("localhost");
+            await Assert.That(server.GetProperty("Port").GetInt64()).IsEqualTo(9090L);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_IncludedFileContributesEnvOverlay_Merges()
+    {
+        // An included file can contribute an env block; overlays for the same
+        // environment merge across files.
+        var compiler = new SettexCompiler();
+        var tempDir = this.GetTempDirectory();
+        var outputDir = Path.Combine(tempDir, "output");
+
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "prod.settex"), """
+                                                                           env "Production" {
+                                                                             settings {
+                                                                               Server { Ssl = true }
+                                                                             }
+                                                                           }
+                                                                           """);
+
+        var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+        await File.WriteAllTextAsync(sourceFile, """
+                                                 include "./prod.settex"
+
+                                                 settings {
+                                                   Server { Host = "localhost" }
+                                                 }
+
+                                                 env "Production" {
+                                                   settings {
+                                                     Server { Host = "prod-host" }
+                                                   }
+                                                 }
+                                                 """);
+
+        try
+        {
+            var result = compiler.Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Production.json")));
+            var server = doc.RootElement.GetProperty("Server");
+            await Assert.That(server.GetProperty("Host").GetString()).IsEqualTo("prod-host");
+            await Assert.That(server.GetProperty("Ssl").GetBoolean()).IsEqualTo(true);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_ModularConfig_LetsInIncludeAndSettingsInMain()
+    {
+        // Realistic modular setup: shared variables in one file, settings split
+        // across an included module and the main file.
+        var compiler = new SettexCompiler();
+        var tempDir = this.GetTempDirectory();
+        var outputDir = Path.Combine(tempDir, "output");
+
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "common.settex"), """
+                                                                             let host = "localhost"
+                                                                             let basePort = 8000
+
+                                                                             settings {
+                                                                               Server { Host = host Port = basePort }
+                                                                             }
+                                                                             """);
+
+        var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+        await File.WriteAllTextAsync(sourceFile, """
+                                                 include "./common.settex"
+
+                                                 settings {
+                                                   ApplicationName = "MyApp"
+                                                   BaseUrl = "http://${host}:${basePort}"
+                                                 }
+                                                 """);
+
+        try
+        {
+            var result = compiler.Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.json")));
+            var root = doc.RootElement;
+            await Assert.That(root.GetProperty("ApplicationName").GetString()).IsEqualTo("MyApp");
+            await Assert.That(root.GetProperty("BaseUrl").GetString()).IsEqualTo("http://localhost:8000");
+            var server = root.GetProperty("Server");
+            await Assert.That(server.GetProperty("Host").GetString()).IsEqualTo("localhost");
+            await Assert.That(server.GetProperty("Port").GetInt64()).IsEqualTo(8000L);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
 }

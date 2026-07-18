@@ -303,14 +303,23 @@ Production result:
 
 ### File Includes
 
-Share reusable **variables** across files with `include`. An included file provides `let` declarations that become available in the including file.
+Split configuration across files with `include`. An included file can contribute `let` variables, `settings` blocks, and `env` blocks — all of them are made available to the including file. This is how you build **modular configuration**.
 
-> Only **one** `settings` block may exist across a file and everything it includes. Keep included files to `let` declarations (and other includes); putting a `settings` block in both the included and the including file is an error (`File must contain exactly one 'settings' block`).
+- **Variables** from an included file are in scope in the including file.
+- **`settings` blocks** are deep-merged in document order. Because an include is expanded where it appears, the including file's own `settings` come later and therefore **win** on conflicting keys.
+- **`env` blocks** with the same environment name merge the same way, so an included module can add to an environment overlay.
 
 ```settex
 # common.settex
 let host = "localhost"
 let defaultPort = 8000
+
+settings {
+  Server {
+    Host = host
+    Port = defaultPort
+  }
+}
 ```
 
 ```settex
@@ -320,15 +329,25 @@ include "./common.settex"
 settings {
   ApplicationName = "MyApp"
   Server {
-    Host = host
-    Port = defaultPort
+    Port = 9090   # overrides the included default
   }
 }
 ```
 
-**Features**:
-- Relative paths resolved from the file location
-- Circular dependency detection
+Generates (base `appsettings.json`):
+
+```json
+{
+  "Server": { "Host": "localhost", "Port": 9090 },
+  "ApplicationName": "MyApp"
+}
+```
+
+**Rules & features**:
+- At least one `settings` block must exist across the file and everything it includes.
+- Relative paths are resolved from the file's location.
+- Circular includes are detected and reported.
+- A `let` variable may only be defined once per scope, so avoid redefining the same global variable in both an included file and the including file.
 
 ### Variables with `let`
 
