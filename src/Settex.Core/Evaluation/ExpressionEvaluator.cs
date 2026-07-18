@@ -41,7 +41,7 @@ public class ExpressionEvaluator
         {
             string s => new StringValue(s),
             long l => new NumberValue(l),
-            double d => new NumberValue((decimal)d),
+            double d => CheckedNumber(() => (decimal)d, literal.Location),
             bool b => new BoolValue(b),
             null => NullValue.Instance,
             _ => throw new EvaluatorException($"Unsupported literal type: {literal.Value?.GetType().Name}", literal.Location),
@@ -228,12 +228,30 @@ public class ExpressionEvaluator
         };
     }
 
+    /// <summary>
+    ///     Produces a <see cref="NumberValue" /> from a decimal computation, converting a
+    ///     decimal <see cref="OverflowException" /> (out-of-range literal or arithmetic
+    ///     result) into a typed, located <see cref="EvaluatorException" /> instead of an
+    ///     untyped crash that surfaces as a generic "Unexpected error" without a location.
+    /// </summary>
+    private static NumberValue CheckedNumber(Func<decimal> compute, SourceLocation location)
+    {
+        try
+        {
+            return new NumberValue(compute());
+        }
+        catch (OverflowException)
+        {
+            throw new EvaluatorException("Numeric value is out of range for a decimal (magnitude must be at most ~7.9e28)", location);
+        }
+    }
+
     // Arithmetic operators
     private RuntimeValue EvaluateAddition(RuntimeValue left, RuntimeValue right, SourceLocation location)
     {
         if (left is NumberValue leftNum && right is NumberValue rightNum)
         {
-            return new NumberValue(leftNum.Value + rightNum.Value);
+            return CheckedNumber(() => leftNum.Value + rightNum.Value, location);
         }
 
         // String concatenation: if either side is a string, concatenate, coercing
@@ -265,7 +283,7 @@ public class ExpressionEvaluator
     {
         if (left is NumberValue leftNum && right is NumberValue rightNum)
         {
-            return new NumberValue(leftNum.Value - rightNum.Value);
+            return CheckedNumber(() => leftNum.Value - rightNum.Value, location);
         }
 
         throw new EvaluatorException($"Operator '-' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
@@ -275,7 +293,7 @@ public class ExpressionEvaluator
     {
         if (left is NumberValue leftNum && right is NumberValue rightNum)
         {
-            return new NumberValue(leftNum.Value * rightNum.Value);
+            return CheckedNumber(() => leftNum.Value * rightNum.Value, location);
         }
 
         throw new EvaluatorException($"Operator '*' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
@@ -290,7 +308,7 @@ public class ExpressionEvaluator
                 throw new EvaluatorException("Division by zero", location);
             }
 
-            return new NumberValue(leftNum.Value / rightNum.Value);
+            return CheckedNumber(() => leftNum.Value / rightNum.Value, location);
         }
 
         throw new EvaluatorException($"Operator '/' requires numeric operands, got {left.GetType().Name} and {right.GetType().Name}", location);
