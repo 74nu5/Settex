@@ -14,11 +14,11 @@
 
 ### V2 Features 🆕
 
-- 📂 **File includes** - Reuse configuration across multiple files
+- 📂 **File includes** - Share variables across multiple files
 - 🔤 **Variables (`let`)** - Define reusable values with proper scoping
 - 🧮 **Expressions** - Arithmetic, logical, comparison, and null coalescing
 - 💬 **String interpolation** - Embed variables and expressions in strings: `"${host}:${port}"`
-- ❓ **Conditional assignments** - `Value = expr if condition` for environment-specific values
+- ❓ **Conditional assignments** - `Value = expr if condition`
 - ⚙️ **Set-if-missing operator** - `Port := 8080` only sets if not already defined
 - 🔁 **For loops** - Generate array elements dynamically from collections
 
@@ -56,31 +56,37 @@ Create a file named `appsettings.settex`:
 ```settex
 settings {
   ApplicationName = "MyApp"
-  
+
   Logging {
     LogLevel {
       Default = "Information"
       Microsoft = "Warning"
     }
   }
-  
+
   AllowedHosts = ["localhost", "*.example.com"]
-  
+
   ConnectionStrings {
     DefaultConnection = "Server=localhost;Database=MyDb"
   }
 }
 
-env Development {
-  Logging.LogLevel.Default = "Debug"
-  ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyDb_Dev"
+env "Development" {
+  settings {
+    Logging.LogLevel.Default = "Debug"
+    ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyDb_Dev"
+  }
 }
 
-env Production {
-  Logging.LogLevel.Default = "Warning"
-  ConnectionStrings.DefaultConnection = "Server=prod-server;Database=MyDb"
+env "Production" {
+  settings {
+    Logging.LogLevel.Default = "Warning"
+    ConnectionStrings.DefaultConnection = "Server=prod-server;Database=MyDb"
+  }
 }
 ```
+
+> **Syntax note.** An `env` block requires a **quoted** environment name and wraps its overrides in an inner `settings { ... }` block: `env "Development" { settings { ... } }`. This is different from the base `settings` block, which is written at the top level.
 
 Build your project, and Settex will generate:
 - `appsettings.json` - Base settings
@@ -88,6 +94,13 @@ Build your project, and Settex will generate:
 - `appsettings.Production.json` - Base merged with Production overlay
 
 ## 📖 Language Syntax
+
+### Comments
+
+```settex
+# Hash-style comment
+// Double-slash comment
+```
 
 ### Settings Block
 
@@ -103,7 +116,7 @@ settings {
 
 ### Nested Objects
 
-Use nested blocks for hierarchical configuration:
+Use nested blocks for hierarchical configuration. A named block becomes a JSON key:
 
 ```settex
 settings {
@@ -118,47 +131,19 @@ settings {
 }
 ```
 
-### Arrays
+### Named Child Blocks (maps)
 
-Define arrays with comma-separated values (commas are optional):
-
-```settex
-settings {
-  AllowedHosts = [
-    "localhost"
-    "*.example.com"
-    "api.production.com"
-  ]
-  
-  Ports = [8080, 8081, 8082]
-}
-```
-
-### Dot-Path Assignments
-
-Set nested values using dot notation:
-
-```settex
-settings {
-  Logging.LogLevel.Default = "Information"
-  Logging.LogLevel.Microsoft = "Warning"
-  Logging.LogLevel.System = "Error"
-}
-```
-
-### Tagged Objects
-
-Create objects with a tag (key):
+Because a named block becomes a key, you can build a map of named objects by nesting named blocks. The block names must be valid identifiers:
 
 ```settex
 settings {
   Providers {
-    Provider "AzureAd" {
+    AzureAd {
       ClientId = "abc-123"
       Authority = "https://login.microsoftonline.com"
     }
-    
-    Provider "Google" {
+
+    Google {
       ClientId = "xyz-456"
       ClientSecret = "secret"
     }
@@ -183,9 +168,71 @@ Generates:
 }
 ```
 
+### Arrays
+
+Define arrays with comma-separated values (commas are optional; a newline also separates items):
+
+```settex
+settings {
+  AllowedHosts = [
+    "localhost"
+    "*.example.com"
+    "api.production.com"
+  ]
+
+  Ports = [8080, 8081, 8082]
+}
+```
+
+### Object Literals in Arrays
+
+To put objects inside an array, prefix each object with a **tag** — any identifier followed by a block. The tag is a required syntactic label and is **not** emitted in the JSON (it exists so the parser can tell an object element from an expression):
+
+```settex
+settings {
+  Services = [
+    service {
+      Name = "auth"
+      Port = 5001
+    }
+    service {
+      Name = "data"
+      Port = 5002
+    }
+  ]
+}
+```
+
+Generates:
+
+```json
+{
+  "Services": [
+    { "Name": "auth", "Port": 5001 },
+    { "Name": "data", "Port": 5002 }
+  ]
+}
+```
+
+The same tagged-object form can be used as a plain value: `Database = connection { Host = "localhost" Port = 5432 }` produces `"Database": { "Host": "localhost", "Port": 5432 }` (the `connection` tag is discarded).
+
+> A bare `{ ... }` without a tag is **not** valid — always prefix object literals with an identifier.
+
+### Dot-Path Assignments
+
+Set nested values using dot notation:
+
+```settex
+settings {
+  Logging.LogLevel.Default = "Information"
+  Logging.LogLevel.Microsoft = "Warning"
+  Logging.LogLevel.System = "Error"
+}
+```
+
 ### Environment Overlays
 
-Define environment-specific overrides with `env` blocks:
+Define environment-specific overrides with `env` blocks. Each `env` block takes a **quoted** name and contains an inner `settings` block (and, optionally, environment-scoped `let` variables):
 
 ```settex
 settings {
@@ -193,18 +240,24 @@ settings {
   LogLevel = "Information"
 }
 
-env Development {
-  ApiUrl = "http://localhost:5000"
-  LogLevel = "Debug"
+env "Development" {
+  settings {
+    ApiUrl = "http://localhost:5000"
+    LogLevel = "Debug"
+  }
 }
 
-env Staging {
-  ApiUrl = "https://staging-api.example.com"
-  LogLevel = "Debug"
+env "Staging" {
+  settings {
+    ApiUrl = "https://staging-api.example.com"
+    LogLevel = "Debug"
+  }
 }
 
-env Production {
-  LogLevel = "Warning"
+env "Production" {
+  settings {
+    LogLevel = "Warning"
+  }
 }
 ```
 
@@ -227,9 +280,11 @@ settings {
   Tags = ["dev", "test"]
 }
 
-env Production {
-  Database.Host = "prod-server"  // Only Host changes
-  Tags = ["prod"]  // Array replaced entirely
+env "Production" {
+  settings {
+    Database.Host = "prod-server"  // Only Host changes
+    Tags = ["prod"]                // Array replaced entirely
+  }
 }
 ```
 
@@ -248,37 +303,32 @@ Production result:
 
 ### File Includes
 
-Reuse configuration across multiple files with `include`:
+Share reusable **variables** across files with `include`. An included file provides `let` declarations that become available in the including file.
+
+> Only **one** `settings` block may exist across a file and everything it includes. Keep included files to `let` declarations (and other includes); putting a `settings` block in both the included and the including file is an error (`File must contain exactly one 'settings' block`).
 
 ```settex
 # common.settex
 let host = "localhost"
 let defaultPort = 8000
+```
+
+```settex
+# appsettings.settex
+include "./common.settex"
 
 settings {
+  ApplicationName = "MyApp"
   Server {
     Host = host
     Port = defaultPort
   }
 }
-
-# appsettings.settex
-include "common.settex"
-
-settings {
-  ApplicationName = "MyApp"
-}
-
-env Production {
-  let host = "api.example.com"
-  let defaultPort = 443
-}
 ```
 
 **Features**:
-- Relative paths resolved from file location
+- Relative paths resolved from the file location
 - Circular dependency detection
-- Variables from included files are available in current scope
 
 ### Variables with `let`
 
@@ -294,21 +344,18 @@ settings {
   Version = version
 }
 
-env Development {
-  let basePort = 5000  # Shadows global variable
-  # host is still "localhost" from global scope
-}
-
-env Production {
-  let host = "api.example.com"
-  let basePort = 443
+env "Development" {
+  let basePort = 5000  # Shadows the global variable within this env
+  settings {
+    DevUrl = "http://${host}:${basePort}"
+  }
 }
 ```
 
 **Scoping rules**:
-- Global scope: Variables defined at file level
-- Environment scope: Variables in `env` blocks shadow global variables
-- For loop scope: Iterator variables only exist within the loop
+- **Global scope**: variables defined at file level
+- **Environment scope**: `let` inside an `env` block shadows global variables for that environment
+- **For-loop scope**: iterator variables only exist within the loop body
 
 ### Expressions
 
@@ -323,15 +370,14 @@ settings {
   # Arithmetic
   TotalTimeout = timeout * maxRetries
   Port = 8000 + 80
-  
+
   # Comparison
-  IsProduction = env == "Production"
   IsLargeTimeout = timeout > 60
-  
+
   # Logical
   ShouldCache = enabled and timeout > 10
-  DebugMode = not enabled or env == "Development"
-  
+  DebugMode = not enabled
+
   # Null coalescing
   LogLevel = null ?? "Information"
   Host = null ?? "localhost"
@@ -339,10 +385,12 @@ settings {
 ```
 
 **Supported operators**:
-- Arithmetic: `+`, `-`, `*`, `/`
-- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- Arithmetic: `+`, `-`, `*`, `/` (numeric operands only — `+` does not concatenate strings)
+- Comparison: `==`, `!=`, `<`, `<=`, `>`, `>=` (numeric operands for the ordering operators)
 - Logical: `and`, `or`, `not`
 - Null coalescing: `??`
+
+> **No parentheses.** Expressions are evaluated with operator precedence but grouping with `( ... )` is not supported. Introduce intermediate `let` variables to control evaluation order.
 
 ### String Interpolation
 
@@ -360,97 +408,113 @@ settings {
 }
 ```
 
-**Note**: Interpolating `null` throws an error. Use null coalescing: `"${value ?? "default"}"`
+**Note**: Interpolating `null` throws an error. Use null coalescing: `"${value ?? "default"}"`.
+
+> `${...}` is resolved **at compile time** from Settex variables and expressions — it is not a placeholder for runtime environment variables. A name like `${DB_CONNECTION_STRING}` is looked up as a Settex variable and fails if undefined. Inject secrets at deployment time through .NET's environment-variable or user-secrets configuration providers rather than through `.settex`.
 
 ### Conditional Assignments
 
-Set values based on conditions:
+Assign a value only when a boolean condition holds:
 
 ```settex
-settings {
-  # Simple condition
-  LogLevel = "Debug" if env == "Development"
-  LogLevel = "Warning" if env == "Production"
-  
-  # With expressions
-  MaxConnections = 100 if env == "Development"
-  MaxConnections = 1000 if env == "Production"
-  
-  # Works in environment blocks too
-  env Staging {
-    CachingEnabled = true if env == "Staging"
+env "Development" {
+  let debug = true
+  settings {
+    LogLevel = "Debug" if debug
+    MaxConnections = 100 if debug
   }
 }
 ```
 
 **Rules**:
-- Condition must evaluate to `bool`
-- Multiple conditions can assign different values
-- Last matching condition wins
+- The condition must evaluate to `bool`.
+- Statements run top to bottom. A conditional whose condition is `false` leaves any value assigned earlier in place, so write the unconditional fallback **first** and the conditional override **after**:
+  ```settex
+  let verbose = false
+
+  settings {
+    LogLevel = "Warning"          # fallback, always assigned
+    LogLevel = "Debug" if verbose # overrides only when `verbose` is true
+  }
+  ```
+- Conditions are evaluated in the **current scope**. The base `settings` block only sees global `let` values, so for per-environment behavior put the conditional inside the relevant `env` block's `settings` (or simply assign the value there — that is what overlays are for).
 
 ### Set-If-Missing Operator (`:=`)
 
-Set a value only if not already defined:
+Set a value only if the path is not already defined:
 
 ```settex
 settings {
   Server {
-    Port := 8080  # Sets default
-    MaxConnections := 100  # Sets default
+    Port := 8080          # Sets a default
+    MaxConnections := 100 # Sets a default
   }
 }
 
-env Development {
-  Server {
-    Port = 5000  # Overrides with =
-    MaxConnections := 50  # Won't set (already defined in base)
+env "Development" {
+  settings {
+    Server {
+      Port = 5000            # Overrides with =
+      MaxConnections := 50   # Won't set (already defined in base)
+    }
   }
 }
 
-env Production {
-  Server {
-    Port := 443  # Won't set (already defined in base)
-    MaxConnections = 1000  # Overrides with =
+env "Production" {
+  settings {
+    Server {
+      Port := 443            # Won't set (already defined in base)
+      MaxConnections = 1000  # Overrides with =
+    }
   }
 }
 ```
 
 **Rules**:
-- `:=` only sets if path doesn't exist yet
-- In environment overlays, checks base settings first
-- Useful for providing defaults that environments can override
+- `:=` only sets a value if the path does not exist yet.
+- In environment overlays, it checks the base settings first.
+- Useful for providing defaults that environments can override.
 
 ### For Loops
 
-Generate array elements dynamically:
+Generate array elements dynamically. Each iteration must produce exactly one tagged object (the tag — `item` below — is a discarded label):
 
 ```settex
-let services = ["auth", "api", "web"]
 let ports = [8001, 8002, 8003]
 let host = "localhost"
 
 settings {
-  # Simple for loop
-  ServiceNames = [
-    for service in services {
-      item { Name = service }
-    }
-  ]
-  
-  # With interpolation
+  # Iterate over a list of values
   ServiceUrls = [
     for port in ports {
       item { Url = "http://${host}:${port}" }
     }
   ]
-  
-  # Mixed with regular elements
+
+  # Iterate over an inline list
+  Numbered = [
+    for i in [1, 2, 3] {
+      item { Index = i }
+    }
+  ]
+}
+```
+
+Iterating over tagged objects gives access to their fields with member access:
+
+```settex
+let services = [
+  svc { Name = "auth" Port = 8001 }
+  svc { Name = "api"  Port = 8002 }
+]
+let host = "localhost"
+
+settings {
   Endpoints = [
-    { Name = "health" Url = "/health" }
-    for service in services {
+    for s in services {
       item {
-        Name = service
-        Url = "/api/${service}"
+        Name = s.Name
+        Url = "http://${host}:${s.Port}"
       }
     }
   ]
@@ -458,80 +522,72 @@ settings {
 ```
 
 **Features**:
-- Iterator variable scoped to loop body
-- Can access outer scope variables
-- Loop body must contain exactly one nested block (`item { ... }`)
-- Nestable (for loops can contain for loops)
+- The iterator variable is scoped to the loop body and can read outer-scope variables.
+- The loop body must contain exactly one tagged block.
+- For loops nest.
 
 ### Complete V2 Example
 
-Here's a real-world example using all V2 features:
+A real-world example using the V2 features:
 
 ```settex
 # common.settex
 let baseHost = "localhost"
 let basePort = 8000
-let services = ["auth", "api", "notifications"]
+let services = [
+  svc { Name = "auth" Port = 8001 }
+  svc { Name = "api"  Port = 8002 }
+]
+```
+
+```settex
+# appsettings.settex
+include "./common.settex"
 
 settings {
   ApplicationName = "MyApp"
   Version = "2.0.0"
-  
+
   Server {
     Host := baseHost
     Port := basePort
     MaxConnections := 100
   }
-}
 
-# appsettings.settex
-include "common.settex"
-
-let apiVersion = "v1"
-
-settings {
   BaseUrl = "http://${baseHost}:${basePort}"
-  
-  Services = [
-    for service in services {
+
+  Endpoints = [
+    for s in services {
       item {
-        Name = service
-        Url = "http://${baseHost}:${basePort}/${service}"
-        Enabled = true if env == "Production"
-        Enabled = true if env == "Development"
+        Name = s.Name
+        Url = "http://${baseHost}:${s.Port}"
       }
     }
   ]
-  
+
   Logging {
     LogLevel {
-      Default = "Information" if env == "Production"
-      Default = "Debug" if env == "Development"
+      Default = "Information"
     }
   }
 }
 
-env Development {
+env "Development" {
   let basePort = 5000
-  
   settings {
-    Server {
-      Port = basePort
-    }
+    Server.Port = basePort
     BaseUrl = "http://dev.${baseHost}:${basePort}"
+    Logging.LogLevel.Default = "Debug"
   }
 }
 
-env Production {
-  let baseHost = "api.example.com"
-  let basePort = 443
-  
+env "Production" {
+  let prodHost = "api.example.com"
   settings {
-    Server {
-      Port = basePort
-      MaxConnections = 1000
-    }
-    BaseUrl = "https://${baseHost}"
+    Server.Port = 443
+    Server.MaxConnections = 1000
+    BaseUrl = "https://${prodHost}"
+    Logging.LogLevel.Default = "Warning"
   }
 }
 ```
@@ -540,7 +596,7 @@ For more examples, see the `samples/` directory.
 
 ## 🔄 Migration Guide: V1 → V2
 
-V2 is fully backward compatible with V1. All V1 syntax continues to work. Here's how to adopt V2 features incrementally:
+V2 is backward compatible with V1 configuration constructs (settings, nested objects, arrays, dot-paths, and environment overlays). You can adopt the new features incrementally.
 
 ### Step 1: Extract Common Values
 
@@ -551,11 +607,6 @@ settings {
   Server.Port = 8080
   Database.Host = "localhost"
   Database.Port = 5432
-}
-
-env Production {
-  Server.Host = "api.example.com"
-  Database.Host = "db.example.com"
 }
 ```
 
@@ -569,11 +620,6 @@ settings {
   Database.Host = defaultHost
   Database.Port = 5432
 }
-
-env Production {
-  let defaultHost = "api.example.com"
-  Database.Host = "db.example.com"
-}
 ```
 
 ### Step 2: Use Set-If-Missing for Defaults
@@ -584,12 +630,16 @@ settings {
   Server.Port = 8080
 }
 
-env Development {
-  Server.Port = 8080  # Repeated
+env "Development" {
+  settings {
+    Server.Port = 8080  # Repeated
+  }
 }
 
-env Production {
-  Server.Port = 443
+env "Production" {
+  settings {
+    Server.Port = 443
+  }
 }
 ```
 
@@ -599,45 +649,35 @@ settings {
   Server.Port := 8080  # Default
 }
 
-env Development {
-  # Inherits default 8080
-}
-
-env Production {
-  Server.Port = 443  # Override
-}
-```
-
-### Step 3: Split Large Files
-
-**V1 - Single file:**
-```settex
-settings {
-  # 500+ lines of configuration...
-}
-```
-
-**V2 - Modular:**
-```settex
-# common.settex
-let version = "1.0.0"
-settings {
-  Version = version
-}
-
-# logging.settex
-settings {
-  Logging {
-    LogLevel.Default = "Information"
+env "Development" {
+  settings {
+    # Inherits default 8080
   }
 }
 
+env "Production" {
+  settings {
+    Server.Port = 443  # Override
+  }
+}
+```
+
+### Step 3: Split Shared Variables Into Includes
+
+```settex
+# common.settex
+let version = "1.0.0"
+let defaultLogLevel = "Information"
+```
+
+```settex
 # appsettings.settex
-include "common.settex"
-include "logging.settex"
+include "./common.settex"
 
 settings {
   ApplicationName = "MyApp"
+  Version = version
+  Logging.LogLevel.Default = defaultLogLevel
 }
 ```
 
@@ -647,9 +687,9 @@ settings {
 ```settex
 settings {
   Services {
-    Service "auth" { Port = 8001 Url = "http://localhost:8001" }
-    Service "api" { Port = 8002 Url = "http://localhost:8002" }
-    Service "web" { Port = 8003 Url = "http://localhost:8003" }
+    Auth { Port = 8001 Url = "http://localhost:8001" }
+    Api  { Port = 8002 Url = "http://localhost:8002" }
+    Web  { Port = 8003 Url = "http://localhost:8003" }
   }
 }
 ```
@@ -657,9 +697,9 @@ settings {
 **V2:**
 ```settex
 let services = [
-  { Name = "auth" Port = 8001 }
-  { Name = "api" Port = 8002 }
-  { Name = "web" Port = 8003 }
+  svc { Name = "auth" Port = 8001 }
+  svc { Name = "api"  Port = 8002 }
+  svc { Name = "web"  Port = 8003 }
 ]
 let host = "localhost"
 
@@ -684,11 +724,9 @@ settings {
 | Expressions | ❌ Only literals | ✅ Arithmetic, logical, etc. |
 | String interpolation | ❌ Not supported | ✅ `"${var}"` |
 | Conditional values | ❌ Not supported | ✅ `value if condition` |
-| File splitting | ❌ Not supported | ✅ `include "file.settex"` |
-| Dynamic arrays | ❌ Manual repetition | ✅ `for x in list { ... }` |
+| Shared variables | ❌ Not supported | ✅ `include "file.settex"` |
+| Dynamic arrays | ❌ Manual repetition | ✅ `for x in list { item { ... } }` |
 | Set-if-missing | ❌ Not supported | ✅ `Path := value` |
-
-All V1 syntax remains valid in V2 - you can migrate gradually!
 
 ## 🔧 MSBuild Configuration
 
@@ -698,7 +736,7 @@ The Settex.Build package automatically discovers `*.settex` files in your projec
 <PropertyGroup>
   <!-- Change output directory (default: project root) -->
   <SettexOutputDirectory>$(MSBuildProjectDirectory)\config</SettexOutputDirectory>
-  
+
   <!-- Disable automatic compilation -->
   <EnableSettexCompilation>false</EnableSettexCompilation>
 </PropertyGroup>
@@ -726,7 +764,6 @@ settex build --help
 
 The CLI provides:
 - ✨ Beautiful formatted diagnostics with Spectre.Console
-- 📊 Progress indicators
 - 🎨 Color-coded error messages
 - 📍 Precise error locations
 
@@ -734,28 +771,27 @@ The CLI provides:
 
 Settex supports these value types:
 
-- **Strings**: `"Hello World"` or `'Single quotes'`
+- **Strings**: `"Hello World"` (double quotes only)
 - **Numbers**: `42`, `3.14`, `-10`
 - **Booleans**: `true`, `false`
 - **Null**: `null`
 - **Arrays**: `[1, 2, 3]` or multiline
-- **Objects**: Nested blocks
+- **Objects**: Nested blocks, or tagged object literals (`tag { ... }`)
 
 ## ⚠️ Error Handling
 
-Settex provides precise error diagnostics:
+Settex provides precise error diagnostics with file, line, and column:
 
 ```
 appsettings.settex(12,5): error: Expected '=' after path
-  LogLevel.Default "Information"
-      ^
 ```
 
 Errors include:
 - File name and location (line, column)
-- Clear error message
-- Source line with error indicator
+- A clear error message
 - IDE integration (clickable in Visual Studio, VS Code, Rider)
+
+Compilation stops at the first error in each phase (lexing, parsing, include resolution, evaluation, writing).
 
 ## 🏗️ Project Structure
 
@@ -783,13 +819,13 @@ settings {
       Microsoft.AspNetCore = "Warning"
     }
   }
-  
+
   AllowedHosts = "*"
-  
+
   ConnectionStrings {
     DefaultConnection = "Server=localhost;Database=MyApi"
   }
-  
+
   JwtSettings {
     SecretKey = "dev-secret-key-change-in-production"
     Issuer = "MyApi"
@@ -798,17 +834,23 @@ settings {
   }
 }
 
-env Development {
-  Logging.LogLevel.Default = "Debug"
-  ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyApi_Dev"
-  JwtSettings.ExpirationMinutes = 1440
+env "Development" {
+  settings {
+    Logging.LogLevel.Default = "Debug"
+    ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyApi_Dev"
+    JwtSettings.ExpirationMinutes = 1440
+  }
 }
 
-env Production {
-  Logging.LogLevel.Default = "Warning"
-  Logging.LogLevel.Microsoft.AspNetCore = "Error"
-  ConnectionStrings.DefaultConnection = "${DB_CONNECTION_STRING}"
-  JwtSettings.SecretKey = "${JWT_SECRET}"
+env "Production" {
+  settings {
+    Logging.LogLevel.Default = "Warning"
+    Logging.LogLevel.Microsoft.AspNetCore = "Error"
+    # Keep real secrets out of source: use a non-secret placeholder here and
+    # override at runtime via the environment / user-secrets providers.
+    ConnectionStrings.DefaultConnection = "Server=prod-db;Database=MyApi"
+    JwtSettings.SecretKey = "set-via-environment"
+  }
 }
 ```
 
@@ -817,40 +859,43 @@ env Production {
 ```settex
 settings {
   Services {
-    Service "EmailService" {
+    EmailService {
       Enabled = true
       Provider = "SendGrid"
       ApiKey = "dev-key"
     }
-    
-    Service "StorageService" {
+
+    StorageService {
       Enabled = true
       Provider = "LocalDisk"
       RootPath = "./storage"
     }
-    
-    Service "CacheService" {
+
+    CacheService {
       Enabled = false
       Provider = "Memory"
     }
   }
 }
 
-env Production {
-  Services {
-    Service "EmailService" {
-      ApiKey = "${SENDGRID_KEY}"
-    }
-    
-    Service "StorageService" {
-      Provider = "AzureBlobStorage"
-      ConnectionString = "${AZURE_STORAGE}"
-    }
-    
-    Service "CacheService" {
-      Enabled = true
-      Provider = "Redis"
-      ConnectionString = "${REDIS_URL}"
+env "Production" {
+  settings {
+    Services {
+      # Real credentials should be injected at runtime, not stored here.
+      EmailService {
+        ApiKey = "set-via-environment"
+      }
+
+      StorageService {
+        Provider = "AzureBlobStorage"
+        ConnectionString = "set-via-environment"
+      }
+
+      CacheService {
+        Enabled = true
+        Provider = "Redis"
+        ConnectionString = "set-via-environment"
+      }
     }
   }
 }
@@ -874,6 +919,6 @@ Contributions welcome! Please open an issue or pull request.
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/settex/settex)
+- [GitHub Repository](https://github.com/74nu5/Settex)
 - [NuGet Package (Build)](https://nuget.org/packages/Settex.Build)
 - [NuGet Package (CLI)](https://nuget.org/packages/Settex.Cli)
