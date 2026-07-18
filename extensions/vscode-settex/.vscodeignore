@@ -8,6 +8,15 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
-node_modules/**
 server/**/*.pdb
 server/**/*.exe
+
+# Dev-only files that must not ship in the VSIX
+test.settex
+TESTING.md
+*.code-workspace
+
+# NOTE: node_modules is intentionally NOT ignored. vsce ships production
+# dependencies (vscode-languageclient, required at runtime by out/extension.js)
+# and prunes devDependencies automatically. Excluding node_modules here would
+# make the installed extension fail to activate with "Cannot find module".
