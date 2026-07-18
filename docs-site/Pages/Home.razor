@@ -1,0 +1,97 @@
+@page "/"
+<PageTitle>Settex — a human-friendly config language for .NET</PageTitle>
+
+<section class="hero">
+    <div class="hero-kicker">Configuration language for .NET</div>
+    <h1>Write configuration that reads like configuration.</h1>
+    <p class="hero-sub">
+        Settex compiles a clean, concise <code>.settex</code> source file into
+        <code>appsettings.json</code> and per-environment overlays — with variables,
+        expressions, includes and deep merging built in.
+    </p>
+    <div class="hero-actions">
+        <a class="btn btn-primary" href="getting-started">Get started</a>
+        <a class="btn btn-ghost" href="language">Language guide</a>
+        <a class="btn btn-ghost" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+</section>
+
+<section class="split">
+    <CodeBlock Title="appsettings.settex" Code="@Source" />
+    <CodeBlock Title="appsettings.Production.json (generated)" Lang="json" Code="@Generated" />
+</section>
+
+<h2>Why Settex</h2>
+<div class="feature-grid">
+    <div class="feature">
+        <div class="feature-icon">🔀</div>
+        <h3>Environment overlays</h3>
+        <p>Define base settings once, override only what changes per environment. Objects deep-merge, arrays replace.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🧮</div>
+        <h3>Variables &amp; expressions</h3>
+        <p><code>let</code> bindings, arithmetic, logic, comparisons, null-coalescing, parentheses and string concatenation.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">💬</div>
+        <h3>String interpolation</h3>
+        <p>Embed variables and expressions directly in strings: <code>"${protocol}://${host}:${port}"</code>.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">📂</div>
+        <h3>Modular includes</h3>
+        <p>Split configuration across files. Included <code>settings</code> and <code>env</code> blocks deep-merge into the main file.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🛠️</div>
+        <h3>MSBuild &amp; CLI</h3>
+        <p>Compile automatically during build, or from a standalone CLI with precise, clickable diagnostics.</p>
+    </div>
+    <div class="feature">
+        <div class="feature-icon">🧩</div>
+        <h3>Editor support</h3>
+        <p>Visual Studio and VS Code extensions provide syntax highlighting, snippets and a language server.</p>
+    </div>
+</div>
+
+<h2>How it works</h2>
+<ol class="steps">
+    <li><strong>Write</strong> an <code>appsettings.settex</code> file describing your base settings and <code>env</code> overlays.</li>
+    <li><strong>Compile</strong> it — on build via the <code>Settex.Build</code> MSBuild package, or with the <code>settex</code> CLI.</li>
+    <li><strong>Ship</strong> the generated <code>appsettings.json</code> and <code>appsettings.{Environment}.json</code> files, consumed by .NET configuration as usual.</li>
+</ol>
+
+<div class="callout callout-note">
+    New to the syntax? Start with <a href="getting-started">Getting started</a>, then browse the
+    full <a href="language">Language guide</a>. Keep the <a href="cheatsheet">cheat sheet</a> handy.
+</div>
+
+@code {
+    private const string Source = """
+        settings {
+          ApplicationName = "MyApp"
+          Logging.LogLevel.Default = "Information"
+          ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyDb"
+        }
+
+        env "Production" {
+          settings {
+            Logging.LogLevel.Default = "Warning"
+            ConnectionStrings.DefaultConnection = "Server=prod-db;Database=MyDb"
+          }
+        }
+        """;
+
+    private const string Generated = """
+        {
+          "ApplicationName": "MyApp",
+          "Logging": {
+            "LogLevel": { "Default": "Warning" }
+          },
+          "ConnectionStrings": {
+            "DefaultConnection": "Server=prod-db;Database=MyDb"
+          }
+        }
+        """;
+}

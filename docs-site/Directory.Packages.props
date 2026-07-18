@@ -1,0 +1,9 @@
+<Project>
+  <!--
+    Opt the docs site out of the repository's Central Package Management so the
+    Blazor package versions can be pinned directly in Settex.Docs.csproj.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

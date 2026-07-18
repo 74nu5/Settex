@@ -1,0 +1,8 @@
+<Project>
+  <!--
+    The documentation site is a standalone deliverable. This empty file stops
+    MSBuild from inheriting the repository-root Directory.Build.props (which
+    enables TreatWarningsAsErrors and compiler-package metadata meant for the
+    Settex libraries, not for a Blazor app).
+  -->
+</Project>

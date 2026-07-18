@@ -1,0 +1,73 @@
+@page "/cli"
+<PageTitle>CLI &amp; MSBuild — Settex</PageTitle>
+
+<h1>CLI &amp; MSBuild</h1>
+<p class="lead">Compile <code>.settex</code> files from the command line, or automatically as part of a build.</p>
+
+<h2 id="cli">CLI</h2>
+<p>Install the global tool:</p>
+<CodeBlock Lang="bash" Code="dotnet tool install --global Settex.Cli" />
+
+<p>Compile a file — output goes next to it by default, or into a directory with <code>-o</code>:</p>
+<CodeBlock Lang="bash" Code="@CliUsage" />
+
+<p>The CLI reports precise, clickable diagnostics with file, line and column:</p>
+<CodeBlock Lang="text" Code="@("appsettings.settex(12,5): error: Expected '=' after path")" />
+
+<h2 id="msbuild">MSBuild integration</h2>
+<p>
+    Add the <code>Settex.Build</code> package and every <code>*.settex</code> file in the project is
+    compiled on build. Diagnostics surface as MSBuild errors/warnings (code <code>SETTEX</code>), so a
+    broken config fails the build.
+</p>
+<CodeBlock Lang="bash" Code="dotnet add package Settex.Build" />
+
+<h3 id="customise">Customising the build</h3>
+<CodeBlock Lang="xml" Code="@MsBuildConfig" />
+
+<h2 id="output">Output &amp; source control</h2>
+<p>
+    A typical project keeps the <code>.settex</code> source under version control and lets the build
+    regenerate the JSON:
+</p>
+<CodeBlock Lang="text" Code="@Structure" />
+<p>Add <code>*.settex</code> to source control and either ignore the generated JSON or commit it for deployment.</p>
+
+@code {
+    private const string CliUsage = """
+        # Compile a file (output next to it)
+        settex build appsettings.settex
+
+        # Specify an output directory
+        settex build config.settex -o ./output
+
+        # Help
+        settex --help
+        settex build --help
+        """;
+
+    private const string MsBuildConfig = """
+        <PropertyGroup>
+          <!-- Change output directory (default: project root) -->
+          <SettexOutputDirectory>$(MSBuildProjectDirectory)\config</SettexOutputDirectory>
+
+          <!-- Disable automatic compilation -->
+          <EnableSettexCompilation>false</EnableSettexCompilation>
+        </PropertyGroup>
+
+        <!-- Or specify files explicitly -->
+        <ItemGroup>
+          <SettexFile Include="config\app.settex" />
+          <SettexFile Include="config\services.settex" />
+        </ItemGroup>
+        """;
+
+    private const string Structure = """
+        MyProject/
+        ├── appsettings.settex           # source (in version control)
+        ├── appsettings.json             # generated (base)
+        ├── appsettings.Development.json  # generated (base + dev)
+        ├── appsettings.Production.json   # generated (base + prod)
+        └── MyProject.csproj
+        """;
+}

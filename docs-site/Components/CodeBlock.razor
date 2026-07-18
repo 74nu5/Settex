@@ -1,0 +1,15 @@
+@* Renders a code sample. Code is passed as a string so Blazor HTML-encodes it
+   automatically — no need to escape <, >, {, } or @ in the samples. *@
+<div class="codeblock @(string.IsNullOrEmpty(Title) ? "" : "codeblock--titled")">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="codeblock-title">@Title</div>
+    }
+    <pre class="@($"code lang-{Lang}")"><code>@Code</code></pre>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = "";
+    [Parameter] public string Lang { get; set; } = "settex";
+    [Parameter] public string? Title { get; set; }
+}
