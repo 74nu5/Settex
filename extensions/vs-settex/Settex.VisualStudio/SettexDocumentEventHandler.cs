@@ -2,6 +2,7 @@ namespace Settex.VisualStudio;
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -18,12 +19,6 @@ using Task = System.Threading.Tasks.Task;
 /// </summary>
 internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
 {
-    /// <summary>
-    /// Delay in milliseconds before disposing a cancelled CancellationTokenSource.
-    /// This ensures the finally block of the cancelled task has time to complete.
-    /// </summary>
-    private const int CancellationTokenDisposalDelayMs = 100;
-
     private readonly AsyncPackage package;
     private readonly ISettexBuildService buildService;
     private readonly IVsOutputWindowPane outputPane;
@@ -126,31 +121,17 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             return VSConstants.S_OK;
         }
 
-        // Cancel any in-flight compilation for this file and start a new one
+        // Cancel any in-flight compilation for this file and start a new one.
+        // The replaced compilation disposes its own CancellationTokenSource in its
+        // finally block once it has finished unwinding, so here we only cancel it —
+        // no fixed-delay disposal is needed.
         var newCts = new CancellationTokenSource();
         this.activeCompilations.AddOrUpdate(
             filePath,
             newCts,
             (key, existingCts) =>
             {
-                // Cancel the existing compilation
                 existingCts.Cancel();
-                
-                // Schedule disposal of the old token after a delay to ensure its finally block completes
-                // This prevents resource leaks when a compilation is replaced mid-flight
-                Task.Run(async () =>
-                {
-                    try
-                    {
-                        await Task.Delay(CancellationTokenDisposalDelayMs);
-                        existingCts.Dispose();
-                    }
-                    catch
-                    {
-                        // Ignore disposal errors - token may have already been disposed
-                    }
-                }).Forget();
-                
                 return newCts;
             });
 
@@ -163,12 +144,14 @@ internal class SettexDocumentEventHandler : IVsRunningDocTableEvents
             }
             finally
             {
-                // Clean up the cancellation token source only if this is still the active compilation
-                // Use TryRemove to atomically remove and get the value, preventing race conditions
-                if (this.activeCompilations.TryRemove(filePath, out var removedCts) && ReferenceEquals(removedCts, newCts))
-                {
-                    newCts.Dispose();
-                }
+                // Remove ourselves from the active set only if we are still the current
+                // compilation (a newer save may have replaced us). ICollection.Remove on a
+                // key/value pair is atomic and only removes when the value still matches,
+                // so a newer entry is never dropped. Then dispose our own token source,
+                // which is safe now that this compilation has finished using it.
+                ((ICollection<KeyValuePair<string, CancellationTokenSource>>)this.activeCompilations)
+                    .Remove(new KeyValuePair<string, CancellationTokenSource>(filePath, newCts));
+                newCts.Dispose();
             }
         }).FileAndForget("settex/auto-compile");
 

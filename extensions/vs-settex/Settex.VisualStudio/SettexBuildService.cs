@@ -17,6 +17,11 @@ using Task = System.Threading.Tasks.Task;
 /// </summary>
 internal class SettexBuildService : ISettexBuildService
 {
+    /// <summary>
+    /// Maximum time a single .settex compilation may run before it is cancelled.
+    /// </summary>
+    private const int CompilationTimeoutMs = 60000;
+
     private readonly IServiceProvider serviceProvider;
 
     /// <summary>
@@ -75,6 +80,10 @@ internal class SettexBuildService : ISettexBuildService
                 CreateNoWindow = true,
             };
 
+            // Bound the compilation: cancel it if the caller cancels or the timeout elapses.
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(CompilationTimeoutMs);
+
             using (var process = Process.Start(processStartInfo))
             {
                 if (process == null)
@@ -82,26 +91,72 @@ internal class SettexBuildService : ISettexBuildService
                     return false;
                 }
 
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
-
-                // WaitForExitAsync is not available on net472, use synchronous wait with Task.Run
-                await Task.Run(() => process.WaitForExit(), cancellationToken);
-
-                if (process.ExitCode != 0)
+                // Kill the external dotnet process on cancel/timeout; otherwise cancelling
+                // only the wait would leave the process running in the background.
+                using (timeoutCts.Token.Register(() =>
                 {
-                    Debug.WriteLine($"Settex compilation failed: {error}");
-                    if (showDialogs)
+                    try
                     {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        this.ShowError($"Settex compilation failed:\n{error}");
+                        if (!process.HasExited)
+                        {
+                            process.Kill();
+                        }
                     }
-                    return false;
-                }
+                    catch
+                    {
+                        // Process already exited or could not be killed; nothing to do.
+                    }
+                }))
+                {
+                    // Start reading both streams before waiting to avoid a full-buffer deadlock.
+                    var outputTask = process.StandardOutput.ReadToEndAsync();
+                    var errorTask = process.StandardError.ReadToEndAsync();
 
-                Debug.WriteLine($"Settex compilation succeeded: {output}");
-                return true;
+                    // WaitForExitAsync is not available on net472; wait on a background thread.
+                    // The registration above makes the process exit promptly on cancel/timeout.
+                    await Task.Run(() => process.WaitForExit());
+
+                    var output = await outputTask;
+                    var error = await errorTask;
+
+                    // Distinguish caller cancellation (expected) from a timeout.
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException(cancellationToken);
+                    }
+
+                    if (timeoutCts.IsCancellationRequested)
+                    {
+                        Debug.WriteLine($"Settex compilation timed out after {CompilationTimeoutMs} ms.");
+                        if (showDialogs)
+                        {
+                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                            this.ShowError($"Settex compilation timed out after {CompilationTimeoutMs / 1000} seconds.");
+                        }
+                        return false;
+                    }
+
+                    if (process.ExitCode != 0)
+                    {
+                        Debug.WriteLine($"Settex compilation failed: {error}");
+                        if (showDialogs)
+                        {
+                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                            this.ShowError($"Settex compilation failed:\n{error}");
+                        }
+                        return false;
+                    }
+
+                    Debug.WriteLine($"Settex compilation succeeded: {output}");
+                    return true;
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is expected when a newer save supersedes this compilation;
+            // let the caller handle it instead of reporting an error.
+            throw;
         }
         catch (Exception ex)
         {
