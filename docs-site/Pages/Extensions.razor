@@ -1,0 +1,60 @@
+@page "/extensions"
+<PageTitle>Editor extensions — Settex</PageTitle>
+
+<h1>Editor extensions</h1>
+<p class="lead">
+    First-class editing for <code>.settex</code> files in Visual Studio and VS Code, powered by a shared
+    .NET language server.
+</p>
+
+<div class="ext-grid">
+    <div class="ext-card">
+        <h2>Visual Studio 2022+</h2>
+        <ul class="check">
+            <li>Syntax highlighting (TextMate grammar)</li>
+            <li>Bracket matching, auto-indent, comment toggling</li>
+            <li>11 code snippets</li>
+            <li>IntelliSense via the bundled language server</li>
+            <li>Compile on save &amp; a manual <em>Compile Settex File</em> command</li>
+            <li>Options page &amp; a dedicated output pane</li>
+        </ul>
+        <p class="ext-note">The language server and CLI are bundled inside the VSIX, so the extension is self-contained (the .NET&nbsp;10 runtime must be installed).</p>
+    </div>
+
+    <div class="ext-card">
+        <h2>Visual Studio Code</h2>
+        <ul class="check">
+            <li>Syntax highlighting</li>
+            <li>12 code snippets</li>
+            <li>Language-server client (completion, hover, diagnostics, navigation)</li>
+            <li>File icon for <code>.settex</code></li>
+        </ul>
+        <p class="ext-note">The language server is bundled with the extension and launched via <code>dotnet</code>.</p>
+    </div>
+</div>
+
+<h2 id="lsp">Language server</h2>
+<p>
+    Both editors share <code>Settex.LanguageServer</code>, an LSP implementation reusing the compiler
+    front-end. It provides context-aware completion, hover that shows a setting's resolved value across
+    every environment, go-to-definition and find-references for variables, document symbols, and live
+    diagnostics.
+</p>
+
+<div class="callout callout-note">
+    Editor features rely on the <strong>.NET&nbsp;10 runtime</strong> being present, since the language
+    server and CLI run as <code>dotnet &lt;dll&gt;</code> processes.
+</div>
+
+<h2 id="snippets">Snippets</h2>
+<p>Both extensions ship snippets for the common constructs — expand them by typing the prefix and pressing <kbd>Tab</kbd>:</p>
+<ul class="two-col">
+    <li><code>settings</code> — base settings block</li>
+    <li><code>env</code> — environment overlay</li>
+    <li><code>let</code> — variable binding</li>
+    <li><code>for</code> — for-loop array</li>
+    <li><code>include</code> — file include</li>
+    <li><code>interp</code> — interpolated string</li>
+    <li><code>tag</code> — tagged object</li>
+    <li><code>setif</code> — set-if-missing</li>
+</ul>

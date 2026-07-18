@@ -1,0 +1,324 @@
+@page "/language"
+<PageTitle>Language guide — Settex</PageTitle>
+
+<h1>Language guide</h1>
+<p class="lead">
+    A tour of every construct in the Settex language. Each example is written in the exact syntax the
+    compiler accepts.
+</p>
+
+<div class="onpage-toc">
+    <span>On this page</span>
+    <a href="language#comments">Comments</a>
+    <a href="language#settings">Settings</a>
+    <a href="language#nested">Nested objects</a>
+    <a href="language#maps">Named maps</a>
+    <a href="language#arrays">Arrays</a>
+    <a href="language#objects">Object literals</a>
+    <a href="language#dotpath">Dot paths</a>
+    <a href="language#env">Environment overlays</a>
+    <a href="language#merging">Merging</a>
+    <a href="language#includes">Includes</a>
+    <a href="language#let">Variables</a>
+    <a href="language#expressions">Expressions</a>
+    <a href="language#interpolation">Interpolation</a>
+    <a href="language#conditionals">Conditionals</a>
+    <a href="language#setifmissing">Set-if-missing</a>
+    <a href="language#for">For loops</a>
+    <a href="language#types">Value types</a>
+</div>
+
+<h2 id="comments">Comments</h2>
+<CodeBlock Code="@("# Hash-style comment\n// Double-slash comment")" />
+
+<h2 id="settings">Settings block</h2>
+<p>The top-level <code>settings</code> block holds your base configuration.</p>
+<CodeBlock Code="@Settings" />
+
+<h2 id="nested">Nested objects</h2>
+<p>A named block becomes a JSON object key. Nest them for hierarchy.</p>
+<CodeBlock Code="@Nested" />
+
+<h2 id="maps">Named maps</h2>
+<p>Because each named block is a key, you build a map of named objects by nesting named blocks:</p>
+<CodeBlock Code="@Maps" />
+
+<h2 id="arrays">Arrays</h2>
+<p>Comma-separated values — commas are optional, a newline also separates items.</p>
+<CodeBlock Code="@Arrays" />
+
+<h2 id="objects">Object literals in arrays</h2>
+<p>
+    Prefix each object in an array with a <strong>tag</strong> — any identifier followed by a block.
+    The tag is a required syntactic label and is <em>not</em> emitted in the JSON. A bare
+    <code>{ … }</code> without a tag is not valid.
+</p>
+<CodeBlock Code="@Objects" />
+<p>The same form works as a plain value: <code>Database = connection { Host = "localhost" }</code> produces <code>"Database": { "Host": "localhost" }</code> (the <code>connection</code> tag is discarded).</p>
+
+<h2 id="dotpath">Dot-path assignments</h2>
+<CodeBlock Code="@DotPath" />
+
+<h2 id="env">Environment overlays</h2>
+<p>
+    Each <code>env</code> block takes a <strong>quoted</strong> name and contains an inner
+    <code>settings</code> block. It generates a matching <code>appsettings.{Name}.json</code> merged
+    onto the base.
+</p>
+<CodeBlock Code="@Env" />
+
+<h2 id="merging">Merging behaviour</h2>
+<ul>
+    <li><strong>Objects</strong> merge deeply (properties combined).</li>
+    <li><strong>Arrays</strong> are replaced entirely (no element merge).</li>
+    <li><strong>Primitives</strong> are replaced.</li>
+</ul>
+<CodeBlock Code="@Merging" />
+
+<h2 id="includes">File includes</h2>
+<p>
+    Split configuration across files with <code>include</code>. An included file can contribute
+    <code>let</code> variables, <code>settings</code> blocks and <code>env</code> blocks — all
+    deep-merged in document order, so the including file wins on conflicts.
+</p>
+<CodeBlock Title="common.settex" Code="@IncludeCommon" />
+<CodeBlock Title="appsettings.settex" Code="@IncludeMain" />
+<div class="callout callout-note">
+    A <code>let</code> variable may only be defined once per scope — avoid redefining the same global
+    variable in both an included file and the including file.
+</div>
+
+<h2 id="let">Variables with <code>let</code></h2>
+<CodeBlock Code="@Let" />
+<p>
+    Scoping: file-level <code>let</code> is global; a <code>let</code> inside an <code>env</code> block
+    shadows the global for that environment; a loop iterator only exists in the loop body.
+</p>
+
+<h2 id="expressions">Expressions</h2>
+<CodeBlock Code="@Expressions" />
+<p><strong>Operators:</strong> arithmetic <code>+ - * /</code>, comparison <code>== != &lt; &lt;= &gt; &gt;=</code>, logical <code>and or not</code>, null-coalescing <code>??</code>. Parentheses group sub-expressions, and <code>+</code> concatenates when either side is a string (coercing numbers and booleans).</p>
+
+<h2 id="interpolation">String interpolation</h2>
+<CodeBlock Code="@Interpolation" />
+<div class="callout callout-warn">
+    <code>${…}</code> is resolved <strong>at compile time</strong> from Settex variables and expressions —
+    it is not a placeholder for runtime environment variables. Inject secrets at deployment time through
+    .NET's environment-variable or user-secrets providers instead.
+</div>
+
+<h2 id="conditionals">Conditional assignments</h2>
+<p>Assign a value only when a boolean condition holds. Write the fallback first, the conditional override after.</p>
+<CodeBlock Code="@Conditionals" />
+
+<h2 id="setifmissing">Set-if-missing (<code>:=</code>)</h2>
+<p>Sets a value only if the path is not already defined — including checking the base settings from within an overlay. Great for defaults.</p>
+<CodeBlock Code="@SetIfMissing" />
+
+<h2 id="for">For loops</h2>
+<p>Generate array elements dynamically. Each iteration produces exactly one tagged object.</p>
+<CodeBlock Code="@ForLoops" />
+
+<h2 id="types">Value types</h2>
+<ul>
+    <li><strong>Strings</strong> — <code>"double quotes only"</code></li>
+    <li><strong>Numbers</strong> — <code>42</code>, <code>3.14</code>, <code>-10</code></li>
+    <li><strong>Booleans</strong> — <code>true</code>, <code>false</code></li>
+    <li><strong>Null</strong> — <code>null</code></li>
+    <li><strong>Arrays</strong> — <code>[1, 2, 3]</code> or multiline</li>
+    <li><strong>Objects</strong> — nested blocks, or tagged object literals (<code>tag { … }</code>)</li>
+</ul>
+
+@code {
+    private const string Settings = """
+        settings {
+          AppName = "MyApp"
+          Version = "1.0.0"
+          EnableFeatureX = true
+        }
+        """;
+
+    private const string Nested = """
+        settings {
+          Database {
+            Host = "localhost"
+            Port = 5432
+            Options {
+              Timeout = 30
+              Retry = true
+            }
+          }
+        }
+        """;
+
+    private const string Maps = """
+        settings {
+          Providers {
+            AzureAd {
+              ClientId = "abc-123"
+              Authority = "https://login.microsoftonline.com"
+            }
+            Google {
+              ClientId = "xyz-456"
+            }
+          }
+        }
+        """;
+
+    private const string Arrays = """
+        settings {
+          AllowedHosts = [
+            "localhost"
+            "*.example.com"
+          ]
+          Ports = [8080, 8081, 8082]
+        }
+        """;
+
+    private const string Objects = """
+        settings {
+          Services = [
+            service { Name = "auth" Port = 5001 }
+            service { Name = "data" Port = 5002 }
+          ]
+        }
+        """;
+
+    private const string DotPath = """
+        settings {
+          Logging.LogLevel.Default = "Information"
+          Logging.LogLevel.Microsoft = "Warning"
+        }
+        """;
+
+    private const string Env = """
+        settings {
+          ApiUrl = "https://api.example.com"
+          LogLevel = "Information"
+        }
+
+        env "Development" {
+          settings {
+            ApiUrl = "http://localhost:5000"
+            LogLevel = "Debug"
+          }
+        }
+
+        env "Production" {
+          settings {
+            LogLevel = "Warning"
+          }
+        }
+        """;
+
+    private const string Merging = """
+        settings {
+          Database { Host = "localhost" Port = 5432 }
+          Tags = ["dev", "test"]
+        }
+
+        env "Production" {
+          settings {
+            Database.Host = "prod-server"   // only Host changes
+            Tags = ["prod"]                 // array replaced entirely
+          }
+        }
+        """;
+
+    private const string IncludeCommon = """
+        let host = "localhost"
+        let defaultPort = 8000
+
+        settings {
+          Server { Host = host Port = defaultPort }
+        }
+        """;
+
+    private const string IncludeMain = """
+        include "./common.settex"
+
+        settings {
+          ApplicationName = "MyApp"
+          Server { Port = 9090 }   // overrides the included default
+        }
+        """;
+
+    private const string Let = """
+        let basePort = 8000
+        let host = "localhost"
+
+        settings {
+          BaseUrl = "http://${host}:${basePort}"
+        }
+
+        env "Development" {
+          let basePort = 5000       // shadows the global within this env
+          settings {
+            DevUrl = "http://${host}:${basePort}"
+          }
+        }
+        """;
+
+    private const string Expressions = """
+        let timeout = 30
+        let enabled = true
+
+        settings {
+          Total = (10 + 5) * 2          // 30 — parentheses group
+          ShouldCache = enabled and timeout > 10
+          LogLevel = null ?? "Information"
+          Label = "v" + 2 + ".0"        // "v2.0" — + concatenates with a string
+        }
+        """;
+
+    private const string Interpolation = """
+        let host = "localhost"
+        let port = 8000
+
+        settings {
+          BaseUrl = "https://${host}:${port}"
+          Message = "Port is ${port + 100}"
+        }
+        """;
+
+    private const string Conditionals = """
+        env "Development" {
+          let verbose = true
+          settings {
+            LogLevel = "Warning"           // fallback, always assigned
+            LogLevel = "Debug" if verbose  // overrides only when verbose is true
+          }
+        }
+        """;
+
+    private const string SetIfMissing = """
+        settings {
+          Server { Port := 8080 }          // default
+        }
+
+        env "Production" {
+          settings {
+            Server { Port := 443 }         // won't set — already defined in base
+          }
+        }
+        """;
+
+    private const string ForLoops = """
+        let services = [
+          svc { Name = "auth" Port = 8001 }
+          svc { Name = "api"  Port = 8002 }
+        ]
+        let host = "localhost"
+
+        settings {
+          Endpoints = [
+            for s in services {
+              item {
+                Name = s.Name
+                Url = "http://${host}:${s.Port}"
+              }
+            }
+          ]
+        }
+        """;
+}

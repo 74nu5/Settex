@@ -1,0 +1,55 @@
+@page "/cheatsheet"
+<PageTitle>Cheat sheet — Settex</PageTitle>
+
+<h1>Cheat sheet</h1>
+<p class="lead">Every construct at a glance.</p>
+
+<table class="ref-table">
+    <thead><tr><th>Construct</th><th>Syntax</th></tr></thead>
+    <tbody>
+        <tr><td>Base settings</td><td><code>settings { Key = value }</code></td></tr>
+        <tr><td>Nested object</td><td><code>Db { Host = "localhost" }</code></td></tr>
+        <tr><td>Dot path</td><td><code>Logging.LogLevel.Default = "Info"</code></td></tr>
+        <tr><td>Array</td><td><code>Ports = [8080, 8081]</code></td></tr>
+        <tr><td>Object literal</td><td><code>svc { Name = "auth" Port = 1 }</code></td></tr>
+        <tr><td>Environment overlay</td><td><code>env "Prod" { settings { … } }</code></td></tr>
+        <tr><td>Include</td><td><code>include "./common.settex"</code></td></tr>
+        <tr><td>Variable</td><td><code>let host = "localhost"</code></td></tr>
+        <tr><td>Interpolation</td><td><code>"${host}:${port}"</code></td></tr>
+        <tr><td>Conditional</td><td><code>Level = "Debug" if verbose</code></td></tr>
+        <tr><td>Set-if-missing</td><td><code>Port := 8080</code></td></tr>
+        <tr><td>For loop</td><td><code>[ for x in list { item { … } } ]</code></td></tr>
+        <tr><td>Comment</td><td><code># hash</code> or <code>// slashes</code></td></tr>
+    </tbody>
+</table>
+
+<h2>Operators</h2>
+<table class="ref-table">
+    <thead><tr><th>Group</th><th>Operators</th></tr></thead>
+    <tbody>
+        <tr><td>Arithmetic</td><td><code>+</code> <code>-</code> <code>*</code> <code>/</code> (<code>+</code> also concatenates strings)</td></tr>
+        <tr><td>Comparison</td><td><code>==</code> <code>!=</code> <code>&lt;</code> <code>&lt;=</code> <code>&gt;</code> <code>&gt;=</code></td></tr>
+        <tr><td>Logical</td><td><code>and</code> <code>or</code> <code>not</code></td></tr>
+        <tr><td>Null-coalescing</td><td><code>??</code></td></tr>
+        <tr><td>Grouping</td><td><code>( … )</code></td></tr>
+    </tbody>
+</table>
+
+<h2>Value types</h2>
+<table class="ref-table">
+    <thead><tr><th>Type</th><th>Example</th></tr></thead>
+    <tbody>
+        <tr><td>String</td><td><code>"double quotes only"</code></td></tr>
+        <tr><td>Number</td><td><code>42</code>, <code>3.14</code>, <code>-10</code></td></tr>
+        <tr><td>Boolean</td><td><code>true</code>, <code>false</code></td></tr>
+        <tr><td>Null</td><td><code>null</code></td></tr>
+        <tr><td>Array</td><td><code>[1, 2, 3]</code></td></tr>
+        <tr><td>Object</td><td><code>tag { … }</code> or a nested block</td></tr>
+    </tbody>
+</table>
+
+<div class="callout callout-note">
+    Gotchas: <code>env</code> names are <strong>quoted</strong> and wrap an inner <code>settings</code> block ·
+    strings use <strong>double quotes only</strong> · <code>${…}</code> is compile-time, not a runtime env var ·
+    base-block conditionals only see global <code>let</code> values.
+</div>

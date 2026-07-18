@@ -1,0 +1,106 @@
+@page "/getting-started"
+<PageTitle>Getting started — Settex</PageTitle>
+
+<h1>Getting started</h1>
+<p class="lead">
+    Settex turns a single <code>.settex</code> source file into <code>appsettings.json</code> and one
+    file per environment. There are two ways to compile: automatically during an MSBuild build, or
+    manually with the CLI.
+</p>
+
+<h2 id="install-msbuild">Option A — MSBuild integration (recommended)</h2>
+<p>Add the <code>Settex.Build</code> package to your project:</p>
+<CodeBlock Lang="bash" Code="dotnet add package Settex.Build" />
+<p>
+    Create a <code>appsettings.settex</code> file in your project root. It is discovered and compiled
+    automatically on every build — the generated JSON stays in sync with your source.
+</p>
+
+<h2 id="install-cli">Option B — CLI tool</h2>
+<p>Install the compiler as a global .NET tool:</p>
+<CodeBlock Lang="bash" Code="dotnet tool install --global Settex.Cli" />
+<p>Then compile a file whenever you need to:</p>
+<CodeBlock Lang="bash" Code="@("settex build appsettings.settex\nsettex build config.settex -o ./output")" />
+
+<h2 id="first-file">Your first file</h2>
+<p>Create <code>appsettings.settex</code>:</p>
+<CodeBlock Title="appsettings.settex" Code="@FirstFile" />
+
+<p>Compile it, and Settex generates three files:</p>
+<ul>
+    <li><code>appsettings.json</code> — the base settings</li>
+    <li><code>appsettings.Development.json</code> — base merged with the Development overlay</li>
+    <li><code>appsettings.Production.json</code> — base merged with the Production overlay</li>
+</ul>
+
+<CodeBlock Title="appsettings.Development.json" Lang="json" Code="@GeneratedDev" />
+
+<div class="callout callout-note">
+    An <code>env</code> block takes a <strong>quoted</strong> name and wraps its overrides in an inner
+    <code>settings { … }</code> block: <code>env "Development" { settings { … } }</code>. This is the one
+    piece of syntax that trips people up — the base <code>settings</code> block is written at the top level,
+    the environment ones are nested inside <code>env</code>.
+</div>
+
+<h2 id="next">Next steps</h2>
+<div class="next-cards">
+    <a class="next-card" href="language">
+        <h3>Language guide →</h3>
+        <p>Every construct: variables, expressions, interpolation, includes, loops and more.</p>
+    </a>
+    <a class="next-card" href="cli">
+        <h3>CLI &amp; MSBuild →</h3>
+        <p>Command reference and how to customise the build integration.</p>
+    </a>
+</div>
+
+@code {
+    private const string FirstFile = """
+        settings {
+          ApplicationName = "MyApp"
+
+          Logging {
+            LogLevel {
+              Default = "Information"
+              Microsoft = "Warning"
+            }
+          }
+
+          AllowedHosts = ["localhost", "*.example.com"]
+
+          ConnectionStrings {
+            DefaultConnection = "Server=localhost;Database=MyDb"
+          }
+        }
+
+        env "Development" {
+          settings {
+            Logging.LogLevel.Default = "Debug"
+            ConnectionStrings.DefaultConnection = "Server=localhost;Database=MyDb_Dev"
+          }
+        }
+
+        env "Production" {
+          settings {
+            Logging.LogLevel.Default = "Warning"
+            ConnectionStrings.DefaultConnection = "Server=prod-server;Database=MyDb"
+          }
+        }
+        """;
+
+    private const string GeneratedDev = """
+        {
+          "ApplicationName": "MyApp",
+          "Logging": {
+            "LogLevel": {
+              "Default": "Debug",
+              "Microsoft": "Warning"
+            }
+          },
+          "AllowedHosts": ["localhost", "*.example.com"],
+          "ConnectionStrings": {
+            "DefaultConnection": "Server=localhost;Database=MyDb_Dev"
+          }
+        }
+        """;
+}

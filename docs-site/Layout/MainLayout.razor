@@ -1,0 +1,29 @@
+@inherits LayoutComponentBase
+
+<div class="layout">
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+    <header class="topbar">
+        <label for="nav-toggle" class="nav-burger" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </label>
+        <a class="brand" href="">
+            <span class="brand-mark">{&nbsp;}</span>
+            <span class="brand-name">Settex</span>
+        </a>
+        <a class="topbar-gh" href="https://github.com/74nu5/Settex" target="_blank" rel="noopener">GitHub ↗</a>
+    </header>
+
+    <aside class="sidebar">
+        <NavMenu />
+    </aside>
+
+    <main class="content">
+        <article>
+            @Body
+        </article>
+        <footer class="doc-footer">
+            <span>Settex — a human-friendly configuration language for .NET.</span>
+            <span>Built with Blazor WebAssembly · MIT License</span>
+        </footer>
+    </main>
+</div>
