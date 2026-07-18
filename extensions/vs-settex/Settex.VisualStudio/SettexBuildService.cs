@@ -67,7 +67,7 @@ internal class SettexBuildService : ISettexBuildService
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"\"{cliPath}\" build \"{settexFilePath}\"",
+                Arguments = SettexCliInvocation.BuildCompileArguments(cliPath, settexFilePath),
                 WorkingDirectory = directory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,

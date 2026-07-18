@@ -8,6 +8,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Settex.Core.Tests/Settex.Core.Tests.csproj" />
     <Project Path="tests/Settex.LanguageServer.Tests/Settex.LanguageServer.Tests.csproj" />
+    <Project Path="tests/Settex.VisualStudio.Tests/Settex.VisualStudio.Tests.csproj" />
   </Folder>
   <Folder Name="/Éléments de solution/">
     <File Path=".editorconfig" />

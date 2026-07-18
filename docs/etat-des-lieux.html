@@ -341,7 +341,7 @@
   <table>
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>)</s> — <strong>fait ✅</strong> ; reste à ajouter un test de non-régression</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + test de non-régression</s> — <strong>fait ✅</strong> (projet <code>Settex.VisualStudio.Tests</code>)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td>Rendre les extensions déployables : embarquer serveur+CLI dans le package, résoudre les binaires par chemin relatif à l'extension installée</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
