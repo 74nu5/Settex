@@ -30,14 +30,22 @@ public class SettexDocumentSymbolHandler : DocumentSymbolHandlerBase
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
-        if (document?.Ast == null)
+        if (document == null)
+        {
+            return Task.FromResult<SymbolInformationOrDocumentSymbolContainer?>(null);
+        }
+
+        // Snapshot unique pour une vue cohérente de l'AST.
+        var snapshot = document.Current;
+
+        if (snapshot.Ast == null)
         {
             return Task.FromResult<SymbolInformationOrDocumentSymbolContainer?>(null);
         }
 
         var symbols = new List<SymbolInformationOrDocumentSymbol>();
 
-        foreach (var statement in document.Ast.Statements)
+        foreach (var statement in snapshot.Ast.Statements)
         {
             var symbol = CreateSymbol(statement);
             if (symbol != null)

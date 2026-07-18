@@ -276,6 +276,63 @@ public sealed class ScopeResolverTests
         await Assert.That(scope.Name).IsEqualTo("Development");
     }
 
+    [Test]
+    public async Task FindScopeAt_TrailingContentAfterEnv_ReturnsGlobalNotEnvAsync()
+    {
+        // Regression: the old ContainsPosition heuristic let an env scope claim ~1000
+        // lines past its real end, so a cursor on top-level content *after* the env
+        // wrongly resolved to the env. The env must end at its content.
+        var source = """
+            env "Dev" {
+                let d = 1
+
+                settings {
+                    Port = d
+                }
+            }
+
+            let after = 2
+
+            settings {
+                Q = after
+            }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+
+        // "let after = 2" is on line 9 (0-based line 8), well past the env's content.
+        var scope = resolver.FindScopeAt(globalScope, new Position(8, 4));
+
+        await Assert.That(scope).IsNotNull();
+        await Assert.That(scope!.Type).IsEqualTo(ScopeType.Global);
+    }
+
+    [Test]
+    public async Task FindScopeAt_DeepPositionInsideEnv_ReturnsEnvAsync()
+    {
+        // The env scope must still contain a position deep inside its body.
+        var source = """
+            env "Dev" {
+                let d = 1
+
+                settings {
+                    Port = d
+                }
+            }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+
+        // "Port = d" is on line 5 (0-based line 4), inside the env body.
+        var scope = resolver.FindScopeAt(globalScope, new Position(4, 8));
+
+        await Assert.That(scope).IsNotNull();
+        await Assert.That(scope!.Type).IsEqualTo(ScopeType.Env);
+        await Assert.That(scope.Name).IsEqualTo("Dev");
+    }
+
     // Helpers
 
     private FileNode Parse(string source)

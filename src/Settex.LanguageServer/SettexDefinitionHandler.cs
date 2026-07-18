@@ -32,13 +32,22 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
-        if (document?.Ast == null || document.Text == null)
+        if (document == null)
+        {
+            return Task.FromResult<LocationOrLocationLinks?>(null);
+        }
+
+        // Capturer un seul snapshot immuable : le texte (pour l'offset du curseur)
+        // et l'AST restent cohérents même si le document est modifié en parallèle.
+        var snapshot = document.Current;
+
+        if (snapshot.Ast == null)
         {
             return Task.FromResult<LocationOrLocationLinks?>(null);
         }
 
         // Extraire le mot à la position
-        var word = GetWordAtPosition(document.Text, request.Position);
+        var word = GetWordAtPosition(snapshot.Text, request.Position);
 
         if (string.IsNullOrEmpty(word))
         {
@@ -46,7 +55,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
         }
 
         // Construire la hiérarchie des scopes
-        var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+        var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
 
         // Trouver le scope actif à la position du curseur
         var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
@@ -69,7 +78,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
         }
 
         // Chercher la définition d'un environnement
-        var envNode = document.Ast.Statements
+        var envNode = snapshot.Ast.Statements
             .OfType<Core.Parser.Ast.EnvBlockNode>()
             .FirstOrDefault(env => env.EnvironmentName == word);
 
