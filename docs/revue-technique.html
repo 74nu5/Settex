@@ -92,9 +92,9 @@
 
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
-    <div class="score"><div class="big">222</div><div class="lbl">Tests · 100 % au vert</div></div>
-    <div class="score"><div class="big">5</div><div class="lbl">bugs réels reproduits</div></div>
-    <div class="score"><div class="big">1</div><div class="lbl">livrable non fonctionnel (VSIX VS Code)</div></div>
+    <div class="score"><div class="big">225</div><div class="lbl">Tests · 100 % au vert</div></div>
+    <div class="score"><div class="big">3</div><div class="lbl">bugs restants (2 corrigés ✅)</div></div>
+    <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
 
   <div class="callout warn">
@@ -123,7 +123,7 @@
   <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
   <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
   <ul class="tight">
-    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 222 tests (201 core + 15 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 225 tests (204 core + 15 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
     <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
     <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
   </ul>
@@ -133,16 +133,16 @@
   <h2 id="bugs"><span class="num">02</span>Bugs reproduits</h2>
   <p>Défauts <strong>confirmés par reproduction</strong> — non couverts par les tests existants.</p>
 
-  <div class="callout bad">
-    <div class="t">🔴 Bloquant — L'extension VS Code ne s'active pas une fois installée</div>
-    <code>.vscodeignore</code> exclut <code>node_modules/**</code>, mais <code>out/extension.js</code> exécute <code>require("vscode-languageclient/node")</code> — une dépendance <strong>runtime</strong>. Le VSIX produit (<code>settex-0.1.0.vsix</code>) contient <strong>0</strong> entrée <code>node_modules</code> (vérifié). À l'activation : <code>Cannot find module 'vscode-languageclient/node'</code> → l'extension ne démarre pas. Le build est un simple <code>tsc</code> (pas de bundling esbuild/webpack). <em>À corriger : retirer <code>node_modules/**</code> de l'ignore (vsce élague alors les dev-deps) ou bundler.</em>
-    <div class="fp">extensions/vscode-settex/.vscodeignore:11 · out/extension.js · package.json (dependencies)</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — L'extension VS Code ne s'activait pas une fois installée</div>
+    <code>.vscodeignore</code> excluait <code>node_modules/**</code>, mais <code>out/extension.js</code> exécute <code>require("vscode-languageclient/node")</code> (dépendance <strong>runtime</strong>). Le VSIX produit contenait <strong>0</strong> entrée <code>node_modules</code> → <code>Cannot find module</code> à l'activation. <strong>Corrigé</strong> : on cesse d'ignorer <code>node_modules</code> (vsce embarque les deps de prod et élague les dev-deps), on exclut les fichiers de dev, et on corrige l'URL placeholder du dépôt. Le VSIX repackagé embarque désormais <code>vscode-languageclient/node</code> (vérifié). Reste conseillé : bundler via esbuild (perf).
+    <div class="fp">extensions/vscode-settex/.vscodeignore · package.json</div>
   </div>
 
-  <div class="callout bad">
-    <div class="t">🔴 Élevé — La soustraction sans espaces est cassée</div>
-    Le lexer rend tout <code>-</code> suivi d'un chiffre glouton en littéral négatif. <code class="sx">settings { R = 5-3 }</code> → <strong>erreur</strong> « Expected identifier… » (lexé en <code>5</code> puis <code>-3</code>). Seul <code class="sx">5 - 3</code> (espaces des deux côtés) donne <code>2</code>. Piège silencieux, aucun test ne l'attrape (tous écrivent avec espaces).
-    <div class="fp">src/Settex.Core/Lexer/Lexer.cs:362 (ScanMinusOrNumber)</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — La soustraction sans espaces</div>
+    Le lexer rendait tout <code>-</code> suivi d'un chiffre glouton en littéral négatif. <code class="sx">5-3</code> → erreur. <strong>Corrigé</strong> : le lexer émet toujours un token <code>Minus</code> et laisse le parser gérer le moins unaire (<code>ParseUnary</code>) et binaire (<code>ParseTerm</code>). Vérifié : <code class="sx">5-3</code>→2, <code class="sx">-5</code>→-5, <code class="sx">a-1</code>→9, <code class="sx">10-3-2</code>→5, <code class="sx">(5-3)*2</code>→4. Tests de non-régression ajoutés (lexer + end-to-end).
+    <div class="fp">src/Settex.Core/Lexer/Lexer.cs (ScanMinus)</div>
   </div>
 
   <div class="callout warn">
@@ -248,8 +248,8 @@
   <table>
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>Réparer le packaging VS Code (retirer <code>node_modules/**</code> de <code>.vscodeignore</code> ou bundler via esbuild) + un test de fumée qui installe/active le VSIX</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>2</td><td>Corriger le lexer des négatifs (décider <code>-</code> binaire vs unaire selon le contexte d'opérande) + tests <code>a-b</code>, <code>a -1</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>1</td><td><s>Réparer le packaging VS Code</s> — <strong>fait ✅</strong> (<code>node_modules</code> embarqué, parasites exclus, URL corrigée). Reste : bundling esbuild + test de fumée d'activation</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td><s>Corriger le lexer des négatifs</s> — <strong>fait ✅</strong> : le lexer émet toujours <code>Minus</code>, le parser gère unaire/binaire + tests de non-régression</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td>Vrai block-scoping : <code>CreateChild()</code> par bloc imbriqué + tests de fuite/écrasement de <code>let</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td>Client LSP VS : drainer <code>stderr</code> (ou ne pas le rediriger), stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>LSP : généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref), protéger les logs par <code>IsEnabled</code>, remplacer <code>UriToFilePath</code>/<code>LocationToRange</code> par les utilitaires OmniSharp + EndLine/EndColumn dans <code>SourceLocation</code></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
@@ -267,7 +267,7 @@
   </div>
 
   <footer>
-    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 222 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 225 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
   </footer>
 </div>
 </body>
