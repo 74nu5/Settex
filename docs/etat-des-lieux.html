@@ -243,16 +243,16 @@
     <div style="margin:14px 0"><b>Compilateur (fonctions V2)</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">(includes modulaires, parenthèses, concat)</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:14px 0"><b>CLI + tâche MSBuild</b> — 7.5/10<div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:14px 0"><b>Serveur de langage (LSP)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(debug retiré, document thread-safe)</span><div class="bar"><i style="width:70%"></i></div></div>
-    <div style="margin:14px 0"><b>Extension Visual Studio 2022</b> — 5.5/10<div class="bar"><i style="width:55%"></i></div></div>
+    <div style="margin:14px 0"><b>Extension Visual Studio 2022</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(VSIX buildable, binaires embarqués, compile-on-save fiabilisé)</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:14px 0"><b>Extension VS Code</b> — 4/10<div class="bar"><i style="width:40%"></i></div></div>
     <div style="margin:14px 0"><b>Documentation (README/specs)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">(README réaligné &amp; vérifié)</span><div class="bar"><i style="width:70%"></i></div></div>
   </div>
 
   <h3>Concurrence &amp; robustesse (extension VS)</h3>
-  <p>L'historique git montre un travail itératif intense sur les race conditions et le disposal (5+ commits dédiés). Le résultat est <strong>nettement plus robuste qu'à ses débuts</strong> : débounce par fichier via <code>ConcurrentDictionary&lt;string,CancellationTokenSource&gt;</code>, capture des options sur le thread UI, nettoyage atomique avec <code>TryRemove</code> + <code>ReferenceEquals</code>. Il subsiste toutefois deux fragilités réelles :</p>
+  <p>Débounce par fichier via <code>ConcurrentDictionary&lt;string,CancellationTokenSource&gt;</code>, capture des options sur le thread UI. Les deux fragilités qui subsistaient sont désormais <strong>corrigées ✅</strong> :</p>
   <ul class="tight">
-    <li>Le disposal du <code>CancellationTokenSource</code> repose sur un <strong>délai magique de 100 ms</strong> dans un <code>Task.Run</code> fire-and-forget — heuristique, pas garantie.</li>
-    <li>L'annulation <strong>ne tue pas le sous-processus <code>dotnet</code></strong> déjà lancé (net472 sans <code>WaitForExitAsync</code>) : fuite de process possible, et aucun timeout de compilation.</li>
+    <li><s>Disposal du <code>CancellationTokenSource</code> par délai magique de 100 ms.</s> → Chaque compilation dispose <strong>son propre</strong> token dans son <code>finally</code> (après usage) ; le remplacement se contente d'annuler. Retrait de l'ensemble actif via <code>ICollection.Remove(clé,valeur)</code> atomique — ce qui corrige au passage un bug latent où l'ancien <code>TryRemove</code> pouvait évincer le token d'une compilation plus récente.</li>
+    <li><s>L'annulation ne tuait pas le sous-processus <code>dotnet</code> ; pas de timeout.</s> → Une <code>Register</code> sur le token <strong>tue le process</strong> à l'annulation/timeout, stdout/stderr lus en parallèle (anti-deadlock), et un <strong>timeout de 60 s</strong> via CTS lié ; l'annulation utilisateur se propage (traitée comme attendue, pas en erreur).</li>
   </ul>
   <p class="fp">extensions/vs-settex/Settex.VisualStudio/SettexDocumentEventHandler.cs · SettexBuildService.cs</p>
 
@@ -346,11 +346,15 @@
   <div class="grid cols-3" style="margin-top:22px">
     <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>LSP maison fonctionnel</li><li>Discipline de build</li><li>Deep-merge correct</li><li>Diagnostics IDE précis</li></ul></div>
     <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li>Doc ≠ code</li><li>Intégration peu testée</li><li>Fonctions V2 fragiles</li><li>Debug en prod (LSP)</li></ul></div>
-    <div class="card"><h3 style="color:var(--bad)">Ce qui bloque</h3><ul class="tight"><li>Extensions non déployables</li><li>Build VS inopérant</li><li>Includes+settings cassés</li><li>Placeholders partout</li></ul></div>
+    <div class="card"><h3 style="color:var(--ok)">Ce qui bloquait — résolu ✅</h3><ul class="tight"><li>Extensions désormais déployables</li><li>VSIX VS buildable</li><li>Includes+settings fusionnés</li><li>Bug CLI corrigé</li></ul></div>
   </div>
 
   <!-- 8 -->
   <h2 id="reco"><span class="num">08</span>Recommandations</h2>
+  <div class="callout ok">
+    <div class="t">✅ Les 8 recommandations ont été traitées</div>
+    L'ensemble des recommandations issues de l'audit a été implémenté et vérifié (build + tests + validation CLI). Le tableau ci-dessous en garde la trace, chaque ligne barrée renvoyant au correctif.
+  </div>
   <p>Par ordre de retour sur investissement décroissant :</p>
   <table>
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
@@ -362,7 +366,7 @@
       <tr><td>5</td><td><s>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code></s> — <strong>fait ✅</strong> (snapshot immuable + <code>volatile</code>, logs en Trace, plancher Information, code mort retiré)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td><s>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</s> — <strong>fait ✅</strong> : 7 tests compilateur par feature + 4 tests de la tâche MSBuild</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>7</td><td><s>Compléter les expressions (parenthèses, concaténation de chaînes) et corriger/documenter les conditionnelles de base</s> — <strong>fait ✅</strong> : parenthèses + concaténation implémentées &amp; testées ; conditionnelles de base documentées (#2)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
-      <tr><td>8</td><td>Fiabiliser le compile-on-save VS : chaîner le disposal sur la vraie tâche (au lieu du délai 100 ms), tuer le process à l'annulation, ajouter un timeout</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>8</td><td><s>Fiabiliser le compile-on-save VS : disposal déterministe, tuer le process à l'annulation, ajouter un timeout</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
     </tbody>
   </table>
 
