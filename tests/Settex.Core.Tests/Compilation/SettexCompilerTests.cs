@@ -23,6 +23,30 @@ public class SettexCompilerTests
         }
     }
 
+    /// <summary>
+    /// Compiles a source string through the full compiler and returns the parsed
+    /// content of a generated output file. Throws if compilation fails.
+    /// </summary>
+    private static async Task<JsonElement> CompileAndReadAsync(string tempDir, string source, string outputFileName)
+    {
+        var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+        var outputDir = Path.Combine(tempDir, "output");
+        await File.WriteAllTextAsync(sourceFile, source);
+
+        var result = new SettexCompiler().Compile(sourceFile, outputDir);
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(
+                "Compilation failed: " + string.Join("; ", result.Errors.Select(e => e.Message)));
+        }
+
+        var json = await File.ReadAllTextAsync(Path.Combine(outputDir, outputFileName));
+
+        // Clone so the JsonElement stays valid after the JsonDocument is disposed.
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.Clone();
+    }
+
     [Test]
     public async Task Compile_SimpleSettex_GeneratesAppSettingsJson()
     {
@@ -428,6 +452,260 @@ settings {
             var server = doc.RootElement.GetProperty("Server");
             await Assert.That(server.GetProperty("Host").GetString()).IsEqualTo("prod-host");
             await Assert.That(server.GetProperty("Ssl").GetBoolean()).IsEqualTo(true);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_VariablesAndInterpolation_ResolvedInOutput()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            var root = await CompileAndReadAsync(tempDir, """
+                let host = "localhost"
+                let port = 8000
+                let protocol = "https"
+
+                settings {
+                  BaseUrl = "${protocol}://${host}:${port}"
+                  Message = "Port is ${port + 100}"
+                }
+                """, "appsettings.json");
+
+            await Assert.That(root.GetProperty("BaseUrl").GetString()).IsEqualTo("https://localhost:8000");
+            await Assert.That(root.GetProperty("Message").GetString()).IsEqualTo("Port is 8100");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_Expressions_EvaluatedInOutput()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            var root = await CompileAndReadAsync(tempDir, """
+                let timeout = 30
+                let retries = 3
+                let enabled = true
+
+                settings {
+                  Total = timeout * retries
+                  Sum = 8000 + 80
+                  ShouldCache = enabled and timeout > 10
+                  Not = not enabled
+                  LogLevel = null ?? "Information"
+                  IsBig = timeout >= 30
+                }
+                """, "appsettings.json");
+
+            await Assert.That(root.GetProperty("Total").GetInt64()).IsEqualTo(90L);
+            await Assert.That(root.GetProperty("Sum").GetInt64()).IsEqualTo(8080L);
+            await Assert.That(root.GetProperty("ShouldCache").GetBoolean()).IsEqualTo(true);
+            await Assert.That(root.GetProperty("Not").GetBoolean()).IsEqualTo(false);
+            await Assert.That(root.GetProperty("LogLevel").GetString()).IsEqualTo("Information");
+            await Assert.That(root.GetProperty("IsBig").GetBoolean()).IsEqualTo(true);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_ForLoop_GeneratesArrayElements()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            var root = await CompileAndReadAsync(tempDir, """
+                let services = [
+                  svc { Name = "auth" Port = 8001 }
+                  svc { Name = "api"  Port = 8002 }
+                ]
+                let host = "localhost"
+
+                settings {
+                  Endpoints = [
+                    for s in services {
+                      item {
+                        Name = s.Name
+                        Url = "http://${host}:${s.Port}"
+                      }
+                    }
+                  ]
+                }
+                """, "appsettings.json");
+
+            var endpoints = root.GetProperty("Endpoints");
+            await Assert.That(endpoints.GetArrayLength()).IsEqualTo(2);
+            await Assert.That(endpoints[0].GetProperty("Name").GetString()).IsEqualTo("auth");
+            await Assert.That(endpoints[0].GetProperty("Url").GetString()).IsEqualTo("http://localhost:8001");
+            await Assert.That(endpoints[1].GetProperty("Url").GetString()).IsEqualTo("http://localhost:8002");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_ConditionalInsideEnv_AppliesWhenTrue()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            const string source = """
+                settings {
+                  LogLevel = "Warning"
+                }
+
+                env "Development" {
+                  let verbose = true
+                  settings {
+                    LogLevel = "Debug" if verbose
+                  }
+                }
+                """;
+
+            var baseRoot = await CompileAndReadAsync(tempDir, source, "appsettings.json");
+            await Assert.That(baseRoot.GetProperty("LogLevel").GetString()).IsEqualTo("Warning");
+
+            var devRoot = await CompileAndReadAsync(tempDir, source, "appsettings.Development.json");
+            await Assert.That(devRoot.GetProperty("LogLevel").GetString()).IsEqualTo("Debug");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_SetIfMissing_KeepsBaseDefaultInOverlay()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            const string source = """
+                settings {
+                  Server { Port := 8080 }
+                }
+
+                env "Production" {
+                  settings {
+                    Server { Port := 443 }
+                  }
+                }
+                """;
+
+            var baseRoot = await CompileAndReadAsync(tempDir, source, "appsettings.json");
+            await Assert.That(baseRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(8080L);
+
+            // := in the overlay must not override the value already set in base.
+            var prodRoot = await CompileAndReadAsync(tempDir, source, "appsettings.Production.json");
+            await Assert.That(prodRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(8080L);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_EnvOverlay_DeepMergesBaseAndOverlay()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            var prodRoot = await CompileAndReadAsync(tempDir, """
+                settings {
+                  Database { Host = "localhost" Port = 5432 }
+                  Tags = ["dev", "test"]
+                }
+
+                env "Production" {
+                  settings {
+                    Database.Host = "prod-server"
+                    Tags = ["prod"]
+                  }
+                }
+                """, "appsettings.Production.json");
+
+            var db = prodRoot.GetProperty("Database");
+            await Assert.That(db.GetProperty("Host").GetString()).IsEqualTo("prod-server");
+            await Assert.That(db.GetProperty("Port").GetInt64()).IsEqualTo(5432L); // preserved from base
+
+            var tags = prodRoot.GetProperty("Tags");
+            await Assert.That(tags.GetArrayLength()).IsEqualTo(1); // array replaced, not merged
+            await Assert.That(tags[0].GetString()).IsEqualTo("prod");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_KitchenSink_AllV2FeaturesTogether()
+    {
+        // One file exercising includes + let + expressions + interpolation + for +
+        // conditionals + set-if-missing + env overlays through the full compiler.
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(tempDir, "common.settex"), """
+                let baseHost = "localhost"
+                let basePort = 8000
+                let services = [
+                  svc { Name = "auth" Port = 8001 }
+                  svc { Name = "api"  Port = 8002 }
+                ]
+
+                settings {
+                  Server { Host := baseHost Port := basePort }
+                }
+                """);
+
+            const string source = """
+                include "./common.settex"
+
+                settings {
+                  ApplicationName = "MyApp"
+                  BaseUrl = "http://${baseHost}:${basePort}"
+                  MaxConnections = 10 * 10
+                  Endpoints = [
+                    for s in services {
+                      item { Name = s.Name Url = "http://${baseHost}:${s.Port}" }
+                    }
+                  ]
+                }
+
+                env "Production" {
+                  let secure = true
+                  settings {
+                    Server.Port = 443
+                    Security.RequireHttps = true if secure
+                  }
+                }
+                """;
+
+            var baseRoot = await CompileAndReadAsync(tempDir, source, "appsettings.json");
+            await Assert.That(baseRoot.GetProperty("ApplicationName").GetString()).IsEqualTo("MyApp");
+            await Assert.That(baseRoot.GetProperty("BaseUrl").GetString()).IsEqualTo("http://localhost:8000");
+            await Assert.That(baseRoot.GetProperty("MaxConnections").GetInt64()).IsEqualTo(100L);
+            await Assert.That(baseRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(8000L);
+            await Assert.That(baseRoot.GetProperty("Endpoints").GetArrayLength()).IsEqualTo(2);
+
+            var prodRoot = await CompileAndReadAsync(tempDir, source, "appsettings.Production.json");
+            await Assert.That(prodRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(443L);
+            await Assert.That(prodRoot.GetProperty("Security").GetProperty("RequireHttps").GetBoolean()).IsEqualTo(true);
         }
         finally
         {
