@@ -9,8 +9,30 @@ using Settex.Core.Parser.Ast;
 /// </summary>
 public class IncludeResolver
 {
-    private readonly HashSet<string> visited = [];
-    private readonly Stack<string> includeStack = [];
+    /// <summary>
+    ///     Maximum include-nesting depth. Beyond this the resolver bails out with a
+    ///     located diagnostic instead of risking an unrecoverable
+    ///     <see cref="StackOverflowException" /> on a pathological (but non-circular)
+    ///     include chain.
+    /// </summary>
+    private const int MaxIncludeDepth = 64;
+
+    /// <summary>
+    ///     Compares include paths using the host filesystem's case semantics:
+    ///     case-insensitive on Windows, case-sensitive elsewhere. Prevents both a
+    ///     missed cycle and a missed diamond when the same file is referenced with
+    ///     different casing on a case-insensitive filesystem (e.g. Inc.settex vs
+    ///     inc.settex on Windows).
+    /// </summary>
+    private static readonly StringComparer PathComparer =
+        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
+    // Files already merged into the output, so a diamond include (A->B, A->C,
+    // B->D, C->D) applies D exactly once instead of twice.
+    private readonly HashSet<string> included = new(PathComparer);
+
+    // The chain of files currently being resolved, used to detect cycles.
+    private readonly Stack<string> includeStack = new();
 
     /// <summary>
     ///     Resolves an include path relative to the current file.
@@ -58,7 +80,7 @@ public class IncludeResolver
     /// <param name="filePath">The file to check</param>
     /// <returns>True if a cycle would be created</returns>
     public bool DetectCycle(string filePath)
-        => this.includeStack.Contains(filePath);
+        => this.includeStack.Any(path => PathComparer.Equals(path, filePath));
 
     /// <summary>
     ///     Resolves all includes in a file recursively, returning a flattened list of top-level statements.
@@ -69,7 +91,7 @@ public class IncludeResolver
     public List<ITopLevelStatement> ResolveIncludes(FileNode fileNode, string filePath)
     {
         this.includeStack.Push(filePath);
-        this.visited.Add(filePath);
+        this.included.Add(filePath);
 
         var result = new List<ITopLevelStatement>();
 
@@ -83,6 +105,21 @@ public class IncludeResolver
                 {
                     var cycle = string.Join(" -> ", this.includeStack.Reverse()) + $" -> {includePath}";
                     throw new IncludeException($"Circular include detected: {cycle}", includeNode.Location);
+                }
+
+                // Diamond dedup: a file already merged in via another branch is
+                // included exactly once (cycle is checked first, above, so an
+                // ancestor still on the stack reports a cycle rather than a skip).
+                if (this.included.Contains(includePath))
+                {
+                    continue;
+                }
+
+                if (this.includeStack.Count >= MaxIncludeDepth)
+                {
+                    throw new IncludeException(
+                        $"Include depth limit ({MaxIncludeDepth}) exceeded while including '{includePath}'; the include chain is too deeply nested.",
+                        includeNode.Location);
                 }
 
                 var includedFile = this.LoadAndParseFile(includePath);
