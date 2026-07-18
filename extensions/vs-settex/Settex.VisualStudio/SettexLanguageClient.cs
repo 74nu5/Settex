@@ -147,15 +147,19 @@ public class SettexLanguageClient : ILanguageClient
     /// <returns>Path to the language server DLL, or empty string if not found.</returns>
     private string GetLanguageServerPath()
     {
+        // The extension assembly directory (not AppDomain.BaseDirectory, which is
+        // the Visual Studio process directory for an installed extension).
+        var extensionDir = Path.GetDirectoryName(typeof(SettexLanguageClient).Assembly.Location) ?? string.Empty;
+
         // Try to find the language server in several locations
         var searchPaths = new[]
         {
-            // Development location (when running from source)
-            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "..", "src", "Settex.LanguageServer", "bin", "Debug", "net10.0", "Settex.LanguageServer.dll")),
-            
-            // Installation location (when installed as VSIX)
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "LanguageServer", "Settex.LanguageServer.dll"),
-            
+            // Installation location (bundled inside the VSIX)
+            Path.Combine(extensionDir, "LanguageServer", "Settex.LanguageServer.dll"),
+
+            // Development location (when running from source: bin\<cfg>\net472 -> repo root)
+            Path.GetFullPath(Path.Combine(extensionDir, "..", "..", "..", "..", "..", "..", "src", "Settex.LanguageServer", "bin", "Debug", "net10.0", "Settex.LanguageServer.dll")),
+
             // Look in PATH environment variable for global installation
             this.FindInPath("Settex.LanguageServer.dll"),
         };

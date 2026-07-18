@@ -59,4 +59,41 @@
     </Content>
   </ItemGroup>
 
+  <!--
+    Embed the .NET runtime binaries the extension shells out to (the language
+    server and the CLI) inside the VSIX so an installed extension is self
+    contained. They target net10.0 and are launched with `dotnet <dll>`, so we
+    publish them framework-dependent and ship the whole publish folder
+    (dll + deps.json + runtimeconfig.json + dependencies) under LanguageServer/
+    and Cli/. The .NET 10 runtime must be present on the machine.
+  -->
+  <PropertyGroup>
+    <SettexRuntimeStage>$(IntermediateOutputPath)SettexRuntime\</SettexRuntimeStage>
+    <SettexLanguageServerProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.LanguageServer\Settex.LanguageServer.csproj</SettexLanguageServerProject>
+    <SettexCliProject>$(MSBuildProjectDirectory)\..\..\..\src\Settex.Cli\Settex.Cli.csproj</SettexCliProject>
+  </PropertyGroup>
+
+  <Target Name="PublishSettexRuntimeBinaries"
+          BeforeTargets="GetVsixSourceItems"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="dotnet publish &quot;$(SettexLanguageServerProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)LanguageServer&quot; --nologo" />
+    <Exec Command="dotnet publish &quot;$(SettexCliProject)&quot; -c $(Configuration) -o &quot;$(SettexRuntimeStage)Cli&quot; --nologo" />
+
+    <ItemGroup>
+      <SettexLanguageServerFiles Include="$(SettexRuntimeStage)LanguageServer\**\*" Exclude="$(SettexRuntimeStage)LanguageServer\**\*.pdb;$(SettexRuntimeStage)LanguageServer\**\*.exe" />
+      <SettexCliFiles Include="$(SettexRuntimeStage)Cli\**\*" Exclude="$(SettexRuntimeStage)Cli\**\*.pdb;$(SettexRuntimeStage)Cli\**\*.exe" />
+
+      <Content Include="@(SettexLanguageServerFiles)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <VSIXSubPath>LanguageServer\%(RecursiveDir)</VSIXSubPath>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Content>
+      <Content Include="@(SettexCliFiles)">
+        <IncludeInVSIX>true</IncludeInVSIX>
+        <VSIXSubPath>Cli\%(RecursiveDir)</VSIXSubPath>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+
 </Project>

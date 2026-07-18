@@ -157,11 +157,18 @@ internal class SettexBuildService : ISettexBuildService
     /// <returns>Path to the CLI DLL, or empty string if not found.</returns>
     private string FindSettexCli()
     {
+        // The extension assembly directory (not AppDomain.BaseDirectory, which is
+        // the Visual Studio process directory for an installed extension).
+        var extensionDir = Path.GetDirectoryName(typeof(SettexBuildService).Assembly.Location) ?? string.Empty;
+
         var searchPaths = new[]
         {
-            // Development location
-            Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "..", "src", "Settex.Cli", "bin", "Debug", "net10.0", "Settex.Cli.dll")),
-            
+            // Installation location (bundled inside the VSIX)
+            Path.Combine(extensionDir, "Cli", "Settex.Cli.dll"),
+
+            // Development location (bin\<cfg>\net472 -> repo root)
+            Path.GetFullPath(Path.Combine(extensionDir, "..", "..", "..", "..", "..", "..", "src", "Settex.Cli", "bin", "Debug", "net10.0", "Settex.Cli.dll")),
+
             // Look in PATH for global tool
             this.FindInPath("Settex.Cli.dll"),
         };
