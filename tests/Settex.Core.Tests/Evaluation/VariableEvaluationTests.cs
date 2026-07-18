@@ -1,5 +1,7 @@
 namespace Settex.Core.Tests.Evaluation;
 
+using System.Text.Json.Nodes;
+
 using Settex.Core.Evaluation;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
@@ -187,6 +189,70 @@ public class VariableEvaluationTests
         var logging = settingsJson!["Logging"]!.AsObject();
         var logLevel = logging["LogLevel"]!.AsObject();
         await Assert.That(logLevel["Default"]!.GetValue<string>()).IsEqualTo("Information");
+    }
+
+    [Test]
+    public async Task Evaluate_NestedBlockLet_DoesNotLeakToParent()
+    {
+        // A 'let' declared inside a nested block must not be visible outside it.
+        var source = """
+                     settings {
+                       Box {
+                         let y = "inner"
+                         Z = 1
+                       }
+                       After = y
+                     }
+                     """;
+
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
+    }
+
+    [Test]
+    public async Task Evaluate_NestedBlockLet_DoesNotOverwriteOuterHomonym()
+    {
+        var source = """
+                     let host = "global"
+
+                     settings {
+                       Box {
+                         let host = "inner"
+                         B = host
+                       }
+                       Top = host
+                     }
+                     """;
+
+        var model = CompileSource(source);
+
+        var box = model.BaseSettings!["Box"] as JsonObject;
+        await Assert.That(box!["B"]!.GetValue<string>()).IsEqualTo("inner");
+        await Assert.That(model.BaseSettings["Top"]!.GetValue<string>()).IsEqualTo("global");
+    }
+
+    [Test]
+    public async Task Evaluate_NestedBlock_CanStillReadOuterVariables()
+    {
+        // Block-scoping must not break reading outer/global variables.
+        var source = """
+                     let g = "g"
+
+                     settings {
+                       A {
+                         let a = "a"
+                         B {
+                           Val = a
+                           Glob = g
+                         }
+                       }
+                     }
+                     """;
+
+        var model = CompileSource(source);
+
+        var b = (model.BaseSettings!["A"] as JsonObject)!["B"] as JsonObject;
+        await Assert.That(b!["Val"]!.GetValue<string>()).IsEqualTo("a");
+        await Assert.That(b["Glob"]!.GetValue<string>()).IsEqualTo("g");
     }
 
     private static SettingsModel CompileSource(string source)
