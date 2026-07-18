@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — État des lieux</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5;
+    }
+  }
+  :root[data-theme="dark"]{
+      --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5;
+  }
+  :root[data-theme="light"]{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.6;font-size:16px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:64px 24px 40px;border-bottom:1px solid var(--border);background:
+    radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:960px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.6rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.15rem;color:var(--muted);margin:0 0 24px;max-width:640px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.6rem;margin:56px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.1rem;margin-right:10px}
+  h3{font-size:1.15rem;margin:28px 0 6px}
+  p{margin:12px 0}
+  .lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.86em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}.grid.cols-3{grid-template-columns:1fr 1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  .b-info{background:color-mix(in srgb,var(--info) 18%,transparent);color:var(--info)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  .status{font-family:var(--mono);font-size:.8rem;white-space:nowrap}
+  ul.tight{margin:12px 0;padding-left:22px}
+  ul.tight li{margin:5px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}
+  .callout.warn{border-left-color:var(--warn)}
+  .callout.ok{border-left-color:var(--ok)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin:32px 0}
+  .toc ol{margin:8px 0 0;padding-left:20px;columns:2;column-gap:32px}
+  .toc a{text-decoration:none;color:var(--text)}
+  .toc a:hover{color:var(--accent)}
+  .bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .verdict{font-size:1.1rem;font-weight:600}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Rapport d'analyse · Audit technique &amp; fonctionnel</p>
+    <h1>Settex — État des lieux</h1>
+    <p class="subtitle">Langage de configuration déclaratif pour .NET qui compile des fichiers <code>.settex</code> en <code>appsettings*.json</code>. Analyse du compilateur, du serveur de langage, des extensions IDE et de leur maturité.</p>
+    <div class="meta">
+      <span><b>Date</b> 18 juillet 2026</span>
+      <span><b>Version</b> 0.1.0-alpha</span>
+      <span><b>Branche</b> copilot/create-vs-extension-settex</span>
+      <span><b>Stack</b> .NET 10 · C# latest</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="score-band">
+    <div class="score"><div class="big">6.2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale — Prototype avancé / Alpha</div></div>
+    <div class="score"><div class="big">196</div><div class="lbl">Tests · 100 % au vert (181 core + 15 LSP)</div></div>
+    <div class="score"><div class="big">~8 300</div><div class="lbl">Lignes de code (C#/TS)</div></div>
+    <div class="score"><div class="big">6</div><div class="lbl">Composants livrables</div></div>
+  </div>
+
+  <div class="callout">
+    <div class="t">Verdict en une phrase</div>
+    Un cœur de compilation V1 <strong>propre, testé et fonctionnel de bout en bout</strong>, entouré d'un ambitieux écosystème V2 + outillage IDE encore <strong>en état alpha</strong> : plusieurs fonctionnalités annoncées ne tiennent pas end-to-end, la documentation est désynchronisée du code, et les extensions ne sont pas déployables en l'état.
+  </div>
+
+  <nav class="toc">
+    <strong>Sommaire</strong>
+    <ol>
+      <li><a href="#synthese">Synthèse exécutive</a></li>
+      <li><a href="#archi">Architecture &amp; composants</a></li>
+      <li><a href="#fonctionnel">État fonctionnel</a></li>
+      <li><a href="#technique">État technique &amp; qualité</a></li>
+      <li><a href="#ecarts">Écarts doc ↔ implémentation</a></li>
+      <li><a href="#bugs">Bugs &amp; dette prioritaires</a></li>
+      <li><a href="#critique">Évaluation critique</a></li>
+      <li><a href="#reco">Recommandations</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <h2 id="synthese"><span class="num">01</span>Synthèse exécutive</h2>
+  <p class="lead">Settex est un projet mono-mainteneur (35 commits sur 36 d'un seul auteur) au périmètre remarquablement ambitieux pour son stade : non seulement un compilateur de langage, mais aussi un CLI, une tâche MSBuild, un serveur LSP complet et deux extensions IDE.</p>
+  <p>La <strong>fondation est saine</strong> : architecture en pipeline clairement séparée, code C# moderne (nullable activé, <code>TreatWarningsAsErrors</code>, central package management), build sans avertissement, et une suite de 196 tests entièrement au vert. J'ai validé le CLI de bout en bout : la compilation du sample V2 complet génère correctement les 5 fichiers <code>appsettings*.json</code> attendus, y compris expressions, boucles <code>for</code>, interpolation et overlays d'environnement.</p>
+  <p>La <strong>fragilité est à la périphérie</strong> : les fonctionnalités V2 les plus avancées (includes contenant un bloc <code>settings</code>, conditionnelles dans le bloc de base) et les promesses du README ne se vérifient pas toujours dans le code ; le serveur de langage embarque du code de debug et une journalisation verbeuse en production ; et les deux extensions IDE référencent des chemins de développement en dur qui les rendent non installables telles quelles.</p>
+
+  <div class="grid cols-2" style="margin-top:24px">
+    <div class="card">
+      <h3>✅ Forces</h3>
+      <ul class="tight">
+        <li>Pipeline de compilation propre et modulaire (Lexer → Parser → Include → Evaluator → Merger → Writer).</li>
+        <li>Couverture de tests unitaires solide sur le cœur (181 tests).</li>
+        <li>Diagnostics précis ligne/colonne au format MSBuild, cliquables dans l'IDE.</li>
+        <li>Écriture conditionnelle des fichiers (n'écrit que si le contenu change).</li>
+        <li>Fusion profonde (deep-merge) correcte et bien testée.</li>
+        <li>CLI soigné (Spectre.Console) fonctionnel de bout en bout.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⚠️ Faiblesses</h3>
+      <ul class="tight">
+        <li>README fortement désynchronisé de la syntaxe réellement supportée.</li>
+        <li>Includes + <code>settings</code> cassés end-to-end et non testés.</li>
+        <li>Bug d'exécution : l'extension VS appelle une commande CLI inexistante.</li>
+        <li>Extensions non déployables (chemins <code>bin/Debug/net10.0</code> en dur).</li>
+        <li>LSP : code de debug résiduel, logs verbeux, document non thread-safe.</li>
+        <li>Couverture d'intégration mince à travers le compilateur complet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <h2 id="archi"><span class="num">02</span>Architecture &amp; composants</h2>
+  <p>La solution regroupe 4 projets applicatifs, 2 projets de test et 2 extensions. Le cœur (<code>Settex.Core</code>) est réutilisé partout, ce qui est un bon choix de conception.</p>
+  <table>
+    <thead><tr><th>Composant</th><th>Rôle</th><th>Taille</th><th>Maturité</th></tr></thead>
+    <tbody>
+      <tr><td><code>Settex.Core</code></td><td>Compilateur : lexer, parser/AST, résolution d'includes, évaluateur, merger, writer JSON</td><td>~3 470 L</td><td><span class="badge b-warn">Alpha avancé</span></td></tr>
+      <tr><td><code>Settex.Cli</code></td><td>Outil en ligne de commande <code>settex build</code> (Spectre.Console)</td><td>~140 L</td><td><span class="badge b-ok">Fonctionnel</span></td></tr>
+      <tr><td><code>Settex.Build</code></td><td>Tâche MSBuild (compilation automatique au build)</td><td>~130 L</td><td><span class="badge b-ok">Fonctionnel</span></td></tr>
+      <tr><td><code>Settex.LanguageServer</code></td><td>Serveur LSP (OmniSharp) : complétion, hover, définition, références, symboles, diagnostics</td><td>~3 060 L</td><td><span class="badge b-warn">Riche mais fragile</span></td></tr>
+      <tr><td><code>vscode-settex</code></td><td>Extension VS Code (TypeScript) : coloration, snippets, client LSP</td><td>~0.1.0</td><td><span class="badge b-bad">Immature</span></td></tr>
+      <tr><td><code>vs-settex</code></td><td>Extension Visual Studio 2022 (C#, net472) : coloration, snippets, LSP, build auto</td><td>v1.2.0</td><td><span class="badge b-warn">Plus mature</span></td></tr>
+    </tbody>
+  </table>
+  <p class="fp">Pipeline vérifié dans src/Settex.Core/Compilation/SettexCompiler.cs — chaque phase est isolée dans un try/catch typé converti en diagnostic.</p>
+
+  <!-- 3 -->
+  <h2 id="fonctionnel"><span class="num">03</span>État fonctionnel</h2>
+  <h3>Fonctionnalités du langage</h3>
+  <table>
+    <thead><tr><th>Fonctionnalité</th><th>État</th><th>Remarque</th></tr></thead>
+    <tbody>
+      <tr><td>Bloc <code>settings</code>, objets imbriqués, tableaux, dot-paths</td><td><span class="badge b-ok">OK</span></td><td>Cœur V1 solide et testé</td></tr>
+      <tr><td>Objets tagués <code>Provider "x" { }</code></td><td><span class="badge b-ok">OK</span></td><td>Implémenté</td></tr>
+      <tr><td>Overlays <code>env</code></td><td><span class="badge b-ok">OK</span></td><td>Fonctionne, mais syntaxe réelle ≠ README (voir §5)</td></tr>
+      <tr><td>Variables <code>let</code> + scoping / shadowing</td><td><span class="badge b-ok">OK</span></td><td>Portée globale / env / boucle</td></tr>
+      <tr><td>Expressions (arithm., logique, comparaison, <code>??</code>)</td><td><span class="badge b-warn">Partiel</span></td><td>Pas de parenthèses ; <code>+</code> numérique uniquement (pas de concaténation)</td></tr>
+      <tr><td>Interpolation <code>"${expr}"</code></td><td><span class="badge b-ok">OK</span></td><td>Interpoler <code>null</code> lève une erreur (voulu)</td></tr>
+      <tr><td>Conditionnelles <code>= v if cond</code></td><td><span class="badge b-warn">Partiel</span></td><td>Inopérant dans le bloc <code>settings</code> de base (évalué une fois avec env=«Base»)</td></tr>
+      <tr><td>Set-if-missing <code>:=</code></td><td><span class="badge b-ok">OK</span></td><td>Vérifie base + overlay</td></tr>
+      <tr><td>Boucles <code>for</code> dans les tableaux</td><td><span class="badge b-ok">OK</span></td><td>Le tag <code>item</code> est en réalité ignoré</td></tr>
+      <tr><td>Includes <code>include "file.settex"</code></td><td><span class="badge b-bad">Cassé si settings</span></td><td>OK pour des fichiers de <code>let</code> ; échoue dès qu'un fichier inclus a un bloc <code>settings</code></td></tr>
+      <tr><td>Chaînes en guillemets simples</td><td><span class="badge b-bad">Absent</span></td><td>Annoncé dans le README, non implémenté</td></tr>
+      <tr><td>Littéraux objet anonymes <code>{ }</code> en tableau</td><td><span class="badge b-bad">Absent</span></td><td>Montré dans le guide de migration du README, ne parse pas</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Outillage &amp; IDE</h3>
+  <table>
+    <thead><tr><th>Capacité</th><th>CLI</th><th>MSBuild</th><th>LSP</th><th>VS Code</th><th>VS 2022</th></tr></thead>
+    <tbody>
+      <tr><td>Compilation</td><td class="status">✅</td><td class="status">✅</td><td class="status">—</td><td class="status">❌</td><td class="status">⚠️ bug</td></tr>
+      <tr><td>Coloration syntaxique</td><td>—</td><td>—</td><td>—</td><td class="status">✅</td><td class="status">✅</td></tr>
+      <tr><td>Snippets</td><td>—</td><td>—</td><td>—</td><td class="status">✅ 12</td><td class="status">✅ 11</td></tr>
+      <tr><td>Complétion / Hover</td><td>—</td><td>—</td><td class="status">✅</td><td class="status">via LSP</td><td class="status">via LSP</td></tr>
+      <tr><td>Définition / Références</td><td>—</td><td>—</td><td class="status">✅ mono-fichier</td><td class="status">via LSP</td><td class="status">via LSP</td></tr>
+      <tr><td>Symboles de document</td><td>—</td><td>—</td><td class="status">✅</td><td class="status">via LSP</td><td class="status">via LSP</td></tr>
+      <tr><td>Diagnostics temps réel</td><td>—</td><td>—</td><td class="status">✅ (1 par phase)</td><td class="status">via LSP</td><td class="status">via LSP</td></tr>
+      <tr><td>Build auto (compile-on-save)</td><td>—</td><td>—</td><td>—</td><td class="status">❌</td><td class="status">✅</td></tr>
+      <tr><td>Rename / Code actions / Formatting</td><td>—</td><td>—</td><td class="status">❌</td><td class="status">❌</td><td class="status">❌</td></tr>
+    </tbody>
+  </table>
+  <p class="fp">LSP handlers : SettexCompletionHandler, SettexHoverHandler, SettexDefinitionHandler, SettexReferencesHandler, SettexDocumentSymbolHandler, SettexTextDocumentSyncHandler.</p>
+
+  <!-- 4 -->
+  <h2 id="technique"><span class="num">04</span>État technique &amp; qualité</h2>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Build &amp; conventions</h3>
+      <ul class="tight">
+        <li><code>Nullable</code> activé, <code>ImplicitUsings</code>, <code>LangVersion=latest</code>.</li>
+        <li><code>TreatWarningsAsErrors=true</code> — discipline forte.</li>
+        <li>Central Package Management (<code>Directory.Packages.props</code>).</li>
+        <li>Build Core en Release : <strong>0 avertissement, 0 erreur</strong>.</li>
+        <li>Versions de packages figées pour éviter CVE-2025-55247 (MSBuild).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Tests</h3>
+      <ul class="tight">
+        <li>196 tests (TUnit) — 181 core + 15 LSP, <strong>100 % au vert</strong>.</li>
+        <li>Bien couvert : expressions, parser, lexer, evaluator, merger, writer.</li>
+        <li><strong>Faible</strong> : intégration end-to-end via <code>SettexCompiler</code> (includes, <code>let</code>, for non testés bout-en-bout).</li>
+        <li>Pas de tests unitaires sur la tâche MSBuild ni le CLI.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Qualité par composant</h3>
+  <div style="margin-top:12px">
+    <div style="margin:14px 0"><b>Compilateur (cœur V1)</b> — 8.5/10<div class="bar"><i style="width:85%"></i></div></div>
+    <div style="margin:14px 0"><b>Compilateur (fonctions V2)</b> — 6/10<div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:14px 0"><b>CLI + tâche MSBuild</b> — 7.5/10<div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:14px 0"><b>Serveur de langage (LSP)</b> — 6/10<div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:14px 0"><b>Extension Visual Studio 2022</b> — 5.5/10<div class="bar"><i style="width:55%"></i></div></div>
+    <div style="margin:14px 0"><b>Extension VS Code</b> — 4/10<div class="bar"><i style="width:40%"></i></div></div>
+    <div style="margin:14px 0"><b>Documentation (README/specs)</b> — 4.5/10<div class="bar"><i style="width:45%"></i></div></div>
+  </div>
+
+  <h3>Concurrence &amp; robustesse (extension VS)</h3>
+  <p>L'historique git montre un travail itératif intense sur les race conditions et le disposal (5+ commits dédiés). Le résultat est <strong>nettement plus robuste qu'à ses débuts</strong> : débounce par fichier via <code>ConcurrentDictionary&lt;string,CancellationTokenSource&gt;</code>, capture des options sur le thread UI, nettoyage atomique avec <code>TryRemove</code> + <code>ReferenceEquals</code>. Il subsiste toutefois deux fragilités réelles :</p>
+  <ul class="tight">
+    <li>Le disposal du <code>CancellationTokenSource</code> repose sur un <strong>délai magique de 100 ms</strong> dans un <code>Task.Run</code> fire-and-forget — heuristique, pas garantie.</li>
+    <li>L'annulation <strong>ne tue pas le sous-processus <code>dotnet</code></strong> déjà lancé (net472 sans <code>WaitForExitAsync</code>) : fuite de process possible, et aucun timeout de compilation.</li>
+  </ul>
+  <p class="fp">extensions/vs-settex/Settex.VisualStudio/SettexDocumentEventHandler.cs · SettexBuildService.cs</p>
+
+  <!-- 5 -->
+  <h2 id="ecarts"><span class="num">05</span>Écarts documentation ↔ implémentation</h2>
+  <p>C'est le point le plus problématique pour l'adoption : un nouvel utilisateur qui suit le README écrira du code qui <strong>ne compile pas</strong>. Écarts vérifiés dans le code et les samples :</p>
+  <table>
+    <thead><tr><th>Sujet</th><th>README annonce</th><th>Code exige réellement</th></tr></thead>
+    <tbody>
+      <tr><td>Syntaxe <code>env</code></td><td><code>env Development { Log = "x" }</code></td><td><code>env "Development" { settings { Log = "x" } }</code> (nom entre guillemets + bloc <code>settings</code> interne)</td></tr>
+      <tr><td>Includes</td><td>Un bloc <code>settings</code> dans chaque fichier inclus</td><td>Échoue : « multiple settings block ». Seuls les <code>let</code> sont sûrs dans un include</td></tr>
+      <tr><td>Conditionnelles de base</td><td><code>Log = "Debug" if env == "Development"</code> dans <code>settings</code></td><td>Sans effet dans le bloc de base (env vaut toujours «Base»)</td></tr>
+      <tr><td>Guillemets simples</td><td>Chaînes <code>'…'</code> supportées</td><td>Non implémenté → erreur de lexer</td></tr>
+      <tr><td>Objets anonymes en tableau</td><td><code>[ { Name = "x" } ]</code></td><td>Ne parse pas (seuls objets tagués <code>id { }</code>)</td></tr>
+      <tr><td>URLs projet</td><td><code>github.com/yourusername/settex</code></td><td>Placeholders jamais renseignés (aussi dans <code>Directory.Build.props</code>)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="t">Incohérence de statut</div>
+    Le README des extensions décrit l'intégration LSP de VS Code comme « planifiée / Phase 3 », alors que <code>extension.ts</code> démarre déjà un client de langage. La communication sur l'état d'avancement n'est pas fiable.
+  </div>
+
+  <!-- 6 -->
+  <h2 id="bugs"><span class="num">06</span>Bugs &amp; dette prioritaires</h2>
+
+  <div class="callout bad">
+    <div class="t">🔴 Critique — Le build auto de l'extension VS ne peut pas fonctionner</div>
+    <code>SettexBuildService</code> invoque <code>dotnet "Settex.Cli.dll" compile "&lt;fichier&gt;"</code>, mais le CLI n'expose que la commande <code>build</code> (aucun <code>compile</code>). La compilation manuelle et le compile-on-save échouent donc systématiquement à l'exécution.
+    <div class="fp">extensions/vs-settex/Settex.VisualStudio/SettexBuildService.cs:70 · vs. src/Settex.Cli/Program.cs:15</div>
+  </div>
+
+  <div class="callout bad">
+    <div class="t">🔴 Critique — Extensions non déployables</div>
+    VS Code et VS 2022 référencent le serveur/CLI via des chemins de développement en dur (<code>…/bin/Debug/net10.0/…</code>). Une extension packagée et installée ne trouvera jamais ces binaires ; le CLI n'a aucun chemin d'installation VSIX.
+    <div class="fp">extensions/vscode-settex/src/extension.ts:28 · extensions/vs-settex/…/SettexBuildService.cs:163</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Majeur — Includes contenant <code>settings</code></div>
+    Fonctionnalité annoncée mais cassée end-to-end et <strong>non couverte par un test d'intégration</strong> ; un test d'<code>IncludeResolver</code> affirme même produire plusieurs <code>SettingsBlockNode</code>, configuration que l'évaluateur rejette ensuite.
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Majeur — Serveur LSP : code de debug en production</div>
+    Bloc de debug codé en dur sur la valeur littérale <code>"Comparison"</code> dans la complétion, journalisation très verbeuse au niveau <code>Information</code> (dont la sérialisation JSON complète du modèle à chaque survol), et <code>SetMinimumLevel(LogLevel.Debug)</code> — bruit et coût significatifs.
+    <div class="fp">src/Settex.LanguageServer/SettexCompletionHandler.cs · HoverOverlayFormatter.cs · Program.cs:18</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Majeur — Document LSP non thread-safe</div>
+    <code>SettexDocument</code> est muté par <code>Reparse()</code> (passe <code>ast</code> à <code>null</code> puis réassigne) pendant que complétion/hover lisent l'AST en concurrence, sans synchronisation ni versioning. Le « sync incrémental » annoncé est en réalité un full-reparse à chaque frappe, avec relecture disque des includes.
+  </div>
+
+  <h3>Dette technique diffuse</h3>
+  <ul class="tight">
+    <li>Code mort dans le LSP (méthodes jamais appelées, variables inutilisées, logique dupliquée entre <code>ScopeResolver</code> et <code>SettexReferencesHandler</code>).</li>
+    <li>Heuristiques de portée codées en dur (<code>line ≤ start + 1000</code>) faute de position de fin dans <code>SourceLocation</code>.</li>
+    <li><code>LocationToRange</code> suppose que tout tient sur une seule ligne → ranges faux pour les nœuds multi-lignes.</li>
+    <li>Conversions numériques <code>double ↔ decimal ↔ long</code> potentiellement lossy.</li>
+    <li>Pas d'écriture atomique des fichiers de sortie (pas de temp + rename).</li>
+    <li><code>catch {}</code> vides masquant des erreurs (disposal, PATH).</li>
+    <li>Commande de démo <code>helloWorld</code> laissée dans l'extension VS Code.</li>
+  </ul>
+
+  <!-- 7 -->
+  <h2 id="critique"><span class="num">07</span>Évaluation critique</h2>
+  <p class="lead verdict">« Un excellent projet d'auteur au potentiel réel, freiné par un écart entre l'ambition affichée et l'état de finition. »</p>
+  <p>Sur le plan de l'<strong>ingénierie</strong>, Settex est au-dessus de la moyenne des projets à ce stade : le découpage en phases est textbook, le code est idiomatique et discipliné (<code>warnings-as-errors</code>), et l'existence d'un serveur LSP maison avec hover contextuel affichant les valeurs résolues par environnement est une fonctionnalité différenciante et non triviale. Le fait que les 196 tests passent et que le CLI produise un JSON correct sur un sample V2 riche prouve que le concept fonctionne réellement.</p>
+  <p>Sur le plan du <strong>produit</strong>, le projet souffre du syndrome classique du « 80 % fait, 80 % restant ». L'ambition (langage + CLI + MSBuild + LSP + 2 extensions) a été déployée en largeur avant d'être consolidée en profondeur. Les conséquences concrètes :</p>
+  <ul class="tight">
+    <li><strong>Confiance érodée</strong> : un utilisateur qui suit le README échoue dès le premier <code>env</code>. La documentation, censée vendre le produit, devient un passif.</li>
+    <li><strong>Fonctionnalités « fantômes »</strong> : includes+settings, conditionnelles de base, guillemets simples, objets anonymes sont annoncés mais absents ou cassés — le périmètre réel est plus petit que le périmètre communiqué.</li>
+    <li><strong>Livrables non livrables</strong> : les deux extensions, vitrine de l'expérience développeur, ne s'installent pas hors arbre de développement, et le build auto de l'extension VS est inopérant (mauvaise commande CLI).</li>
+  </ul>
+  <p>La question de la <strong>pertinence même</strong> mérite d'être posée : Settex entre en concurrence avec des approches établies (transformations de config .NET, variables d'environnement, JSON + <code>dotnet user-secrets</code>, ou des langages comme CUE/Dhall/Jsonnet). Sa proposition de valeur — un DSL lisible avec overlays et deep-merge — est réelle mais étroite ; elle ne se justifiera que si l'expérience « ça marche du premier coup » est irréprochable. Aujourd'hui, ce n'est pas le cas.</p>
+
+  <div class="grid cols-3" style="margin-top:22px">
+    <div class="card"><h3 style="color:var(--ok)">Ce qui impressionne</h3><ul class="tight"><li>LSP maison fonctionnel</li><li>Discipline de build</li><li>Deep-merge correct</li><li>Diagnostics IDE précis</li></ul></div>
+    <div class="card"><h3 style="color:var(--warn)">Ce qui inquiète</h3><ul class="tight"><li>Doc ≠ code</li><li>Intégration peu testée</li><li>Fonctions V2 fragiles</li><li>Debug en prod (LSP)</li></ul></div>
+    <div class="card"><h3 style="color:var(--bad)">Ce qui bloque</h3><ul class="tight"><li>Extensions non déployables</li><li>Build VS inopérant</li><li>Includes+settings cassés</li><li>Placeholders partout</li></ul></div>
+  </div>
+
+  <!-- 8 -->
+  <h2 id="reco"><span class="num">08</span>Recommandations</h2>
+  <p>Par ordre de retour sur investissement décroissant :</p>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + ajouter un test de non-régression</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>3</td><td>Rendre les extensions déployables : embarquer serveur+CLI dans le package, résoudre les binaires par chemin relatif à l'extension installée</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code> (immutabilité ou verrou + versioning)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>6</td><td>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>7</td><td>Compléter les expressions (parenthèses, concaténation de chaînes) et corriger les conditionnelles de base, ou documenter la limite</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>8</td><td>Fiabiliser le compile-on-save VS : chaîner le disposal sur la vraie tâche (au lieu du délai 100 ms), tuer le process à l'annulation, ajouter un timeout</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok" style="margin-top:28px">
+    <div class="t">Conclusion</div>
+    Settex n'est pas un projet en difficulté — c'est un projet <strong>en avance sur sa consolidation</strong>. Les fondations techniques sont bonnes et le concept est prouvé. Un cycle de « resserrage » ciblé (aligner doc et code, rendre les livrables installables, corriger les 3-4 bugs bloquants, ajouter des tests d'intégration) le ferait passer d'un prototype impressionnant à un outil réellement adoptable. La priorité n'est pas d'ajouter des fonctionnalités, mais de rendre vraies celles déjà annoncées.
+  </div>
+
+  <footer>
+    Rapport généré le 18 juillet 2026 · Analyse statique + validation dynamique (build, 196 tests, compilation CLI end-to-end du sample V2). Les statuts et notes reflètent l'état de la branche <code>copilot/create-vs-extension-settex</code> à cette date.
+  </footer>
+</div>
+</body>
+</html>
