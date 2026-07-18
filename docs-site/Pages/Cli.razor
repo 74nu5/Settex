@@ -1,37 +1,39 @@
 @page "/cli"
-<PageTitle>CLI &amp; MSBuild — Settex</PageTitle>
+@inherits LocalizedComponentBase
+<PageTitle>@(Fr ? "CLI &amp; MSBuild — Settex" : "CLI &amp; MSBuild — Settex")</PageTitle>
 
 <h1>CLI &amp; MSBuild</h1>
-<p class="lead">Compile <code>.settex</code> files from the command line, or automatically as part of a build.</p>
+<p class="lead">@(Fr ? "Compilez des fichiers .settex en ligne de commande, ou automatiquement dans un build." : "Compile .settex files from the command line, or automatically as part of a build.")</p>
 
 <h2 id="cli">CLI</h2>
-<p>Install the global tool:</p>
+<p>@(Fr ? "Installez l'outil global :" : "Install the global tool:")</p>
 <CodeBlock Lang="bash" Code="dotnet tool install --global Settex.Cli" />
 
-<p>Compile a file — output goes next to it by default, or into a directory with <code>-o</code>:</p>
+<p>@(Fr ? "Compilez un fichier — la sortie est placée à côté par défaut, ou dans un dossier avec " : "Compile a file — output goes next to it by default, or into a directory with ")<code>-o</code> :</p>
 <CodeBlock Lang="bash" Code="@CliUsage" />
 
-<p>The CLI reports precise, clickable diagnostics with file, line and column:</p>
+<p>@(Fr ? "La CLI produit des diagnostics précis et cliquables avec fichier, ligne et colonne :" : "The CLI reports precise, clickable diagnostics with file, line and column:")</p>
 <CodeBlock Lang="text" Code="@("appsettings.settex(12,5): error: Expected '=' after path")" />
 
-<h2 id="msbuild">MSBuild integration</h2>
+<h2 id="msbuild">@(Fr ? "Intégration MSBuild" : "MSBuild integration")</h2>
 <p>
-    Add the <code>Settex.Build</code> package and every <code>*.settex</code> file in the project is
-    compiled on build. Diagnostics surface as MSBuild errors/warnings (code <code>SETTEX</code>), so a
-    broken config fails the build.
+    @(Fr
+        ? "Ajoutez le paquet Settex.Build et chaque fichier *.settex du projet est compilé au build. Les diagnostics remontent comme erreurs/avertissements MSBuild (code SETTEX), donc une config invalide fait échouer le build."
+        : "Add the Settex.Build package and every *.settex file in the project is compiled on build. Diagnostics surface as MSBuild errors/warnings (code SETTEX), so a broken config fails the build.")
 </p>
 <CodeBlock Lang="bash" Code="dotnet add package Settex.Build" />
 
-<h3 id="customise">Customising the build</h3>
+<h3 id="customise">@(Fr ? "Personnaliser le build" : "Customising the build")</h3>
 <CodeBlock Lang="xml" Code="@MsBuildConfig" />
 
-<h2 id="output">Output &amp; source control</h2>
+<h2 id="output">@(Fr ? "Sortie &amp; contrôle de version" : "Output &amp; source control")</h2>
 <p>
-    A typical project keeps the <code>.settex</code> source under version control and lets the build
-    regenerate the JSON:
+    @(Fr
+        ? "Un projet type garde la source .settex sous contrôle de version et laisse le build régénérer le JSON :"
+        : "A typical project keeps the .settex source under version control and lets the build regenerate the JSON:")
 </p>
 <CodeBlock Lang="text" Code="@Structure" />
-<p>Add <code>*.settex</code> to source control and either ignore the generated JSON or commit it for deployment.</p>
+<p>@(Fr ? "Ajoutez *.settex au contrôle de version et, soit ignorez le JSON généré, soit committez-le pour le déploiement." : "Add *.settex to source control and either ignore the generated JSON or commit it for deployment.")</p>
 
 @code {
     private const string CliUsage = """

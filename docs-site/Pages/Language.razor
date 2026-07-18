@@ -1,133 +1,162 @@
 @page "/language"
-<PageTitle>Language guide — Settex</PageTitle>
+@inherits LocalizedComponentBase
+<PageTitle>@(Fr ? "Guide du langage — Settex" : "Language guide — Settex")</PageTitle>
 
-<h1>Language guide</h1>
+<h1>@(Fr ? "Guide du langage" : "Language guide")</h1>
 <p class="lead">
-    A tour of every construct in the Settex language. Each example is written in the exact syntax the
-    compiler accepts.
+    @(Fr
+        ? "Un tour de chaque construction du langage Settex. Chaque exemple est écrit dans la syntaxe exacte acceptée par le compilateur."
+        : "A tour of every construct in the Settex language. Each example is written in the exact syntax the compiler accepts.")
 </p>
 
 <div class="onpage-toc">
-    <span>On this page</span>
-    <a href="language#comments">Comments</a>
-    <a href="language#settings">Settings</a>
-    <a href="language#nested">Nested objects</a>
-    <a href="language#maps">Named maps</a>
-    <a href="language#arrays">Arrays</a>
-    <a href="language#objects">Object literals</a>
-    <a href="language#dotpath">Dot paths</a>
-    <a href="language#env">Environment overlays</a>
-    <a href="language#merging">Merging</a>
+    <span>@(Fr ? "Sur cette page" : "On this page")</span>
+    <a href="language#comments">@(Fr ? "Commentaires" : "Comments")</a>
+    <a href="language#settings">@(Fr ? "Réglages" : "Settings")</a>
+    <a href="language#nested">@(Fr ? "Objets imbriqués" : "Nested objects")</a>
+    <a href="language#maps">@(Fr ? "Maps nommées" : "Named maps")</a>
+    <a href="language#arrays">@(Fr ? "Tableaux" : "Arrays")</a>
+    <a href="language#objects">@(Fr ? "Objets littéraux" : "Object literals")</a>
+    <a href="language#dotpath">@(Fr ? "Chemins pointés" : "Dot paths")</a>
+    <a href="language#env">@(Fr ? "Overlays d'environnement" : "Environment overlays")</a>
+    <a href="language#merging">@(Fr ? "Fusion" : "Merging")</a>
     <a href="language#includes">Includes</a>
-    <a href="language#let">Variables</a>
+    <a href="language#let">@(Fr ? "Variables" : "Variables")</a>
     <a href="language#expressions">Expressions</a>
     <a href="language#interpolation">Interpolation</a>
-    <a href="language#conditionals">Conditionals</a>
+    <a href="language#conditionals">@(Fr ? "Conditionnelles" : "Conditionals")</a>
     <a href="language#setifmissing">Set-if-missing</a>
-    <a href="language#for">For loops</a>
-    <a href="language#types">Value types</a>
+    <a href="language#for">@(Fr ? "Boucles for" : "For loops")</a>
+    <a href="language#types">@(Fr ? "Types de valeurs" : "Value types")</a>
 </div>
 
-<h2 id="comments">Comments</h2>
+<h2 id="comments">@(Fr ? "Commentaires" : "Comments")</h2>
 <CodeBlock Code="@("# Hash-style comment\n// Double-slash comment")" />
 
-<h2 id="settings">Settings block</h2>
-<p>The top-level <code>settings</code> block holds your base configuration.</p>
+<h2 id="settings">@(Fr ? "Bloc settings" : "Settings block")</h2>
+<p>@(Fr ? "Le bloc " : "The top-level ")<code>settings</code>@(Fr ? " de premier niveau contient votre configuration de base." : " block holds your base configuration.")</p>
 <CodeBlock Code="@Settings" />
 
-<h2 id="nested">Nested objects</h2>
-<p>A named block becomes a JSON object key. Nest them for hierarchy.</p>
+<h2 id="nested">@(Fr ? "Objets imbriqués" : "Nested objects")</h2>
+<p>@(Fr ? "Un bloc nommé devient une clé d'objet JSON. Imbriquez-les pour créer une hiérarchie." : "A named block becomes a JSON object key. Nest them for hierarchy.")</p>
 <CodeBlock Code="@Nested" />
 
-<h2 id="maps">Named maps</h2>
-<p>Because each named block is a key, you build a map of named objects by nesting named blocks:</p>
+<h2 id="maps">@(Fr ? "Maps nommées" : "Named maps")</h2>
+<p>@(Fr ? "Comme chaque bloc nommé est une clé, on construit une map d'objets nommés en imbriquant des blocs nommés :" : "Because each named block is a key, you build a map of named objects by nesting named blocks:")</p>
 <CodeBlock Code="@Maps" />
 
-<h2 id="arrays">Arrays</h2>
-<p>Comma-separated values — commas are optional, a newline also separates items.</p>
+<h2 id="arrays">@(Fr ? "Tableaux" : "Arrays")</h2>
+<p>@(Fr ? "Valeurs séparées par des virgules — les virgules sont optionnelles, un retour à la ligne sépare aussi les éléments." : "Comma-separated values — commas are optional, a newline also separates items.")</p>
 <CodeBlock Code="@Arrays" />
 
-<h2 id="objects">Object literals in arrays</h2>
+<h2 id="objects">@(Fr ? "Objets littéraux dans les tableaux" : "Object literals in arrays")</h2>
 <p>
-    Prefix each object in an array with a <strong>tag</strong> — any identifier followed by a block.
-    The tag is a required syntactic label and is <em>not</em> emitted in the JSON. A bare
-    <code>{ … }</code> without a tag is not valid.
+    @(Fr
+        ? "Préfixez chaque objet d'un tableau par un tag — un identifiant suivi d'un bloc. Le tag est une étiquette syntaxique obligatoire et n'apparaît pas dans le JSON. Un simple { … } sans tag n'est pas valide."
+        : "Prefix each object in an array with a tag — any identifier followed by a block. The tag is a required syntactic label and is not emitted in the JSON. A bare { … } without a tag is not valid.")
 </p>
 <CodeBlock Code="@Objects" />
-<p>The same form works as a plain value: <code>Database = connection { Host = "localhost" }</code> produces <code>"Database": { "Host": "localhost" }</code> (the <code>connection</code> tag is discarded).</p>
+<p>@(Fr ? "La même forme s'utilise comme valeur : " : "The same form works as a plain value: ")<code>Database = connection { Host = "localhost" }</code>@(Fr ? " produit " : " produces ")<code>"Database": { "Host": "localhost" }</code>@(Fr ? " (le tag connection est ignoré)." : " (the connection tag is discarded).")</p>
 
-<h2 id="dotpath">Dot-path assignments</h2>
+<h2 id="dotpath">@(Fr ? "Affectations par chemin pointé" : "Dot-path assignments")</h2>
 <CodeBlock Code="@DotPath" />
 
-<h2 id="env">Environment overlays</h2>
+<h2 id="env">@(Fr ? "Overlays d'environnement" : "Environment overlays")</h2>
 <p>
-    Each <code>env</code> block takes a <strong>quoted</strong> name and contains an inner
-    <code>settings</code> block. It generates a matching <code>appsettings.{Name}.json</code> merged
-    onto the base.
+    @(Fr
+        ? "Chaque bloc env prend un nom entre guillemets et contient un bloc settings interne. Il génère un fichier appsettings.{Nom}.json fusionné sur la base."
+        : "Each env block takes a quoted name and contains an inner settings block. It generates a matching appsettings.{Name}.json merged onto the base.")
 </p>
 <CodeBlock Code="@Env" />
 
-<h2 id="merging">Merging behaviour</h2>
-<ul>
-    <li><strong>Objects</strong> merge deeply (properties combined).</li>
-    <li><strong>Arrays</strong> are replaced entirely (no element merge).</li>
-    <li><strong>Primitives</strong> are replaced.</li>
-</ul>
+<h2 id="merging">@(Fr ? "Comportement de fusion" : "Merging behaviour")</h2>
+@if (Fr)
+{
+    <ul>
+        <li><strong>Objets</strong> : fusion profonde (propriétés combinées).</li>
+        <li><strong>Tableaux</strong> : remplacés entièrement (pas de fusion élément par élément).</li>
+        <li><strong>Primitives</strong> : remplacées.</li>
+    </ul>
+}
+else
+{
+    <ul>
+        <li><strong>Objects</strong> merge deeply (properties combined).</li>
+        <li><strong>Arrays</strong> are replaced entirely (no element merge).</li>
+        <li><strong>Primitives</strong> are replaced.</li>
+    </ul>
+}
 <CodeBlock Code="@Merging" />
 
-<h2 id="includes">File includes</h2>
+<h2 id="includes">@(Fr ? "Includes de fichiers" : "File includes")</h2>
 <p>
-    Split configuration across files with <code>include</code>. An included file can contribute
-    <code>let</code> variables, <code>settings</code> blocks and <code>env</code> blocks — all
-    deep-merged in document order, so the including file wins on conflicts.
+    @(Fr
+        ? "Répartissez la configuration sur plusieurs fichiers avec include. Un fichier inclus peut apporter des variables let, des blocs settings et des blocs env — tous fusionnés dans l'ordre du document, si bien que le fichier incluant l'emporte en cas de conflit."
+        : "Split configuration across files with include. An included file can contribute let variables, settings blocks and env blocks — all deep-merged in document order, so the including file wins on conflicts.")
 </p>
 <CodeBlock Title="common.settex" Code="@IncludeCommon" />
 <CodeBlock Title="appsettings.settex" Code="@IncludeMain" />
 <div class="callout callout-note">
-    A <code>let</code> variable may only be defined once per scope — avoid redefining the same global
-    variable in both an included file and the including file.
+    @(Fr
+        ? "Une variable let ne peut être définie qu'une fois par portée — évitez de redéfinir la même variable globale à la fois dans un fichier inclus et dans le fichier incluant."
+        : "A let variable may only be defined once per scope — avoid redefining the same global variable in both an included file and the including file.")
 </div>
 
-<h2 id="let">Variables with <code>let</code></h2>
+<h2 id="let">@(Fr ? "Variables avec " : "Variables with ")<code>let</code></h2>
 <CodeBlock Code="@Let" />
 <p>
-    Scoping: file-level <code>let</code> is global; a <code>let</code> inside an <code>env</code> block
-    shadows the global for that environment; a loop iterator only exists in the loop body.
+    @(Fr
+        ? "Portée : un let au niveau fichier est global ; un let dans un bloc env masque le global pour cet environnement ; un itérateur de boucle n'existe que dans le corps de la boucle."
+        : "Scoping: file-level let is global; a let inside an env block shadows the global for that environment; a loop iterator only exists in the loop body.")
 </p>
 
 <h2 id="expressions">Expressions</h2>
 <CodeBlock Code="@Expressions" />
-<p><strong>Operators:</strong> arithmetic <code>+ - * /</code>, comparison <code>== != &lt; &lt;= &gt; &gt;=</code>, logical <code>and or not</code>, null-coalescing <code>??</code>. Parentheses group sub-expressions, and <code>+</code> concatenates when either side is a string (coercing numbers and booleans).</p>
+<p><strong>@(Fr ? "Opérateurs :" : "Operators:")</strong> @(Fr ? "arithmétiques" : "arithmetic") <code>+ - * /</code>, @(Fr ? "comparaison" : "comparison") <code>== != &lt; &lt;= &gt; &gt;=</code>, @(Fr ? "logiques" : "logical") <code>and or not</code>, @(Fr ? "coalescence de null" : "null-coalescing") <code>??</code>. @(Fr ? "Les parenthèses groupent les sous-expressions, et " : "Parentheses group sub-expressions, and ")<code>+</code>@(Fr ? " concatène dès qu'un opérande est une chaîne (les nombres et booléens sont convertis)." : " concatenates when either side is a string (coercing numbers and booleans).")</p>
 
-<h2 id="interpolation">String interpolation</h2>
+<h2 id="interpolation">@(Fr ? "Interpolation de chaînes" : "String interpolation")</h2>
 <CodeBlock Code="@Interpolation" />
 <div class="callout callout-warn">
-    <code>${…}</code> is resolved <strong>at compile time</strong> from Settex variables and expressions —
-    it is not a placeholder for runtime environment variables. Inject secrets at deployment time through
-    .NET's environment-variable or user-secrets providers instead.
+    <code>${…}</code> @(Fr
+        ? "est résolu à la compilation à partir des variables et expressions Settex — ce n'est pas un emplacement pour des variables d'environnement runtime. Injectez les secrets au déploiement via les fournisseurs de configuration .NET (variables d'environnement ou user-secrets)."
+        : "is resolved at compile time from Settex variables and expressions — it is not a placeholder for runtime environment variables. Inject secrets at deployment time through .NET's environment-variable or user-secrets providers instead.")
 </div>
 
-<h2 id="conditionals">Conditional assignments</h2>
-<p>Assign a value only when a boolean condition holds. Write the fallback first, the conditional override after.</p>
+<h2 id="conditionals">@(Fr ? "Affectations conditionnelles" : "Conditional assignments")</h2>
+<p>@(Fr ? "Affecte une valeur seulement si une condition booléenne est vraie. Écrivez le repli d'abord, la surcharge conditionnelle après." : "Assign a value only when a boolean condition holds. Write the fallback first, the conditional override after.")</p>
 <CodeBlock Code="@Conditionals" />
 
 <h2 id="setifmissing">Set-if-missing (<code>:=</code>)</h2>
-<p>Sets a value only if the path is not already defined — including checking the base settings from within an overlay. Great for defaults.</p>
+<p>@(Fr ? "N'affecte une valeur que si le chemin n'est pas déjà défini — y compris en vérifiant les réglages de base depuis un overlay. Idéal pour des valeurs par défaut." : "Sets a value only if the path is not already defined — including checking the base settings from within an overlay. Great for defaults.")</p>
 <CodeBlock Code="@SetIfMissing" />
 
-<h2 id="for">For loops</h2>
-<p>Generate array elements dynamically. Each iteration produces exactly one tagged object.</p>
+<h2 id="for">@(Fr ? "Boucles for" : "For loops")</h2>
+<p>@(Fr ? "Génèrent dynamiquement des éléments de tableau. Chaque itération produit exactement un objet tagué." : "Generate array elements dynamically. Each iteration produces exactly one tagged object.")</p>
 <CodeBlock Code="@ForLoops" />
 
-<h2 id="types">Value types</h2>
-<ul>
-    <li><strong>Strings</strong> — <code>"double quotes only"</code></li>
-    <li><strong>Numbers</strong> — <code>42</code>, <code>3.14</code>, <code>-10</code></li>
-    <li><strong>Booleans</strong> — <code>true</code>, <code>false</code></li>
-    <li><strong>Null</strong> — <code>null</code></li>
-    <li><strong>Arrays</strong> — <code>[1, 2, 3]</code> or multiline</li>
-    <li><strong>Objects</strong> — nested blocks, or tagged object literals (<code>tag { … }</code>)</li>
-</ul>
+<h2 id="types">@(Fr ? "Types de valeurs" : "Value types")</h2>
+@if (Fr)
+{
+    <ul>
+        <li><strong>Chaînes</strong> — <code>"guillemets doubles uniquement"</code></li>
+        <li><strong>Nombres</strong> — <code>42</code>, <code>3.14</code>, <code>-10</code></li>
+        <li><strong>Booléens</strong> — <code>true</code>, <code>false</code></li>
+        <li><strong>Null</strong> — <code>null</code></li>
+        <li><strong>Tableaux</strong> — <code>[1, 2, 3]</code> ou multiligne</li>
+        <li><strong>Objets</strong> — blocs imbriqués, ou objets littéraux tagués (<code>tag { … }</code>)</li>
+    </ul>
+}
+else
+{
+    <ul>
+        <li><strong>Strings</strong> — <code>"double quotes only"</code></li>
+        <li><strong>Numbers</strong> — <code>42</code>, <code>3.14</code>, <code>-10</code></li>
+        <li><strong>Booleans</strong> — <code>true</code>, <code>false</code></li>
+        <li><strong>Null</strong> — <code>null</code></li>
+        <li><strong>Arrays</strong> — <code>[1, 2, 3]</code> or multiline</li>
+        <li><strong>Objects</strong> — nested blocks, or tagged object literals (<code>tag { … }</code>)</li>
+    </ul>
+}
 
 @code {
     private const string Settings = """

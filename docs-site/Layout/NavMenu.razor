@@ -1,13 +1,15 @@
+@inherits LocalizedComponentBase
+
 <nav class="nav-menu">
-    <div class="nav-section">Guide</div>
-    <NavLink class="nav-item" href="" Match="NavLinkMatch.All">Overview</NavLink>
-    <NavLink class="nav-item" href="getting-started">Getting started</NavLink>
-    <NavLink class="nav-item" href="language">Language guide</NavLink>
+    <div class="nav-section">@(Fr ? "Guide" : "Guide")</div>
+    <NavLink class="nav-item" href="" Match="NavLinkMatch.All">@(Fr ? "Présentation" : "Overview")</NavLink>
+    <NavLink class="nav-item" href="getting-started">@(Fr ? "Démarrage" : "Getting started")</NavLink>
+    <NavLink class="nav-item" href="language">@(Fr ? "Guide du langage" : "Language guide")</NavLink>
 
-    <div class="nav-section">Tooling</div>
-    <NavLink class="nav-item" href="cli">CLI &amp; MSBuild</NavLink>
-    <NavLink class="nav-item" href="extensions">Editor extensions</NavLink>
+    <div class="nav-section">@(Fr ? "Outillage" : "Tooling")</div>
+    <NavLink class="nav-item" href="cli">@(Fr ? "CLI &amp; MSBuild" : "CLI &amp; MSBuild")</NavLink>
+    <NavLink class="nav-item" href="extensions">@(Fr ? "Extensions d'éditeur" : "Editor extensions")</NavLink>
 
-    <div class="nav-section">Reference</div>
-    <NavLink class="nav-item" href="cheatsheet">Cheat sheet</NavLink>
+    <div class="nav-section">@(Fr ? "Référence" : "Reference")</div>
+    <NavLink class="nav-item" href="cheatsheet">@(Fr ? "Aide-mémoire" : "Cheat sheet")</NavLink>
 </nav>
