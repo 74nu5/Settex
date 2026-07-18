@@ -284,9 +284,15 @@
     <div class="fp">extensions/vs-settex/Settex.VisualStudio/SettexBuildService.cs:70 · src/Settex.Cli/Program.cs:15</div>
   </div>
 
-  <div class="callout bad">
-    <div class="t">🔴 Critique — Extensions non déployables</div>
-    VS Code et VS 2022 référencent le serveur/CLI via des chemins de développement en dur (<code>…/bin/Debug/net10.0/…</code>). Une extension packagée et installée ne trouvera jamais ces binaires ; le CLI n'a aucun chemin d'installation VSIX.
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — Le VSIX de l'extension VS ne compilait pas</div>
+    Le projet épinglait un SDK MSBuild inexistant (<code>CodingWithCalvin.VsixSdk 1.0.0</code>, max publié = 0.4.0) et des versions de packages non restaurables (VS SDK <code>17.12.40459</code>, StreamJsonRpc <code>2.19.27</code>), le tout transformé en erreurs par <code>TreatWarningsAsErrors</code>. <strong>Corrigé</strong> : SDK→0.4.0, VS SDK→17.13.x, StreamJsonRpc→2.21.10, adaptation de <code>ILanguageClient</code> à la surface 17.13, <code>RunningDocumentTable.Unadvise</code> au lieu de <code>Dispose</code> (supprimé), et packaging des grammaires/snippets/pkgdef/licence en <code>Content</code>. Un <strong>VSIX complet est produit</strong> avec MSBuild 18.9. Contrepartie : la version minimale de Visual Studio passe à 17.13.
+    <div class="fp">extensions/vs-settex/Settex.VisualStudio/*.cs · Directory.Packages.props · source.extension.vsixmanifest</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">🟠 Majeur — Découverte des binaires à l'exécution</div>
+    Le VSIX build et s'installe, mais à l'exécution VS Code et VS 2022 cherchent le serveur/CLI via des chemins de développement en dur (<code>…/bin/Debug/net10.0/…</code>). Une extension installée ne trouvera pas ces binaires ; le CLI n'est pas embarqué dans le VSIX. Le packaging compile désormais, mais le déploiement runtime reste à finaliser (embarquer serveur + CLI).
     <div class="fp">extensions/vscode-settex/src/extension.ts:28 · extensions/vs-settex/…/SettexBuildService.cs:163</div>
   </div>
 
@@ -343,7 +349,7 @@
     <tbody>
       <tr><td>1</td><td><s>Corriger la commande CLI de l'extension VS (<code>compile</code> → <code>build</code>) + test de non-régression</s> — <strong>fait ✅</strong> (projet <code>Settex.VisualStudio.Tests</code>)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td>Réaligner le README sur la syntaxe réelle (<code>env "…" { settings { } }</code>, includes, retirer guillemets simples/objets anonymes)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>3</td><td>Rendre les extensions déployables : embarquer serveur+CLI dans le package, résoudre les binaires par chemin relatif à l'extension installée</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>3</td><td>Rendre les extensions déployables : le VSIX <s>ne compile pas</s> <strong>build désormais ✅</strong> ; reste à embarquer serveur+CLI dans le package et résoudre les binaires par chemin relatif à l'extension installée</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td>Décider du sort des includes+<code>settings</code> : soit les faire fonctionner (merge des blocs), soit les interdire explicitement avec un diagnostic clair ; ajouter des tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code> (immutabilité ou verrou + versioning)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
