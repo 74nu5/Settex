@@ -103,7 +103,7 @@
 
   <div class="score-band">
     <div class="score"><div class="big">6.2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale — Prototype avancé / Alpha</div></div>
-    <div class="score"><div class="big">203</div><div class="lbl">Tests · 100 % au vert (186 core + 15 LSP + 2 ext.)</div></div>
+    <div class="score"><div class="big">214</div><div class="lbl">Tests · 100 % au vert (193 core + 15 LSP + 4 MSBuild + 2 ext.)</div></div>
     <div class="score"><div class="big">~8 300</div><div class="lbl">Lignes de code (C#/TS)</div></div>
     <div class="score"><div class="big">6</div><div class="lbl">Composants livrables</div></div>
   </div>
@@ -130,7 +130,7 @@
   <!-- 1 -->
   <h2 id="synthese"><span class="num">01</span>Synthèse exécutive</h2>
   <p class="lead">Settex est un projet mono-mainteneur (35 commits sur 36 d'un seul auteur) au périmètre remarquablement ambitieux pour son stade : non seulement un compilateur de langage, mais aussi un CLI, une tâche MSBuild, un serveur LSP complet et deux extensions IDE.</p>
-  <p>La <strong>fondation est saine</strong> : architecture en pipeline clairement séparée, code C# moderne (nullable activé, <code>TreatWarningsAsErrors</code>, central package management), build sans avertissement, et une suite de 203 tests entièrement au vert. J'ai validé le CLI de bout en bout : la compilation du sample V2 complet génère correctement les 5 fichiers <code>appsettings*.json</code> attendus, y compris expressions, boucles <code>for</code>, interpolation et overlays d'environnement.</p>
+  <p>La <strong>fondation est saine</strong> : architecture en pipeline clairement séparée, code C# moderne (nullable activé, <code>TreatWarningsAsErrors</code>, central package management), build sans avertissement, et une suite de 214 tests entièrement au vert. J'ai validé le CLI de bout en bout : la compilation du sample V2 complet génère correctement les 5 fichiers <code>appsettings*.json</code> attendus, y compris expressions, boucles <code>for</code>, interpolation et overlays d'environnement.</p>
   <p>La <strong>fragilité est à la périphérie</strong> : les fonctionnalités V2 les plus avancées (includes contenant un bloc <code>settings</code>, conditionnelles dans le bloc de base) et les promesses du README ne se vérifient pas toujours dans le code ; le serveur de langage embarque du code de debug et une journalisation verbeuse en production ; et les deux extensions IDE référencent des chemins de développement en dur qui les rendent non installables telles quelles.</p>
 
   <div class="grid cols-2" style="margin-top:24px">
@@ -229,10 +229,10 @@
     <div class="card">
       <h3>Tests</h3>
       <ul class="tight">
-        <li>203 tests (TUnit) — 186 core + 15 LSP + 2 extension, <strong>100 % au vert</strong>.</li>
+        <li>214 tests (TUnit) — 193 core + 15 LSP + 4 MSBuild + 2 extension, <strong>100 % au vert</strong>.</li>
         <li>Bien couvert : expressions, parser, lexer, evaluator, merger, writer.</li>
-        <li><strong>Faible</strong> : intégration end-to-end via <code>SettexCompiler</code> (includes, <code>let</code>, for non testés bout-en-bout).</li>
-        <li>Pas de tests unitaires sur la tâche MSBuild ni le CLI.</li>
+        <li><strong>Intégration end-to-end ✅</strong> : le compilateur complet est désormais testé par feature (includes, <code>let</code>, expressions, interpolation, <code>for</code>, conditionnelles, <code>:=</code>, overlays) en assertant le JSON généré, plus un test « kitchen-sink ».</li>
+        <li><strong>Tâche MSBuild ✅</strong> : <code>CompileSettexTask</code> couverte via un faux <code>IBuildEngine</code> (succès, source invalide, fichier manquant, code diagnostic). Reste le CLI, non testé unitairement (validé manuellement).</li>
       </ul>
     </div>
   </div>
@@ -334,7 +334,7 @@
   <!-- 7 -->
   <h2 id="critique"><span class="num">07</span>Évaluation critique</h2>
   <p class="lead verdict">« Un excellent projet d'auteur au potentiel réel, freiné par un écart entre l'ambition affichée et l'état de finition. »</p>
-  <p>Sur le plan de l'<strong>ingénierie</strong>, Settex est au-dessus de la moyenne des projets à ce stade : le découpage en phases est textbook, le code est idiomatique et discipliné (<code>warnings-as-errors</code>), et l'existence d'un serveur LSP maison avec hover contextuel affichant les valeurs résolues par environnement est une fonctionnalité différenciante et non triviale. Le fait que les 203 tests passent et que le CLI produise un JSON correct sur un sample V2 riche prouve que le concept fonctionne réellement.</p>
+  <p>Sur le plan de l'<strong>ingénierie</strong>, Settex est au-dessus de la moyenne des projets à ce stade : le découpage en phases est textbook, le code est idiomatique et discipliné (<code>warnings-as-errors</code>), et l'existence d'un serveur LSP maison avec hover contextuel affichant les valeurs résolues par environnement est une fonctionnalité différenciante et non triviale. Le fait que les 214 tests passent et que le CLI produise un JSON correct sur un sample V2 riche prouve que le concept fonctionne réellement.</p>
   <p>Sur le plan du <strong>produit</strong>, le projet souffre du syndrome classique du « 80 % fait, 80 % restant ». L'ambition (langage + CLI + MSBuild + LSP + 2 extensions) a été déployée en largeur avant d'être consolidée en profondeur. Les conséquences concrètes :</p>
   <ul class="tight">
     <li><strong>Confiance érodée</strong> : un utilisateur qui suit le README échoue dès le premier <code>env</code>. La documentation, censée vendre le produit, devient un passif.</li>
@@ -360,7 +360,7 @@
       <tr><td>3</td><td><s>Rendre les extensions déployables : builder le VSIX, embarquer serveur+CLI, résoudre les binaires par chemin relatif (VS + VS Code)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>4</td><td><s>Décider du sort des includes+<code>settings</code></s> — <strong>fait ✅</strong> : choix « les faire fonctionner » (deep-merge des blocs <code>settings</code>/<code>env</code>) + 4 tests d'intégration</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td><s>Nettoyer le LSP : retirer code de debug/logs verbeux, passer les logs en Trace, protéger <code>SettexDocument</code></s> — <strong>fait ✅</strong> (snapshot immuable + <code>volatile</code>, logs en Trace, plancher Information, code mort retiré)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>6</td><td>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>6</td><td><s>Ajouter une couche de tests d'intégration end-to-end (compilateur complet avec includes/let/for/interpolation)</s> — <strong>fait ✅</strong> : 7 tests compilateur par feature + 4 tests de la tâche MSBuild</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>7</td><td>Compléter les expressions (parenthèses, concaténation de chaînes) et corriger les conditionnelles de base, ou documenter la limite</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>8</td><td>Fiabiliser le compile-on-save VS : chaîner le disposal sur la vraie tâche (au lieu du délai 100 ms), tuer le process à l'annulation, ajouter un timeout</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
     </tbody>
@@ -372,7 +372,7 @@
   </div>
 
   <footer>
-    Rapport généré le 18 juillet 2026 · Analyse statique + validation dynamique (build, 203 tests, compilation CLI end-to-end du sample V2). Les statuts et notes reflètent l'état de la branche <code>copilot/create-vs-extension-settex</code> à cette date.
+    Rapport généré le 18 juillet 2026 · Analyse statique + validation dynamique (build, 214 tests, compilation CLI end-to-end du sample V2). Les statuts et notes reflètent l'état de la branche <code>copilot/create-vs-extension-settex</code> à cette date.
   </footer>
 </div>
 </body>
