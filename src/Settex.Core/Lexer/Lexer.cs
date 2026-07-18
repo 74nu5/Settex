@@ -107,7 +107,7 @@ public class Lexer(string source, string? filePath = null)
             ';' => this.CreateAndAdvance(TokenType.Semicolon, ";", startLine, startColumn),
             ':' => this.ScanColonEquals(startLine, startColumn),
             '+' => this.CreateAndAdvance(TokenType.Plus, "+", startLine, startColumn),
-            '-' => this.ScanMinusOrNumber(startLine, startColumn),
+            '-' => this.ScanMinus(startLine, startColumn),
             '*' => this.CreateAndAdvance(TokenType.Star, "*", startLine, startColumn),
             '/' => this.CreateAndAdvance(TokenType.Slash, "/", startLine, startColumn),
             '<' => this.ScanLessOrLessEqual(startLine, startColumn),
@@ -249,13 +249,8 @@ public class Lexer(string source, string? filePath = null)
         var start = this.position;
         var hasDecimal = false;
 
-        // Handle negative sign
-        if (this.Current == '-')
-        {
-            this.Advance();
-        }
-
-        // Read digits
+        // Read digits ('-' is handled by the parser as a unary/binary operator,
+        // so a number literal never starts with a sign here).
         while (!this.IsAtEnd && char.IsDigit(this.Current))
         {
             this.Advance();
@@ -359,14 +354,12 @@ public class Lexer(string source, string? filePath = null)
         }
     }
 
-    private Token ScanMinusOrNumber(int startLine, int startColumn)
+    private Token ScanMinus(int startLine, int startColumn)
     {
-        // Check if this is a negative number or minus operator
-        if (char.IsDigit(this.Peek()))
-        {
-            return this.ScanNumber(startLine, startColumn);
-        }
-
+        // '-' is always the minus operator. The parser turns a leading '-' into a
+        // unary negation (ParseUnary) and an infix '-' into subtraction (ParseTerm).
+        // Lexing '-3' as a single negative literal would break subtraction written
+        // without surrounding spaces (e.g. '5-3'), so we never do that here.
         return this.CreateAndAdvance(TokenType.Minus, "-", startLine, startColumn);
     }
 

@@ -150,18 +150,33 @@ public sealed class LexerTests
     }
 
     [Test]
-    public async Task Tokenize_Integer_Negative_ReturnsIntegerToken()
+    public async Task Tokenize_MinusBeforeNumber_ProducesMinusOperatorThenNumber()
     {
-        // Arrange
+        // '-' is always a minus operator token; negation is handled by the parser.
+        // Lexing "-42" as a single negative literal would break subtraction without
+        // spaces (e.g. "5-3"), so the lexer never does that.
         var lexer = new Lexer("-42 -17");
 
-        // Act
         var tokens = lexer.Tokenize();
 
-        // Assert
-        await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Integer);
-        await Assert.That(tokens[0].Value).IsEqualTo(-42L);
-        await Assert.That(tokens[1].Value).IsEqualTo(-17L);
+        await Assert.That(tokens).Count().IsEqualTo(5); // - 42 - 17 EOF
+        await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Minus);
+        await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Integer);
+        await Assert.That(tokens[1].Value).IsEqualTo(42L);
+        await Assert.That(tokens[2].Type).IsEqualTo(TokenType.Minus);
+        await Assert.That(tokens[3].Value).IsEqualTo(17L);
+    }
+
+    [Test]
+    public async Task Tokenize_Subtraction_WithoutSpaces_ProducesOperator()
+    {
+        // Regression: "5-3" must lex to 5, '-', 3 (not 5 then negative-3).
+        var tokens = new Lexer("5-3").Tokenize();
+
+        await Assert.That(tokens).Count().IsEqualTo(4); // 5 - 3 EOF
+        await Assert.That(tokens[0].Value).IsEqualTo(5L);
+        await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Minus);
+        await Assert.That(tokens[2].Value).IsEqualTo(3L);
     }
 
     [Test]
@@ -173,12 +188,14 @@ public sealed class LexerTests
         // Act
         var tokens = lexer.Tokenize();
 
-        // Assert
-        await Assert.That(tokens).Count().IsEqualTo(4); // 3 floats + EOF
+        // Assert — '-' is a separate operator token (negation handled by the parser).
+        await Assert.That(tokens).Count().IsEqualTo(5); // 3.14 - 0.5 0.0 EOF
         await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Float);
         await Assert.That(tokens[0].Value).IsEqualTo(3.14);
-        await Assert.That(tokens[1].Value).IsEqualTo(-0.5);
-        await Assert.That(tokens[2].Value).IsEqualTo(0.0);
+        await Assert.That(tokens[1].Type).IsEqualTo(TokenType.Minus);
+        await Assert.That(tokens[2].Type).IsEqualTo(TokenType.Float);
+        await Assert.That(tokens[2].Value).IsEqualTo(0.5);
+        await Assert.That(tokens[3].Value).IsEqualTo(0.0);
     }
 
     [Test]

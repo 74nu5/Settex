@@ -69,7 +69,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/settex.git"
+    "url": "https://github.com/74nu5/Settex.git"
   },
+  "homepage": "https://settex.74nu5.dev",
   "license": "MIT"
 }

@@ -63,6 +63,43 @@ public class ExpressionEvaluationTests
     }
 
     [Test]
+    public async Task Evaluate_Subtraction_WithoutSpaces_ReturnsCorrectResult()
+    {
+        // Regression: subtraction must work without surrounding spaces.
+        var source = """
+            settings {
+                A = 5-3
+                B = 10-3-2
+                C = (5-3)*2
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["A"]!.GetValue<long>()).IsEqualTo(2L);
+        await Assert.That(json!["B"]!.GetValue<long>()).IsEqualTo(5L);
+        await Assert.That(json!["C"]!.GetValue<long>()).IsEqualTo(4L);
+    }
+
+    [Test]
+    public async Task Evaluate_NegativeLiteralAndUnaryMinus()
+    {
+        var source = """
+            let x = -5
+
+            settings {
+                Neg = -42
+                FromVar = x
+                Expr = -x + 10
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Neg"]!.GetValue<long>()).IsEqualTo(-42L);
+        await Assert.That(json!["FromVar"]!.GetValue<long>()).IsEqualTo(-5L);
+        await Assert.That(json!["Expr"]!.GetValue<long>()).IsEqualTo(15L);
+    }
+
+    [Test]
     public async Task Evaluate_Multiplication_ReturnsCorrectResult()
     {
         var source = """
