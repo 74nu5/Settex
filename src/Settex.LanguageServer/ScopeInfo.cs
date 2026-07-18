@@ -42,6 +42,7 @@ public class ScopeInfo
         this.Name = name;
         this.Variables = new List<LetNode>();
         this.Children = new List<ScopeInfo>();
+        this.EndLine = location.Line;
     }
 
     /// <summary>
@@ -76,34 +77,40 @@ public class ScopeInfo
     public SourceLocation Location { get; }
 
     /// <summary>
-    /// Vérifie si une position est dans ce scope.
+    /// Dernière ligne (1-based) couverte par ce scope. Calculée par le
+    /// <see cref="ScopeResolver"/> à partir de l'étendue réelle du contenu du
+    /// scope (statements, expressions, scopes enfants) plutôt que d'une heuristique.
+    /// Le scope global couvre tout le fichier (<see cref="int.MaxValue"/>).
+    /// </summary>
+    public int EndLine { get; private set; }
+
+    /// <summary>
+    /// Étend la fin du scope pour inclure la ligne donnée (jamais rétrécie).
+    /// </summary>
+    internal void ExtendTo(int line)
+    {
+        if (line > this.EndLine)
+        {
+            this.EndLine = line;
+        }
+    }
+
+    /// <summary>
+    /// Vérifie si une position (1-based) est dans l'étendue de ce scope.
     /// </summary>
     public bool ContainsPosition(int line, int column)
     {
-        // Note: SourceLocation utilise line/column 1-based
         var startLine = this.Location.Line;
         var startColumn = this.Location.Column;
-        var endLine = startLine;
-        var endColumn = startColumn + this.Location.Length;
 
-        // Pour un scope multi-ligne, on doit calculer la fin différemment
-        // Pour l'instant, on utilise une heuristique simple
+        // Avant le début du scope ?
         if (line < startLine || (line == startLine && column < startColumn))
         {
             return false;
         }
 
-        // Pour un scope, on considère qu'il s'étend jusqu'à la fin de son dernier enfant
-        // ou jusqu'à la fin de sa propre location si pas d'enfants
-        if (this.Children.Count > 0)
-        {
-            var lastChild = this.Children[^1];
-            return lastChild.ContainsPosition(line, column) ||
-                   (line <= lastChild.Location.Line + 100); // Heuristique généreuse
-        }
-
-        // Heuristique simple : 1000 lignes max pour un scope
-        return line <= startLine + 1000;
+        // Après la dernière ligne de contenu du scope ?
+        return line <= this.EndLine;
     }
 
     /// <summary>

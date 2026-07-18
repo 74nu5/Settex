@@ -456,40 +456,46 @@ public class SettexCompletionHandler : CompletionHandlerBase
     {
         try
         {
-            // Log the AST structure
-            this.logger.LogTrace("[COMPLETION-EVAL] Evaluating AST with {Count} statements", ast.Statements.Count);
-            var settingsBlocks = ast.Statements.OfType<SettingsBlockNode>().Count();
-            var envBlocks = ast.Statements.OfType<EnvBlockNode>().Count();
-            var letStatements = ast.Statements.OfType<LetNode>().Count();
-            this.logger.LogTrace("[COMPLETION-EVAL] AST contains: {Settings} settings blocks, {Env} env blocks, {Let} let statements", 
-                settingsBlocks, envBlocks, letStatements);
-            
-            // Log settings block structure
-            var settingsBlock = ast.Statements.OfType<SettingsBlockNode>().FirstOrDefault();
-            if (settingsBlock != null)
+            // Diagnostics verbeux : ne calculer les comptages/joins que si le niveau
+            // Trace est actif (sinon ces OfType/Count/Join tournent à chaque requête
+            // de complétion pour rien).
+            if (this.logger.IsEnabled(LogLevel.Trace))
             {
-                var assignments = settingsBlock.Block.Statements.OfType<AssignmentNode>().ToList();
-                this.logger.LogTrace("[COMPLETION-EVAL] Settings block has {Count} assignments", assignments.Count);
-                
-                // Log each assignment path
-                foreach (var assignment in assignments)
+                this.logger.LogTrace("[COMPLETION-EVAL] Evaluating AST with {Count} statements", ast.Statements.Count);
+                var settingsBlocks = ast.Statements.OfType<SettingsBlockNode>().Count();
+                var envBlocks = ast.Statements.OfType<EnvBlockNode>().Count();
+                var letStatements = ast.Statements.OfType<LetNode>().Count();
+                this.logger.LogTrace("[COMPLETION-EVAL] AST contains: {Settings} settings blocks, {Env} env blocks, {Let} let statements",
+                    settingsBlocks, envBlocks, letStatements);
+
+                var settingsBlock = ast.Statements.OfType<SettingsBlockNode>().FirstOrDefault();
+                if (settingsBlock != null)
                 {
-                    var path = string.Join(".", assignment.Path.Segments);
-                    this.logger.LogTrace("[COMPLETION-EVAL] Assignment: {Path}", path);
+                    var assignments = settingsBlock.Block.Statements.OfType<AssignmentNode>().ToList();
+                    this.logger.LogTrace("[COMPLETION-EVAL] Settings block has {Count} assignments", assignments.Count);
+
+                    foreach (var assignment in assignments)
+                    {
+                        var path = string.Join(".", assignment.Path.Segments);
+                        this.logger.LogTrace("[COMPLETION-EVAL] Assignment: {Path}", path);
+                    }
                 }
             }
-            
+
             var evaluator = new Evaluator();
             var model = evaluator.Evaluate(ast);
-            
-            this.logger.LogTrace("[COMPLETION-EVAL] Evaluation complete. Base has {BaseCount} properties", 
-                model.BaseSettings?.Count ?? 0);
-            if (model.BaseSettings != null)
+
+            if (this.logger.IsEnabled(LogLevel.Trace))
             {
-                var keys = string.Join(", ", model.BaseSettings.Select(p => p.Key));
-                this.logger.LogTrace("[COMPLETION-EVAL] Base properties: {Keys}", keys);
+                this.logger.LogTrace("[COMPLETION-EVAL] Evaluation complete. Base has {BaseCount} properties",
+                    model.BaseSettings?.Count ?? 0);
+                if (model.BaseSettings != null)
+                {
+                    var keys = string.Join(", ", model.BaseSettings.Select(p => p.Key));
+                    this.logger.LogTrace("[COMPLETION-EVAL] Base properties: {Keys}", keys);
+                }
             }
-            
+
             return (model.BaseSettings, model.EnvironmentOverlays);
         }
         catch (System.Exception ex)
@@ -529,8 +535,11 @@ public class SettexCompletionHandler : CompletionHandlerBase
                 if (value is JsonObject obj)
                 {
                     current = obj;
-                    this.logger.LogTrace("[COMPLETION-NAV] Navigated to object '{Segment}', properties: {Properties}", 
-                        segment, string.Join(", ", obj.Select(p => p.Key)));
+                    if (this.logger.IsEnabled(LogLevel.Trace))
+                    {
+                        this.logger.LogTrace("[COMPLETION-NAV] Navigated to object '{Segment}', properties: {Properties}",
+                            segment, string.Join(", ", obj.Select(p => p.Key)));
+                    }
                 }
                 else
                 {
@@ -541,8 +550,12 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
             else
             {
-                this.logger.LogTrace("[COMPLETION-NAV] Property '{Segment}' not found. Available: {Available}", 
-                    segment, string.Join(", ", current.Select(p => p.Key)));
+                if (this.logger.IsEnabled(LogLevel.Trace))
+                {
+                    this.logger.LogTrace("[COMPLETION-NAV] Property '{Segment}' not found. Available: {Available}",
+                        segment, string.Join(", ", current.Select(p => p.Key)));
+                }
+
                 return null;
             }
         }

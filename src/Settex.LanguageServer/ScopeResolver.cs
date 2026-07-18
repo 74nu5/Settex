@@ -23,6 +23,10 @@ public class ScopeResolver
             parent: null,
             name: null);
 
+        // Le scope global couvre l'intégralité du fichier : toute position qui
+        // n'appartient pas à un scope enfant (env/for) retombe sur le global.
+        globalScope.ExtendTo(int.MaxValue);
+
         // Parcourir les statements top-level
         foreach (var statement in ast.Statements)
         {
@@ -93,6 +97,9 @@ public class ScopeResolver
 
                 // Parcourir le contenu de l'env block
                 this.ProcessSettingsBlock(envNode.SettingsBlock, envScope);
+
+                // Faire remonter l'étendue de l'env vers le scope parent.
+                parentScope.ExtendTo(envScope.EndLine);
                 break;
 
             case SettingsBlockNode settingsNode:
@@ -119,6 +126,9 @@ public class ScopeResolver
 
     private void ProcessStatement(IStatement statement, ScopeInfo parentScope)
     {
+        // Ce statement appartient au scope courant : étendre sa couverture.
+        parentScope.ExtendTo(statement.Location.Line);
+
         switch (statement)
         {
             case LetNode letNode:
@@ -145,6 +155,9 @@ public class ScopeResolver
 
     private void ProcessExpression(IExpression expression, ScopeInfo parentScope)
     {
+        // Les expressions (arrays multi-lignes, etc.) élargissent le scope courant.
+        parentScope.ExtendTo(expression.Location.Line);
+
         switch (expression)
         {
             case ArrayNode arrayNode:
@@ -205,6 +218,9 @@ public class ScopeResolver
 
                 // Parcourir le corps de la boucle
                 this.ProcessBlock(forNode.Body, forScope);
+
+                // Faire remonter l'étendue de la boucle vers le scope parent.
+                parentScope.ExtendTo(forScope.EndLine);
 
                 // Parcourir la collection pour trouver d'éventuels for imbriqués
                 this.ProcessExpression(forNode.Collection, parentScope);

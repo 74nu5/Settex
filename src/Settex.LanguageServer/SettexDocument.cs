@@ -1,3 +1,4 @@
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Settex.Core.Diagnostics;
 using Settex.Core.Lexer;
@@ -170,24 +171,30 @@ public class SettexDocument
     }
 
     /// <summary>
-    /// Convertit une URI LSP en chemin de fichier système.
+    /// Convertit une URI LSP en chemin de fichier système, ou <c>null</c> si l'URI
+    /// ne désigne pas un fichier sur disque (document non enregistré, schéma non
+    /// <c>file</c>). Délègue à <see cref="DocumentUri"/>, qui décode l'URL (espaces
+    /// <c>%20</c>, etc.) et gère les lettres de lecteur Windows et les chemins UNC —
+    /// contrairement à l'ancien découpage manuel de chaîne.
     /// </summary>
     private static string? UriToFilePath(string uri)
     {
-        if (uri.StartsWith("file:///"))
+        try
         {
-            // file:///d:/path/to/file.settex -> d:/path/to/file.settex
-            var path = uri.Substring(8);
+            var documentUri = DocumentUri.Parse(uri);
 
-            // On Windows, convertir les / en \
-            if (Path.DirectorySeparatorChar == '\\')
+            if (!string.Equals(documentUri.Scheme, "file", StringComparison.OrdinalIgnoreCase))
             {
-                path = path.Replace('/', '\\');
+                return null;
             }
 
-            return path;
+            var path = documentUri.GetFileSystemPath();
+            return string.IsNullOrEmpty(path) ? null : path;
         }
-
-        return null;
+        catch (Exception)
+        {
+            // URI malformée : traiter comme un document sans fichier sur disque.
+            return null;
+        }
     }
 }

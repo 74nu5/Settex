@@ -33,13 +33,21 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
-        if (document?.Ast == null || document.Text == null)
+        if (document == null)
         {
             return Task.FromResult<LocationContainer?>(null);
         }
 
-        var word = GetWordAtPosition(document.Text, request.Position);
-        
+        // Snapshot unique : texte et AST cohérents malgré des updates concurrents.
+        var snapshot = document.Current;
+
+        if (snapshot.Ast == null)
+        {
+            return Task.FromResult<LocationContainer?>(null);
+        }
+
+        var word = GetWordAtPosition(snapshot.Text, request.Position);
+
         if (string.IsNullOrEmpty(word))
         {
             return Task.FromResult<LocationContainer?>(null);
@@ -48,7 +56,7 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         var locations = new List<Location>();
 
         // Construire la hiérarchie des scopes
-        var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+        var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
         
         // Trouver le scope actif à la position du curseur
         var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
@@ -77,7 +85,7 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         }
 
         // Trouver toutes les références qui résolvent vers cette même définition
-        var references = FindScopedReferences(document.Ast, word, targetLetNode, rootScope);
+        var references = FindScopedReferences(snapshot.Ast, word, targetLetNode, rootScope);
         
         foreach (var reference in references)
         {

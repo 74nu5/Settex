@@ -39,13 +39,17 @@ public class SettexHoverHandler : HoverHandlerBase
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
-        if (document == null || document.Text == null)
+        if (document == null)
         {
             return Task.FromResult<Hover?>(null);
         }
 
+        // Capturer un seul snapshot immuable : le texte (pour l'offset du curseur)
+        // et l'AST restent cohérents même si le document est modifié en parallèle.
+        var snapshot = document.Current;
+
         // Récupérer le mot à la position
-        var word = GetWordAtPosition(document.Text, request.Position);
+        var word = GetWordAtPosition(snapshot.Text, request.Position);
 
         if (string.IsNullOrEmpty(word))
         {
@@ -67,11 +71,11 @@ public class SettexHoverHandler : HoverHandlerBase
         }
 
         // Vérifier si c'est une variable
-        if (document.Ast != null)
+        if (snapshot.Ast != null)
         {
             // PREMIÈRE PRIORITÉ : Vérifier si le curseur est sur un path d'assignation (overlay tracking)
             // MAIS seulement si le mot sous le curseur correspond au path !
-            var assignmentInfo = FindAssignmentAtPosition(document.Ast, request.Position);
+            var assignmentInfo = FindAssignmentAtPosition(snapshot.Ast, request.Position);
             if (assignmentInfo != null)
             {
                 var (assignment, envName) = assignmentInfo.Value;
@@ -95,7 +99,7 @@ public class SettexHoverHandler : HoverHandlerBase
                         var objectPath = string.Join(".", assignment.Path.Segments.Take(wordIndex + 1));
                         this.logger.LogTrace("[HOVER-OVERLAY] Formatting OBJECT for path='{ObjectPath}', envName='{EnvName}', word='{Word}'", objectPath, envName ?? "(base)", word);
                         
-                        var objectHover = HoverOverlayFormatter.FormatObjectWithOverlay(document.Ast, objectPath, envName, this.logger);
+                        var objectHover = HoverOverlayFormatter.FormatObjectWithOverlay(snapshot.Ast, objectPath, envName, this.logger);
                         
                         this.logger.LogTrace("[HOVER-OVERLAY] Object result: {IsNull}, length={Length}", objectHover == null ? "NULL" : "NOT NULL", objectHover?.Length ?? 0);
                         if (objectHover != null)
@@ -116,7 +120,7 @@ public class SettexHoverHandler : HoverHandlerBase
                         // Le mot survolé est la valeur finale (ex: "Port" dans "Server.Port")
                         this.logger.LogTrace("[HOVER-OVERLAY] Formatting assignment for path='{Path}', envName='{EnvName}', word='{Word}'", path, envName ?? "(base)", word);
                         
-                        var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(document.Ast, path, envName, this.logger);
+                        var overlayHover = HoverOverlayFormatter.FormatAssignmentWithOverlay(snapshot.Ast, path, envName, this.logger);
                         
                         this.logger.LogTrace("[HOVER-OVERLAY] Result: {IsNull}, length={Length}", overlayHover == null ? "NULL" : "NOT NULL", overlayHover?.Length ?? 0);
                         if (overlayHover != null)
@@ -140,7 +144,7 @@ public class SettexHoverHandler : HoverHandlerBase
             }
 
             // DEUXIÈME PRIORITÉ : Construire la hiérarchie des scopes
-            var rootScope = this.scopeResolver.BuildScopeHierarchy(document.Ast);
+            var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
 
             // Trouver le scope actif à la position du curseur
             var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
@@ -174,7 +178,7 @@ public class SettexHoverHandler : HoverHandlerBase
             }
 
             // Vérifier si c'est un environnement
-            var env = FindEnvironment(document.Ast, word);
+            var env = FindEnvironment(snapshot.Ast, word);
             if (env != null)
             {
                 return Task.FromResult<Hover?>(new Hover
