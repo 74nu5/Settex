@@ -2,6 +2,8 @@
 
 Visual Studio extension for the Settex configuration language, providing syntax highlighting, IntelliSense, and integrated build support for `.settex` files.
 
+📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
+
 ## Features
 
 ### Syntax Highlighting

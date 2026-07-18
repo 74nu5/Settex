@@ -4,6 +4,8 @@
 
 This extension provides rich language support for Settex files in Visual Studio Code.
 
+📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
+
 ## Features
 
 ### 🎨 Syntax Highlighting
