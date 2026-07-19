@@ -9,8 +9,9 @@ name: Deploy docs to Azure Static Web Apps
 #   2. Copy its deployment token and add it to this repository's secrets as
 #      AZURE_STATIC_WEB_APPS_API_TOKEN (Settings → Secrets and variables → Actions).
 #
-# The app is pre-built here (rather than by Azure's Oryx builder) because it
-# targets a preview .NET SDK; the built static files are then uploaded.
+# The app is pre-built here (rather than by Azure's Oryx builder) because Oryx
+# does not carry the .NET 10 SDK and the wasm-tools workload; the built static
+# files are then uploaded.
 
 on:
   push:
@@ -35,8 +36,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
-          dotnet-quality: 'preview'
+          # Taken from global.json, which pins a GA SDK and sets
+          # allowPrerelease: false. Requesting a preview SDK here would no
+          # longer satisfy that pin.
+          global-json-file: global.json
 
       - name: Restore workloads
         run: dotnet workload restore docs-site/Settex.Docs.csproj
