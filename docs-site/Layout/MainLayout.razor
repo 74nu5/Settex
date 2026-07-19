@@ -39,10 +39,21 @@
 @code {
     private bool Fr => Loc.IsFrench;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         Loc.OnChange += StateHasChanged;
-        await Loc.InitializeAsync();
+        // Read the stored language synchronously so the first paint is already in
+        // the right language (no English flash). Falls back to the async path below
+        // if in-process interop is unavailable.
+        Loc.Initialize();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Loc.InitializeAsync();
+        }
     }
 
     private string LangClass(string lang) => Loc.Language == lang ? "lang-btn active" : "lang-btn";

@@ -6,6 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Settex — Documentation</title>
     <meta name="description" content="Settex is a human-friendly configuration language for .NET that compiles to appsettings*.json with environment overlays and deep merging." />
+
+    <!-- Set <html lang> from the stored preference before Blazor boots, so the
+         document language is correct on first paint (no English flash), and expose
+         a helper the app uses to keep it in sync on language switches. -->
+    <script>
+        window.settexDocs = {
+            setHtmlLang: function (lang) {
+                if (lang === 'fr' || lang === 'en') {
+                    document.documentElement.setAttribute('lang', lang);
+                }
+            }
+        };
+        try {
+            window.settexDocs.setHtmlLang(localStorage.getItem('settex-lang'));
+        } catch (e) { /* localStorage unavailable */ }
+    </script>
+
+    <!-- Social / SEO metadata -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Settex" />
+    <meta property="og:title" content="Settex — Documentation" />
+    <meta property="og:description" content="A human-friendly configuration language for .NET that compiles to appsettings*.json with environment overlays and deep merging." />
+    <meta property="og:url" content="https://settex.74nu5.dev/" />
+    <meta property="og:image" content="https://settex.74nu5.dev/icon-192.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Settex — Documentation" />
+    <meta name="twitter:description" content="A human-friendly configuration language for .NET that compiles to appsettings*.json with environment overlays and deep merging." />
+    <meta name="twitter:image" content="https://settex.74nu5.dev/icon-192.png" />
+    <link rel="canonical" href="https://settex.74nu5.dev/" />
+
     <base href="/" />
     <link rel="preload" id="webassembly" />
     <link rel="stylesheet" href="css/app.css" />
@@ -23,6 +53,18 @@
             <div class="app-loading-text">Loading Settex docs…</div>
         </div>
     </div>
+
+    <noscript>
+        <div style="max-width:680px;margin:64px auto;padding:0 24px;font-family:sans-serif;line-height:1.6">
+            <h1>Settex</h1>
+            <p>Settex is a human-friendly configuration language for .NET. It compiles a
+               concise <code>.settex</code> file into <code>appsettings.json</code> and
+               per-environment overlays, with variables, expressions, includes and deep
+               merging built in.</p>
+            <p>This documentation needs JavaScript to run. The source and reference live on
+               <a href="https://github.com/74nu5/Settex">GitHub</a>.</p>
+        </div>
+    </noscript>
 
     <div id="blazor-error-ui">
         An unhandled error has occurred.

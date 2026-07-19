@@ -1,15 +1,23 @@
-@* Renders a code sample. Code is passed as a string so Blazor HTML-encodes it
-   automatically — no need to escape <, >, {, } or @ in the samples. *@
+@* Renders a code sample. `Code` is passed as a string. Settex samples are
+   syntax-highlighted by SettexHighlighter (which HTML-encodes every character);
+   other languages render as plain, auto-encoded text. *@
 <div class="codeblock @(string.IsNullOrEmpty(Title) ? "" : "codeblock--titled")">
     @if (!string.IsNullOrEmpty(Title))
     {
         <div class="codeblock-title">@Title</div>
     }
-    <pre class="@($"code lang-{Lang}")"><code>@Code</code></pre>
+    <pre class="@($"code lang-{Lang}")"><code>@RenderedCode</code></pre>
 </div>
 
 @code {
     [Parameter, EditorRequired] public string Code { get; set; } = "";
     [Parameter] public string Lang { get; set; } = "settex";
     [Parameter] public string? Title { get; set; }
+
+    // For Settex, emit highlighted (already HTML-encoded) markup; other languages
+    // are HTML-encoded and rendered as-is. Always a MarkupString so the render path
+    // is unambiguous.
+    private MarkupString RenderedCode => Lang == "settex"
+        ? (MarkupString)SettexHighlighter.Highlight(Code)
+        : (MarkupString)System.Net.WebUtility.HtmlEncode(Code);
 }
