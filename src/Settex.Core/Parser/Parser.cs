@@ -409,8 +409,15 @@ public class Parser(List<Token> tokens, string? filePath = null)
             allStatements.AddRange(letStatements);
             allStatements.AddRange(settingsBlock.Block.Statements);
 
-            var newBlock = new BlockNode(allStatements, settingsBlock.Block.Location);
-            settingsBlock = new SettingsBlockNode(newBlock, settingsBlock.Location);
+            // Widen the block to start at the first let. Those lets sit *before*
+            // `settings {` in the source, so keeping the settings block's own location
+            // produced children beginning before their parent — an inverted containment
+            // that scope resolution and document symbols both assume cannot happen, and
+            // that makes an LSP range invalid.
+            var spanStart = letStatements[0].Location;
+
+            var newBlock = new BlockNode(allStatements, SpanTo(spanStart, settingsBlock.Block.Location));
+            settingsBlock = new SettingsBlockNode(newBlock, SpanTo(spanStart, settingsBlock.Location));
         }
 
         return new(envName, settingsBlock, SpanTo(envToken.Location, envCloseToken));
@@ -529,10 +536,18 @@ public class Parser(List<Token> tokens, string? filePath = null)
             condition = this.ParseExpression();
         }
 
-        // Span the assignment from its path to the end of its value (or condition,
-        // which comes last), so editors can test whether a position is really on
-        // this assignment rather than merely on the same line.
-        return new(path, op, value, condition, SpanTo(path.Location, (condition ?? value).Location));
+        // Span the assignment from its path to the last token it consumed, so editors
+        // can test whether a position is really on this assignment rather than merely
+        // on the same line.
+        //
+        // Taken from the token stream rather than from the value node: an expression
+        // node's own location is not its extent. A binary or unary operator node
+        // carries the operator's position, a member access carries its first segment's,
+        // and a parenthesised expression drops the parentheses entirely — so
+        // `B = 1 + 2` used to stop before the `2`, and hovering the `2` was judged to
+        // be outside the assignment it belongs to. The last consumed token is exact
+        // for every one of those shapes.
+        return new(path, op, value, condition, SpanTo(path.Location, this.Previous));
     }
 
     /// <summary>
