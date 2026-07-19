@@ -60,6 +60,10 @@ public class SettexCompletionHandler : CompletionHandlerBase
 
     private Task<CompletionList> HandleCoreAsync(CompletionParams request, CancellationToken cancellationToken)
     {
+        // Makes the OperationCanceledException arm of the caller's guard real
+        // instead of dead code: a request the client already withdrew does no work.
+        cancellationToken.ThrowIfCancellationRequested();
+
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
@@ -237,9 +241,14 @@ public class SettexCompletionHandler : CompletionHandlerBase
         return Task.FromResult(new CompletionList(completions));
     }
 
+    /// <summary>
+    /// Resolve step. Nothing extra to compute, so the item is returned as-is —
+    /// but honouring cancellation keeps it consistent with the other handlers.
+    /// </summary>
     public override Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
     {
-        // Pas de résolution supplémentaire nécessaire
+        cancellationToken.ThrowIfCancellationRequested();
+
         return Task.FromResult(request);
     }
 

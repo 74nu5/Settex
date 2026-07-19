@@ -57,6 +57,10 @@ public class SettexHoverHandler : HoverHandlerBase
 
     private Task<Hover?> HandleCoreAsync(HoverParams request, CancellationToken cancellationToken)
     {
+        // Makes the OperationCanceledException arm of the caller's guard real
+        // instead of dead code: a request the client already withdrew does no work.
+        cancellationToken.ThrowIfCancellationRequested();
+
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
@@ -101,7 +105,7 @@ public class SettexHoverHandler : HoverHandlerBase
             {
                 // Le chemin complet inclut les blocs imbriqués traversés, donc
                 // survoler "Port" dans `Server { Port = … }` cible bien "Server.Port".
-                var (_, pathSegments, envName) = assignmentInfo.Value;
+                var (pathSegments, envName, isObjectHeader) = assignmentInfo.Value;
 
                 // Vérifier que le mot sous le curseur est bien le path (ou une partie du path)
                 var isOnPath = pathSegments.Any(segment => segment == word);
@@ -112,7 +116,7 @@ public class SettexHoverHandler : HoverHandlerBase
 
                     // Détecter si le mot survolé est un segment d'objet (pas le dernier segment)
                     var wordIndex = pathSegments.IndexOf(word);
-                    var isObjectSegment = wordIndex >= 0 && wordIndex < pathSegments.Count - 1;
+                    var isObjectSegment = isObjectHeader || (wordIndex >= 0 && wordIndex < pathSegments.Count - 1);
 
                     if (isObjectSegment)
                     {
@@ -544,7 +548,7 @@ public class SettexHoverHandler : HoverHandlerBase
     /// <summary>
     /// Trouve une assignation à la position donnée et retourne l'assignation + l'environnement (null si dans base).
     /// </summary>
-    private static (Core.Parser.Ast.AssignmentNode Assignment, List<string> Path, string? EnvName)? FindAssignmentAtPosition(
+    private static (List<string> Path, string? EnvName, bool IsObjectHeader)? FindAssignmentAtPosition(
         Core.Parser.Ast.FileNode ast,
         Position position,
         string? documentFilePath = null)
@@ -570,7 +574,7 @@ public class SettexHoverHandler : HoverHandlerBase
                 var found = FindAssignmentInStatements(settings.Block.Statements, new List<string>(), line, column);
                 if (found != null)
                 {
-                    return (found.Value.Assignment, found.Value.Path, null); // Base, pas d'environnement
+                    return (found.Value.Path, null, found.Value.IsObjectHeader); // Base, pas d'environnement
                 }
             }
             else if (stmt is Core.Parser.Ast.EnvBlockNode env)
@@ -578,7 +582,7 @@ public class SettexHoverHandler : HoverHandlerBase
                 var found = FindAssignmentInStatements(env.SettingsBlock.Block.Statements, new List<string>(), line, column);
                 if (found != null)
                 {
-                    return (found.Value.Assignment, found.Value.Path, env.EnvironmentName); // Dans un environnement
+                    return (found.Value.Path, env.EnvironmentName, found.Value.IsObjectHeader); // Dans un environnement
                 }
             }
         }
@@ -593,7 +597,7 @@ public class SettexHoverHandler : HoverHandlerBase
     /// (<c>Server.Port</c> et non <c>Port</c>) — c'est ce chemin que l'overlay
     /// recherche dans la configuration évaluée.
     /// </summary>
-    private static (Core.Parser.Ast.AssignmentNode Assignment, List<string> Path)? FindAssignmentInStatements(
+    private static (List<string> Path, bool IsObjectHeader)? FindAssignmentInStatements(
         IReadOnlyList<Core.Parser.Ast.IStatement> statements,
         List<string> prefix,
         int line,
@@ -607,7 +611,7 @@ public class SettexHoverHandler : HoverHandlerBase
                 {
                     var fullPath = new List<string>(prefix);
                     fullPath.AddRange(assignment.Path.Segments);
-                    return (assignment, fullPath);
+                    return (fullPath, false);
                 }
             }
             else if (stmt is Core.Parser.Ast.NestedBlockNode nested)
@@ -619,11 +623,30 @@ public class SettexHoverHandler : HoverHandlerBase
                 {
                     return found;
                 }
+
+                // The block's own header. Hovering `Server` in `Server { … }` used to
+                // return nothing, while the same word in `Server.Port = …` returned the
+                // full object overlay — the same thing written two ways, answered two
+                // ways. Checked after the body so an inner match still wins.
+                if (IsPositionOnBlockName(nested, line, column))
+                {
+                    return (nestedPrefix, true);
+                }
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// Vérifie si une position est sur le <strong>nom</strong> d'un bloc imbriqué,
+    /// c'est-à-dire sur son en-tête et non dans son corps. Le nœud démarre sur son
+    /// identifiant, donc le nom occupe les colonnes qui suivent immédiatement.
+    /// </summary>
+    private static bool IsPositionOnBlockName(Core.Parser.Ast.NestedBlockNode nested, int line, int column)
+        => line == nested.Location.Line
+           && column >= nested.Location.Column
+           && column < nested.Location.Column + nested.Name.Length;
 
     /// <summary>
     /// Vérifie si une position (1-based) est réellement dans l'étendue d'un nœud.
@@ -643,7 +666,11 @@ public class SettexHoverHandler : HoverHandlerBase
             return false;
         }
 
-        if (line == location.EffectiveEndLine && column > location.EffectiveEndColumn)
+        // EffectiveEndColumn is exclusive — it is the column just past the last
+        // character — so a position sitting on it is already outside. Comparing with
+        // '>' included one column too many, which is how the character immediately
+        // after an assignment still triggered its overlay.
+        if (line == location.EffectiveEndLine && column >= location.EffectiveEndColumn)
         {
             return false;
         }
