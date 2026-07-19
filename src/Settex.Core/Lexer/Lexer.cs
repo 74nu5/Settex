@@ -219,6 +219,16 @@ public class Lexer(string source, string? filePath = null)
         return null;
     }
 
+    /// <summary>
+    ///     Location of the escape sequence being scanned, covering both characters.
+    ///     The cursor has already moved past the backslash by the time an invalid escape
+    ///     is detected, so the span has to start one column back — otherwise it
+    ///     highlighted the escape character and whatever followed it (<c>$x</c>) instead
+    ///     of the sequence at fault (<c>\$</c>).
+    /// </summary>
+    private SourceLocation EscapeSequenceLocation()
+        => this.CreateLocation(this.line, Math.Max(1, this.column - 1), 2);
+
     private Token ScanString(int startLine, int startColumn)
     {
         var start = this.position;
@@ -250,9 +260,9 @@ public class Lexer(string source, string? filePath = null)
                     // Point the user at the right syntax rather than a bare error.
                     '$' => throw new LexerException(
                         "Invalid escape sequence '\\$'. To write a literal \"${\", use \"$${\" instead.",
-                        this.CreateLocation(this.line, this.column, 2)),
+                        this.EscapeSequenceLocation()),
 
-                    _ => throw new LexerException($"Invalid escape sequence '\\{this.Current}'", this.CreateLocation(this.line, this.column, 2)),
+                    _ => throw new LexerException($"Invalid escape sequence '\\{this.Current}'", this.EscapeSequenceLocation()),
                 };
 
                 sb.Append(escaped);

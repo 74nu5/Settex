@@ -119,7 +119,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
 
         var includePath = (string)pathToken.Value!;
 
-        return new(includePath, includeToken.Location);
+        // Spans the whole statement, including the quoted path, so an editor can
+        // highlight the include rather than just the keyword.
+        return new(includePath, SpanTo(includeToken.Location, pathToken));
     }
 
     /// <summary>
@@ -143,7 +145,10 @@ public class Parser(List<Token> tokens, string? filePath = null)
             value = this.ParseExpression();
         }
 
-        return new(nameToken.Text, value, letToken.Location);
+        // Spans from 'let' to the end of the value, consistent with assignments. Taken
+        // from the token stream for the same reason as there: an expression node's own
+        // location is not its extent.
+        return new(nameToken.Text, value, SpanTo(letToken.Location, this.Previous));
     }
 
     /// <summary>
