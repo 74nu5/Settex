@@ -191,14 +191,29 @@ public class SettexDocument
                     // report drift that does not exist.
                     if (HasSettingsBlock(ast))
                     {
-                        foreach (var coverage in Settex.Compilation.CoverageAnalyzer.Analyze(model))
-                        {
-                            diagnostics.Add(ToLspDiagnostic(coverage));
-                        }
+                        var analyses = Settex.Compilation.CoverageAnalyzer.Analyze(model)
+                            .Concat(Settex.Compilation.ArrayLayeringAnalyzer.Analyze(model));
 
-                        foreach (var layering in Settex.Compilation.ArrayLayeringAnalyzer.Analyze(model))
+                        foreach (var analysis in analyses)
                         {
-                            diagnostics.Add(ToLspDiagnostic(layering));
+                            // Anchor on the assignment that introduced the key. The
+                            // analyzers work on the evaluated JSON, which has no source
+                            // positions, so every one of these used to land on the first
+                            // character — a dozen warnings stacked on one spot, none of
+                            // them pointing at what to change.
+                            var anchor = FindAssignmentLocation(ast, analysis.KeyPath, analysis.EnvironmentName, filePath);
+
+                            // No anchor means the key lives in an included file. It is
+                            // reported there, on the assignment itself, rather than here
+                            // where the reader cannot act on it — the AST is
+                            // include-flattened, so without this every includer
+                            // republished its includes' warnings verbatim.
+                            if (analysis.KeyPath != null && anchor == null)
+                            {
+                                continue;
+                            }
+
+                            diagnostics.Add(ToLspDiagnostic(analysis, anchor));
                         }
                     }
                 }
@@ -262,6 +277,103 @@ public class SettexDocument
     /// </summary>
     private static bool HasSettingsBlock(FileNode ast)
         => ast.Statements.OfType<SettingsBlockNode>().Any();
+
+    /// <summary>
+    /// Finds where a dotted configuration key is assigned <strong>in this document</strong>,
+    /// searching the base settings and every environment overlay. Returns <c>null</c>
+    /// when the key is not assigned here — either because it comes from an included
+    /// file, or because it is not an assignment at all.
+    /// Keys are matched case-insensitively, as .NET configuration compares them.
+    /// </summary>
+    private static SourceLocation? FindAssignmentLocation(
+        FileNode ast,
+        string? keyPath,
+        string? environmentName,
+        string? documentFilePath)
+    {
+        if (string.IsNullOrEmpty(keyPath))
+        {
+            return null;
+        }
+
+        // The named environment's own block first. These diagnostics are about an
+        // environment overriding or missing something, so its assignment is the one to
+        // point at — the base may assign the same key, and matching that instead would
+        // send the reader to a line that is not the problem.
+        var inEnvironment = Search(env => env.EnvironmentName == environmentName);
+
+        return inEnvironment ?? Search(_ => true);
+
+        SourceLocation? Search(Func<EnvBlockNode, bool> environmentFilter)
+        {
+            foreach (var statement in ast.Statements)
+            {
+                if (!IsFromSameFile(statement.Location, documentFilePath))
+                {
+                    continue;
+                }
+
+                var block = statement switch
+                {
+                    EnvBlockNode env when environmentFilter(env) => env.SettingsBlock.Block,
+                    SettingsBlockNode settings when environmentName == null => settings.Block,
+                    _ => null,
+                };
+
+                if (block == null)
+                {
+                    continue;
+                }
+
+                var found = FindAssignmentInBlock(block, prefix: string.Empty, keyPath);
+
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    private static SourceLocation? FindAssignmentInBlock(BlockNode block, string prefix, string keyPath)
+    {
+        foreach (var statement in block.Statements)
+        {
+            switch (statement)
+            {
+                case AssignmentNode assignment:
+                {
+                    var path = Join(prefix, string.Join(".", assignment.Path.Segments));
+
+                    if (string.Equals(path, keyPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return assignment.Location;
+                    }
+
+                    break;
+                }
+
+                case NestedBlockNode nested:
+                {
+                    var found = FindAssignmentInBlock(nested.Block, Join(prefix, nested.Name), keyPath);
+
+                    if (found != null)
+                    {
+                        return found;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return null;
+
+        static string Join(string prefix, string segment)
+            => prefix.Length == 0 ? segment : $"{prefix}.{segment}";
+    }
 
     /// <summary>
     /// Indique si un symbole à la localisation donnée appartient <strong>à ce
@@ -365,12 +477,12 @@ public class SettexDocument
 
     /// <summary>
     /// Converts a compiler <see cref="Settex.Compilation.Diagnostic"/> (e.g. a
-    /// cross-environment coverage warning) into an LSP diagnostic. Coverage
-    /// diagnostics carry no source location, so they anchor at the file start.
+    /// cross-environment coverage warning) into an LSP diagnostic, anchored on the
+    /// assignment named by <paramref name="anchor"/> when one was found.
     /// </summary>
-    private static Diagnostic ToLspDiagnostic(Settex.Compilation.Diagnostic diagnostic) => new()
+    private static Diagnostic ToLspDiagnostic(Settex.Compilation.Diagnostic diagnostic, SourceLocation? anchor = null) => new()
     {
-        Range = diagnostic.Location != null ? LocationToRange(diagnostic.Location) : ZeroRange(),
+        Range = (diagnostic.Location ?? anchor) is { } location ? LocationToRange(location) : ZeroRange(),
         Severity = diagnostic.Severity switch
         {
             Settex.Compilation.DiagnosticSeverity.Error => DiagnosticSeverity.Error,

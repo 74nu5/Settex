@@ -57,7 +57,9 @@ public static class ArrayLayeringAnalyzer
                         DiagnosticSeverity.Warning,
                         $"Environment '{envName}' overrides array '{path}' with {overlayArray.Count} element(s), but the base array has {baseArray.Count}. " +
                         ".NET merges arrays by index across appsettings files, so the effective runtime value keeps the base's extra trailing element(s) instead of replacing the array. " +
-                        $"Either keep '{path}' at least as long in this environment, or define it only per environment (not in the base) so nothing layers under it."));
+                        $"Either keep '{path}' at least as long in this environment, or define it only per environment (not in the base) so nothing layers under it.",
+                        keyPath: path,
+                        environmentName: envName));
                 }
 
                 var leaks = FindLeakedFields(baseArray, overlayArray);
@@ -69,7 +71,9 @@ public static class ArrayLayeringAnalyzer
                         $"Environment '{envName}' overrides array '{path}', whose elements are objects. " +
                         "At a shared index .NET merges those objects field by field, so every field the base element defines and this one omits survives at runtime: " +
                         $"{string.Join(", ", leaks)}. " +
-                        $"Either repeat those fields here, or define '{path}' only per environment (not in the base) so nothing layers under it."));
+                        $"Either repeat those fields here, or define '{path}' only per environment (not in the base) so nothing layers under it.",
+                        keyPath: path,
+                        environmentName: envName));
                 }
             }
         }
