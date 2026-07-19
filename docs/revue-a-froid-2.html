@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — Troisième revue (à froid, état consolidé)</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  }
+  :root[data-theme="dark"]{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  :root[data-theme="light"]{ --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:60px 24px 36px;border-bottom:1px solid var(--border);
+    background:radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:940px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.12rem;color:var(--muted);margin:0 0 22px;max-width:700px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.55rem;margin:52px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.05rem;margin-right:10px}
+  h3{font-size:1.12rem;margin:26px 0 6px}
+  p{margin:12px 0}.lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}.grid.cols-3{grid-template-columns:1fr 1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  .b-info{background:color-mix(in srgb,var(--info) 18%,transparent);color:var(--info)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  ul.tight{margin:12px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}.callout.warn{border-left-color:var(--warn)}.callout.ok{border-left-color:var(--ok)}.callout.info{border-left-color:var(--info)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .tag{font-family:var(--mono);font-size:.7rem;padding:.1em .5em;border-radius:5px;background:var(--surface-2);color:var(--muted);margin-left:6px}
+  .bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:8px}
+  .bar > i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+  code.sx{color:var(--accent)}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .verdict{font-size:1.12rem;font-weight:600}
+  .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin:32px 0}
+  .toc ol{margin:8px 0 0;padding-left:20px;columns:2;column-gap:32px}
+  .toc a{text-decoration:none;color:var(--text)}.toc a:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Troisième revue · Regard à froid sur l'état consolidé</p>
+    <h1>Settex — revue de l'état courant</h1>
+    <p class="subtitle">Après un cycle complet de correctifs (les 10 recommandations de la <a href="revue-technique.html">seconde revue</a> traitées), voici une nouvelle passe <strong>adversariale</strong> : vérité terrain reproduite, plus deux relecteurs indépendants à yeux neufs. Elle relève ce qui tient — et ce que les correctifs eux-mêmes ont laissé ou introduit.</p>
+    <div class="meta">
+      <span><b>Date</b> 19 juillet 2026</span>
+      <span><b>Méthode</b> reproduction CLI + 2 relecteurs adversariaux</span>
+      <span><b>Base</b> main @ d6e035a</span>
+      <span><b>Stack</b> .NET 10 (preview) · C#</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="score-band">
+    <div class="score"><div class="big">7.2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">262</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
+    <div class="score"><div class="big">3</div><div class="lbl">défauts <span style="color:var(--bad)">élevés</span> restants (nouveaux, à froid)</div></div>
+  </div>
+
+  <div class="callout ok">
+    <div class="t">Pourquoi la note remonte (5,8 → 7,2)</div>
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. 262 tests (contre 228), 0 avertissement. Le socle est désormais bon.
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Pourquoi pas plus haut</div>
+    Une passe à froid trouve encore des défauts <strong>réels</strong>, surtout en périphérie : le serveur de langage <strong>ne montre aucune erreur sémantique ni la dérive de couverture</strong> dans l'éditeur (la valeur phare est invisible là où on la regarde), le piège d'indexation des tableaux de .NET casse silencieusement la sémantique « les tableaux se remplacent », et une conflit de type peut encore remonter en « Unexpected error » sans localisation. Plusieurs de ces défauts sont des <strong>angles morts des correctifs de cette session</strong> — c'est noté explicitement.
+  </div>
+
+  <div class="callout">
+    <div class="t">Verdict en une phrase</div>
+    <span class="verdict">Un compilateur d'auteur désormais solide et bien testé, avec un écosystème qui fonctionne — mais dont la couche éditeur et quelques pièges de layering runtime le maintiennent en <strong>bêta soignée</strong> plutôt qu'en 1.0.</span>
+  </div>
+
+  <div class="toc">
+    <b>Sommaire</b>
+    <ol>
+      <li><a href="#contexte">Contexte &amp; méthode</a></li>
+      <li><a href="#tient">Ce qui tient (vérifié)</a></li>
+      <li><a href="#defauts">Défauts trouvés à froid</a></li>
+      <li><a href="#composant">Évaluation par composant</a></li>
+      <li><a href="#verdict">Verdict &amp; priorités</a></li>
+    </ol>
+  </div>
+
+  <!-- 1 -->
+  <h2 id="contexte"><span class="num">01</span>Contexte &amp; méthode</h2>
+  <p>Cette revue est la troisième du projet, et la <strong>seconde menée à froid</strong>. Entre-temps, 11 PR ont été mergées, fermant l'intégralité des recommandations de la <a href="revue-technique.html">revue précédente</a> : packaging VS Code, lexer des négatifs, block-scoping, client LSP VS, dette LSP (snapshot, portée, URI, cross-fichier, outline), interpolation, overflow décimal, includes en losange, détection du runtime .NET 10, projet de tests CLI, polish docs, et enfin le modèle de sortie (deltas + lint de couverture).</p>
+  <ul class="tight">
+    <li><strong>Vérité terrain reproduite</strong> : build de la solution (0 avertissement), <strong>262 tests</strong> (222 core + 22 LSP + 7 CLI + 4 MSBuild + 7 extension) tous au vert, et une série de compilations CLI adverses sur les cas limites des nouveautés (deltas, <code>--merged</code>, couverture, tableaux, conflits de type).</li>
+    <li><strong>Deux relecteurs indépendants</strong> à yeux neufs : un sur le cœur compilateur et le code neuf (delta/couverture), un sur le serveur de langage. Chaque défaut ci-dessous est marqué <span class="tag">reproduit</span> ou <span class="tag">raisonné</span>.</li>
+    <li><strong>Regard critique assumé</strong> : quand un correctif de cette session a laissé ou créé un angle mort, c'est signalé <span class="tag">issu du dernier cycle</span> — un correctif qui déplace le défaut d'un cran mérite d'être dit.</li>
+  </ul>
+
+  <!-- 2 -->
+  <h2 id="tient"><span class="num">02</span>Ce qui tient (vérifié)</h2>
+  <p>Contrairement à la 2<sup>e</sup> revue, ces points ne sont plus des promesses de commentaires — ils ont été <strong>rejoués</strong> :</p>
+  <div class="grid cols-2" style="margin-top:8px">
+    <div class="card"><h3 style="color:var(--ok)">Langage &amp; compilateur</h3><ul class="tight">
+      <li>Tous les bugs de langage de la 2<sup>e</sup> revue corrigés <strong>et testés</strong> (soustraction, portée des <code>let</code>, interpolation à jetons stricts, overflow décimal localisé).</li>
+      <li>Includes en losange dédupliqués (<em>include-once</em>), casse selon le système de fichiers, profondeur bornée.</li>
+      <li>Deep-merge multi-blocs correct ; <code>:=</code>, conditionnelles, <code>for</code>, member-access opérationnels.</li>
+      <li>Sortie <strong>delta</strong> par défaut, fidèle au layering .NET ; mode complet en option.</li>
+    </ul></div>
+    <div class="card"><h3 style="color:var(--ok)">Outillage &amp; tests</h3><ul class="tight">
+      <li>Snapshot immuable capturé une seule fois dans les 4 handlers LSP — <strong>plus de course</strong> texte/AST (confirmé par relecture).</li>
+      <li>Navigation cross-fichier et outline corrects (chemins propagés, symboles inclus filtrés).</li>
+      <li>Extensions : VSIX VS Code fonctionnel, process LSP VS géré, runtime .NET 10 détecté avec message actionnable.</li>
+      <li>Couverture de tests réelle : 262 tests, assertions d'exception typées, projet CLI black-box, <code>CoverageAnalyzer</code> unitairement testé (déterministe, sans faux positif sur les clés de base).</li>
+    </ul></div>
+  </div>
+
+  <!-- 3 -->
+  <h2 id="defauts"><span class="num">03</span>Défauts trouvés à froid</h2>
+
+  <h3>🔴 Élevés</h3>
+
+  <div class="callout bad">
+    <div class="t">Le serveur de langage ne montre ni erreurs sémantiques ni dérive de couverture <span class="tag">reproduit</span></div>
+    <code>SettexDocument.Parse</code> s'arrête après la résolution des includes : il ne lance <strong>jamais</strong> l'<code>Evaluator</code> ni le <code>CoverageAnalyzer</code>. Conséquence : une variable indéfinie, un débordement, un conflit de type — <strong>et surtout la dérive inter-environnements</strong> — ne produisent <strong>aucun souligné dans l'éditeur</strong>. La fonctionnalité phare (« tu as oublié cette clé en prod ») n'apparaît qu'au CLI/build, jamais là où l'utilisateur écrit sa config. C'est le plus gros écart valeur ↔ UX.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (Parse) — correctif : évaluer + analyser la couverture et publier ces diagnostics (dont les warnings)</div>
+  </div>
+
+  <div class="callout bad">
+    <div class="t">La sémantique « les tableaux se remplacent » est fausse à l'exécution <span class="tag">reproduit</span></div>
+    Base <code class="sx">Hosts = ["a","b","c"]</code>, env <code class="sx">Hosts = ["x"]</code>. Settex présente le remplacement complet (le <code>Merger</code> l'applique). Mais .NET aplatit les tableaux en clés indexées (<code>Hosts:0/1/2</code>) et superpose <strong>par index</strong> les deux fichiers → valeur effective <code class="sx">["x","b","c"]</code>, pas <code class="sx">["x"]</code>. Vrai en mode <strong>delta ET <code>--merged</code></strong> (le fichier de base contient toujours le tableau). Aucun avertissement, aucune doc du piège. Le format ne peut pas exprimer « raccourcir un tableau » à travers les couches.
+    <div class="fp">src/Settex.Core/Writing/JsonWriter.cs · Merger.cs — au minimum : documenter le piège ; idéalement, avertir quand un env raccourcit un tableau présent en base</div>
+  </div>
+
+  <div class="callout bad">
+    <div class="t">Un conflit de type remonte en « Unexpected error » sans localisation <span class="tag">reproduit</span></div>
+    <code>MergerException</code> n'hérite pas d'<code>EvaluatorException</code>, donc le try/catch de la phase 3 ne l'attrape pas et il tombe dans le catch-all. Sur <code class="sx">settings { Foo = 1 } settings { Foo { Bar = 2 } }</code> (cas fréquent via includes), l'erreur devient « Unexpected error during compilation: Type mismatch… » <strong>sans ligne/colonne</strong> — exactement le motif corrigé pour l'overflow, mais oublié ici.
+    <div class="fp">src/Settex.Core/Compilation/SettexCompiler.cs:116-129 · Merger.cs — attraper <code>MergerException</code> comme diagnostic localisé</div>
+  </div>
+
+  <h3>🟠 Moyens</h3>
+
+  <div class="callout warn">
+    <div class="t">Le mode delta n'effectue aucune validation de type base ↔ overlay <span class="tag">reproduit</span> <span class="tag">issu du dernier cycle</span></div>
+    Base <code class="sx">Foo = 1</code>, env <code class="sx">Foo { Bar = 2 }</code> : en mode delta (défaut) ça compile et écrit un JSON <strong>incohérent</strong> (base <code>Foo:1</code> + env <code>Foo:Bar:2</code>), qui casse le binding .NET. Le <strong>même</strong> fichier est <strong>rejeté</strong> en <code>--merged</code>. La validité dépend donc d'un drapeau de sortie, et c'est le défaut par défaut qui masque le problème — parce que les overlays ne sont jamais fusionnés contre la base en mode delta.
+    <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs · JsonWriter.cs — valider la compatibilité base/overlay indépendamment du mode</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Ranges de symboles mono-ligne → containment LSP violée <span class="tag">raisonné</span></div>
+    <code>LocationToRange</code> reste mono-ligne (<code>SourceLocation</code> sans EndLine/EndColumn). <code>DocumentSymbol</code> l'utilise pour le <code>Range</code> des blocs <code>settings</code>/<code>env</code>/imbriqués : un bloc lignes 2-40 a un range = ligne 2, alors que ses enfants sont lignes 3-39, donc <strong>hors</strong> du parent. Le LSP exige l'inclusion des ranges enfants → breadcrumbs / sticky-scroll / outline cassés ou mal imbriqués selon le client.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (LocationToRange) — nécessite EndLine/EndColumn dans SourceLocation (change Core)</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">L'étendue de scope sous-couvre les lignes de fin / accolade <span class="tag">raisonné</span> <span class="tag">issu du dernier cycle</span></div>
+    Le nouveau calcul d'étendue ne pousse <code>EndLine</code> que par la ligne de <strong>début</strong> des nœuds traversés. Toute position entre la dernière ligne de contenu et le <code>}</code> fermant (lignes vides, accolade) retombe sur le scope <strong>parent</strong> ; un <code class="sx">env { settings {} }</code> vide ne couvre que sa ligne de déclaration. Impact borné (les identifiants sont sur des lignes couvertes, donc def/hover marchent en général) — mais c'est le défaut miroir de l'ancienne heuristique <code>+1000</code>.
+    <div class="fp">src/Settex.LanguageServer/ScopeInfo.cs · ScopeResolver.cs — étendre jusqu'à la ligne de l'accolade fermante</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Go-to-definition in-file sur doc enregistré : URI reconstruite, casse possiblement altérée <span class="tag">raisonné</span> <span class="tag">issu du dernier cycle</span></div>
+    <code>ToLspLocation</code> reconstruit l'URI depuis le chemin FS (<code>FromFileSystemPath</code>) dès que <code>FilePath</code> est non nul — donc même pour un saut dans le fichier courant enregistré, l'URI fait un aller-retour qui peut changer la casse de la lettre de lecteur sur Windows. Le client (VS Code envoie souvent une lettre minuscule) peut alors ouvrir un nouvel onglet au lieu de révéler. Les docs non enregistrés (<code>FilePath == null</code>) retombent correctement sur l'URI de la requête.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (ToLspLocation) — réutiliser l'URI de la requête pour le fichier courant</div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Aucun moyen d'émettre un <code>${…}</code> littéral — <code>$</code> n'a pas d'échappement <span class="tag">reproduit</span></div>
+    L'interpolation se déclenche sur un simple <code>str.Contains("${")</code>, et l'échappement du lexer se limite à <code>\" \\ \n \r \t</code> (<code>\$</code> lève « Invalid escape sequence »). Toute chaîne contenant légitimement <code>${…}</code> (templates shell/docker-compose, regex, jetons .NET) est forcée en interpolation : <code class="sx">"${HOME}"</code> échoue « Variable 'HOME' is not defined » sans échappatoire évidente.
+    <div class="fp">src/Settex.Core/Lexer/Lexer.cs · Parser.cs — supporter <code>\$</code> ou <code>$${</code></div>
+  </div>
+
+  <h3>🟡 Faibles</h3>
+  <ul class="tight">
+    <li><strong>Couverture — clé présente dans <em>tous</em> les env mais pas la base</strong> : jamais signalée <span class="tag">reproduit</span>. Défendable comme choix, mais c'est précisément la dérive qui mord quand on <em>ajoute</em> un nouvel environnement. À trancher explicitement.</li>
+    <li><strong>Couverture — conflit objet/feuille</strong> : <code class="sx">Shape = 1</code> (Dev) vs <code class="sx">Shape { Inner = 2 }</code> (Prod) produit deux avertissements contradictoires (« Shape absent de Prod », « Shape.Inner absent de Dev ») sans jamais nommer le vrai problème (un conflit de type) <span class="tag">reproduit</span>.</li>
+    <li><strong>Scanner d'accolades d'interpolation</strong> ignore les chaînes internes : <code class="sx">"${ y == \"}\" }"</code> s'arrête sur le <code>}</code> dans la chaîne interne <span class="tag">raisonné</span>.</li>
+    <li><strong>Dédup/cycle d'includes</strong> comparent des chemins <code>GetFullPath</code> : liens symboliques/durs et noms courts 8.3 peuvent les contourner (borné par <code>MaxIncludeDepth</code>, donc pas de blocage) <span class="tag">raisonné</span>.</li>
+    <li><strong>LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés ; pas de re-parse quand un fichier inclus change <span class="tag">raisonné</span>.</li>
+    <li><strong>LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> → go-to-def sur l'itérateur saute vers une variable homonyme externe <span class="tag">raisonné</span>.</li>
+    <li><strong>LSP : handlers sans try/catch</strong> ; <code>LocationToRange</code> calcule <code>Column-1</code> → une colonne 0 produirait une position négative <span class="tag">raisonné</span>.</li>
+    <li><strong>Highlighter des docs ignore les commentaires <code>#</code></strong> (Settex en supporte deux styles) — latent, aucun exemple actuel ne l'utilise <span class="tag">reproduit</span>.</li>
+  </ul>
+
+  <!-- 4 -->
+  <h2 id="composant"><span class="num">04</span>Évaluation par composant</h2>
+  <div style="margin:8px 0 20px">
+    <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture solides ; piège des tableaux &amp; validation delta manquante</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">plomberie assainie, mais aucun diagnostic sémantique/couverture en éditeur</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Site de documentation</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">coloration, i18n, SEO de base ; i18n dupliqué &amp; pas de pré-rendu</span><div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:12px 0"><b>Tests &amp; CI</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">262 tests, assertions typées, CLI &amp; couverture testés</span><div class="bar"><i style="width:80%"></i></div></div>
+  </div>
+
+  <!-- 5 -->
+  <h2 id="verdict"><span class="num">05</span>Verdict &amp; priorités</h2>
+  <p>Le projet a franchi un vrai palier depuis la 2<sup>e</sup> revue : le cœur du langage est <strong>correct et couvert</strong>, l'écosystème d'extensions <strong>fonctionne</strong>, et le modèle de sortie répond enfin au problème d'origine (la dérive de configuration). La note remonte à <strong>7,2</strong> parce que ces gains sont réels et vérifiés, pas décrétés.</p>
+  <p>Il reste en <strong>bêta soignée</strong> pour trois raisons honnêtes : (1) la couche <strong>éditeur ne montre pas les diagnostics qui comptent</strong> — évaluation et couverture — ce qui vide en partie la promesse de l'IDE ; (2) le <strong>piège d'indexation des tableaux</strong> de .NET fait mentir une sémantique documentée, dans les deux modes ; (3) quelques <strong>trous de robustesse</strong> (conflit de type non localisé, validation delta absente) qui, ironiquement, incluent des angles morts des correctifs de ce cycle.</p>
+
+  <h3>Priorités recommandées</h3>
+  <table>
+    <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3) ; valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>3</td><td>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>4</td><td>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>7</td><td>Publication marketplace (VS + VS Code) ; dépendance SDK .NET 10 <em>preview</em> à retirer à la sortie stable</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+    </tbody>
+  </table>
+
+  <footer>
+    Troisième revue Settex · menée à froid sur <code>main</code> @ d6e035a le 19 juillet 2026 · méthode : reproduction CLI + deux relecteurs adversariaux indépendants (cœur compilateur, serveur de langage). Chaque défaut est marqué <em>reproduit</em> ou <em>raisonné</em> ; les angles morts hérités du dernier cycle de correctifs sont signalés comme tels. À rapprocher de l'<a href="etat-des-lieux.html">état des lieux</a> (1<sup>re</sup>) et de la <a href="revue-technique.html">revue technique</a> (2<sup>e</sup>).
+  </footer>
+
+</div>
+</body>
+</html>
