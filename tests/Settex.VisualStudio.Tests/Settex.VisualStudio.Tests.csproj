@@ -22,6 +22,8 @@
   <ItemGroup>
     <Compile Include="..\..\extensions\vs-settex\Settex.VisualStudio\SettexCliInvocation.cs"
              Link="SettexCliInvocation.cs" />
+    <Compile Include="..\..\extensions\vs-settex\Settex.VisualStudio\DotNetRuntime.cs"
+             Link="DotNetRuntime.cs" />
   </ItemGroup>
 
 </Project>

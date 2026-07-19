@@ -1,5 +1,7 @@
+import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { promisify } from 'util';
 import * as vscode from 'vscode';
 import {
     LanguageClient,
@@ -8,7 +10,52 @@ import {
     TransportKind
 } from 'vscode-languageclient/node';
 
+const execFileAsync = promisify(execFile);
+
+/** Download page shown when the required .NET runtime is missing. */
+const DOTNET_DOWNLOAD_URL = 'https://dotnet.microsoft.com/download/dotnet/10.0';
+
+/**
+ * The shared-framework line prefix that indicates a .NET 10 runtime. The trailing
+ * dot avoids matching e.g. "Microsoft.NETCore.App 100.x".
+ */
+const REQUIRED_RUNTIME_PREFIX = 'Microsoft.NETCore.App 10.';
+
 let client: LanguageClient;
+
+type RuntimeCheck = { ok: true } | { ok: false; detail: string };
+
+/**
+ * Verifies the .NET 10 runtime (which the language server needs) is installed by
+ * running `dotnet --list-runtimes`. Returns a reason when it is unavailable so the
+ * caller can show an actionable message instead of an opaque start failure.
+ */
+async function checkDotnetRuntime(): Promise<RuntimeCheck> {
+    let stdout: string;
+
+    try {
+        ({ stdout } = await execFileAsync('dotnet', ['--list-runtimes']));
+    } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        return {
+            ok: false,
+            detail: `The .NET CLI ('dotnet') was not found on your PATH (${reason}).`
+        };
+    }
+
+    const hasNet10 = stdout
+        .split(/\r?\n/)
+        .some(line => line.trim().startsWith(REQUIRED_RUNTIME_PREFIX));
+
+    if (!hasNet10) {
+        return {
+            ok: false,
+            detail: `The .NET 10 runtime was not found ('dotnet --list-runtimes' listed no ${REQUIRED_RUNTIME_PREFIX}x).`
+        };
+    }
+
+    return { ok: true };
+}
 
 /**
  * Resolves the Settex language server DLL.
@@ -33,7 +80,7 @@ function resolveServerModule(context: vscode.ExtensionContext): string | undefin
  * Settex VS Code Extension
  * Provides syntax highlighting, snippets, and Language Server support for Settex files
  */
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     console.log('Settex extension is now active');
 
     // Language Server setup
@@ -44,6 +91,25 @@ export function activate(context: vscode.ExtensionContext) {
             'Settex language server not found. Syntax highlighting and snippets remain available, ' +
             'but IntelliSense and diagnostics are disabled.'
         );
+        return;
+    }
+
+    // The server is a .NET 10 app. Check the runtime up front so a missing runtime
+    // yields an actionable message instead of an opaque start failure.
+    const runtimeCheck = await checkDotnetRuntime();
+
+    if (!runtimeCheck.ok) {
+        const openDownload = 'Download .NET 10';
+        const choice = await vscode.window.showErrorMessage(
+            `Settex IntelliSense could not start: the .NET 10 runtime is unavailable. ${runtimeCheck.detail} ` +
+            'Syntax highlighting and snippets still work.',
+            openDownload
+        );
+
+        if (choice === openDownload) {
+            vscode.env.openExternal(vscode.Uri.parse(DOTNET_DOWNLOAD_URL));
+        }
+
         return;
     }
 

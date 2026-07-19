@@ -10,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Utilities;
 
@@ -81,6 +83,15 @@ public class SettexLanguageClient : ILanguageClient, IDisposable
             return null;
         }
 
+        // The server is a .NET 10 app. Check the runtime up front so a missing
+        // runtime yields an actionable message instead of an opaque start failure.
+        if (!DotNetRuntime.IsAvailable(out var runtimeDetail))
+        {
+            Debug.WriteLine($"Settex Language Server disabled - .NET 10 runtime unavailable: {runtimeDetail}");
+            await this.ShowRuntimeMissingMessageAsync(runtimeDetail);
+            return null;
+        }
+
         var processStartInfo = new ProcessStartInfo
         {
             FileName = "dotnet",
@@ -136,6 +147,46 @@ public class SettexLanguageClient : ILanguageClient, IDisposable
         process.BeginErrorReadLine();
 
         return new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream);
+    }
+
+    /// <summary>
+    /// Shows an actionable message when the .NET 10 runtime the server needs is
+    /// missing, offering to open the download page. Syntax highlighting keeps
+    /// working; only the language-server features are disabled.
+    /// </summary>
+    /// <param name="detail">Human-readable reason from the runtime check.</param>
+    private async Task ShowRuntimeMissingMessageAsync(string detail)
+    {
+        try
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var message =
+                "Settex IntelliSense could not start because the .NET 10 runtime is unavailable.\n\n" +
+                $"{detail}\n\n" +
+                "Syntax highlighting and snippets still work. Click OK to open the .NET 10 download page, " +
+                "then reload the window once it is installed.";
+
+            var result = VsShellUtilities.ShowMessageBox(
+                ServiceProvider.GlobalProvider,
+                message,
+                "Settex Language Server",
+                OLEMSGICON.OLEMSGICON_WARNING,
+                OLEMSGBUTTON.OLEMSGBUTTON_OKCANCEL,
+                OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+
+            const int idok = 1; // Win32 IDOK
+
+            if (result == idok)
+            {
+                Process.Start(new ProcessStartInfo(DotNetRuntime.DownloadUrl) { UseShellExecute = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            // Never let a notification failure break activation.
+            Debug.WriteLine($"Failed to show the .NET runtime message: {ex.Message}");
+        }
     }
 
     /// <summary>
