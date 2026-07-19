@@ -85,7 +85,9 @@ public static class CoverageAnalyzer
                 diagnostics.Add(new Diagnostic(
                     DiagnosticSeverity.Warning,
                     $"Key '{key}' is set in {Quote(definedIn)} but missing from {Quote(missingIn)}, and is not in the base settings. " +
-                    "Add it to the base 'settings' block or to the missing environment(s) to keep configuration consistent."));
+                    "Add it to the base 'settings' block or to the missing environment(s) to keep configuration consistent.",
+                    keyPath: key,
+                    environmentName: definedIn[0]));
             }
         }
 

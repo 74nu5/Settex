@@ -339,6 +339,20 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             foreach (var letNode in s.Variables)
             {
+                // Un itérateur de boucle est enregistré comme un let synthétique dont la
+                // "valeur" est la collection parcourue. Le lier ici ferait pointer son
+                // nom sur le tableau entier, si bien que toute autre variable du corps
+                // qui le référence (let inner = svc.Name) serait évaluée contre un
+                // tableau et affichée comme une valeur sûre… et fausse. Un itérateur n'a
+                // pas de valeur unique : on le laisse non lié, et les variables qui en
+                // dépendent échouent à s'évaluer — ce que le hover signale honnêtement
+                // au lieu d'inventer. Le survol de l'itérateur lui-même est traité à
+                // part, par FormatIteratorHover.
+                if (s.Type == ScopeType.ForLoop && letNode.Name == s.Name)
+                {
+                    continue;
+                }
+
                 try
                 {
                     // Évaluer la variable avec le scope courant
