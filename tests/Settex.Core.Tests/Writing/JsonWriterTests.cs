@@ -98,7 +98,7 @@ public sealed class JsonWriterTests
 
         try
         {
-            // Act
+            // Act — default is delta output.
             writer.WriteSettings(model, outputDir);
 
             // Assert
@@ -108,7 +108,49 @@ public sealed class JsonWriterTests
             await Assert.That(File.Exists(baseFile)).IsTrue();
             await Assert.That(File.Exists(devFile)).IsTrue();
 
+            // Base holds the base-only key; the environment file holds only its override.
+            await Assert.That(await File.ReadAllTextAsync(baseFile)).Contains("ApplicationName");
+
             var devContent = await File.ReadAllTextAsync(devFile);
+            await Assert.That(devContent).Contains("Debug");
+            await Assert.That(devContent).DoesNotContain("ApplicationName");
+        }
+        finally
+        {
+            this.CleanupDirectory(outputDir);
+        }
+    }
+
+    [Test]
+    public async Task WriteSettings_MergeEnvironments_WritesFullConfigPerEnvironment()
+    {
+        // Arrange
+        var writer = new JsonWriter();
+        var model = new SettingsModel(new()
+            {
+                ["ApplicationName"] = "TestApp",
+            },
+            new()
+            {
+                ["Development"] = new()
+                {
+                    ["Logging"] = new JsonObject
+                    {
+                        ["LogLevel"] = new JsonObject { ["Default"] = "Debug" },
+                    },
+                },
+            }
+        );
+
+        var outputDir = this.GetTempDirectory();
+
+        try
+        {
+            // Act — opt in to full merged environment files.
+            writer.WriteSettings(model, outputDir, mergeEnvironments: true);
+
+            // Assert — the environment file now carries the base key too.
+            var devContent = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Development.json"));
             await Assert.That(devContent).Contains("ApplicationName");
             await Assert.That(devContent).Contains("Debug");
         }

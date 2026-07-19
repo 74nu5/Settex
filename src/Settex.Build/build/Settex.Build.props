@@ -11,6 +11,12 @@
     
     <!-- Enable/disable Settex compilation (enabled by default) -->
     <EnableSettexCompilation Condition="'$(EnableSettexCompilation)' == ''">true</EnableSettexCompilation>
+
+    <!-- Environment files hold only their overrides (delta) by default; set true for full merged files -->
+    <SettexMergeEnvironments Condition="'$(SettexMergeEnvironments)' == ''">false</SettexMergeEnvironments>
+
+    <!-- Warn about keys set for some environments but missing from others (enabled by default) -->
+    <SettexCheckCoverage Condition="'$(SettexCheckCoverage)' == ''">true</SettexCheckCoverage>
   </PropertyGroup>
 
   <ItemGroup>

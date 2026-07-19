@@ -30,19 +30,37 @@ internal static class Program
 
         buildCommand.AddOption(outputOption);
 
-        buildCommand.SetHandler(ExecuteBuildAsync, fileArgument, outputOption);
+        var mergedOption = new Option<bool>(
+            ["--merged"],
+            description: "Write the full merged config in each environment file instead of only its overrides");
+
+        buildCommand.AddOption(mergedOption);
+
+        var noCoverageOption = new Option<bool>(
+            ["--no-coverage-check"],
+            description: "Disable the cross-environment coverage check (keys set in some environments but not others)");
+
+        buildCommand.AddOption(noCoverageOption);
+
+        buildCommand.SetHandler(ExecuteBuildAsync, fileArgument, outputOption, mergedOption, noCoverageOption);
 
         rootCommand.AddCommand(buildCommand);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task<int> ExecuteBuildAsync(FileInfo sourceFile, DirectoryInfo? outputDirectory)
+    private static async Task<int> ExecuteBuildAsync(FileInfo sourceFile, DirectoryInfo? outputDirectory, bool merged, bool noCoverageCheck)
     {
-        return await Task.Run(() => ExecuteBuild(sourceFile, outputDirectory ?? new DirectoryInfo(".")));
+        var options = new CompilerOptions
+        {
+            MergeEnvironments = merged,
+            CheckCoverage = !noCoverageCheck,
+        };
+
+        return await Task.Run(() => ExecuteBuild(sourceFile, outputDirectory ?? new DirectoryInfo("."), options));
     }
 
-    private static int ExecuteBuild(FileInfo sourceFile, DirectoryInfo outputDirectory)
+    private static int ExecuteBuild(FileInfo sourceFile, DirectoryInfo outputDirectory, CompilerOptions options)
     {
         if (!sourceFile.Exists)
         {
@@ -73,7 +91,7 @@ internal static class Program
                         });
 
         var compiler = new SettexCompiler();
-        var result = compiler.Compile(sourceFile.FullName, outputDirectory.FullName);
+        var result = compiler.Compile(sourceFile.FullName, outputDirectory.FullName, options);
 
         if (result.Diagnostics.Count > 0)
         {

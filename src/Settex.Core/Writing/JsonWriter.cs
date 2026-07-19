@@ -28,9 +28,15 @@ public sealed class JsonWriter
     /// </summary>
     /// <param name="model">Settings model to write.</param>
     /// <param name="outputDirectory">Directory where files will be written.</param>
+    /// <param name="mergeEnvironments">
+    ///     When <c>true</c>, each environment file contains the full merged config
+    ///     (base + overlay). When <c>false</c> (the default), it contains only the
+    ///     environment's overrides, layered on top of <c>appsettings.json</c> by .NET
+    ///     configuration at runtime.
+    /// </param>
     /// <returns>List of generated file paths.</returns>
     /// <exception cref="JsonWriterException">Thrown when writing fails.</exception>
-    public List<string> WriteSettings(SettingsModel model, string outputDirectory)
+    public List<string> WriteSettings(SettingsModel model, string outputDirectory, bool mergeEnvironments = false)
     {
         var generatedFiles = new List<string>();
 
@@ -55,11 +61,14 @@ public sealed class JsonWriter
         {
             ValidateEnvironmentName(envName);
 
-            // Merge base with environment overlay
-            var merged = this.merger.Merge(model.BaseSettings, overlay);
+            // Delta (default): write only the environment's overrides, which .NET
+            // layers on top of appsettings.json. Merged (opt-in): the full config.
+            var content = mergeEnvironments
+                ? this.merger.Merge(model.BaseSettings, overlay)
+                : overlay;
 
             var fileName = $"appsettings.{envName}.json";
-            var path = WriteJsonFile(merged, outputDirectory, fileName);
+            var path = WriteJsonFile(content, outputDirectory, fileName);
             generatedFiles.Add(path);
         }
 

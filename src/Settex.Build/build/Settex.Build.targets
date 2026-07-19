@@ -29,8 +29,10 @@
     <Message Text="Compiling Settex files..." Importance="High" />
     
     <!-- Compile each .settex file -->
-    <CompileSettexTask SourceFile="%(SettexFile.FullPath)" 
-                       OutputDirectory="$(SettexOutputDirectory)">
+    <CompileSettexTask SourceFile="%(SettexFile.FullPath)"
+                       OutputDirectory="$(SettexOutputDirectory)"
+                       MergeEnvironments="$(SettexMergeEnvironments)"
+                       CheckCoverage="$(SettexCheckCoverage)">
       <Output TaskParameter="GeneratedFiles" ItemName="FileWrites" />
     </CompileSettexTask>
 

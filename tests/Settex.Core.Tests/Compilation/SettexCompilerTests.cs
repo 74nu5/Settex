@@ -27,13 +27,13 @@ public class SettexCompilerTests
     /// Compiles a source string through the full compiler and returns the parsed
     /// content of a generated output file. Throws if compilation fails.
     /// </summary>
-    private static async Task<JsonElement> CompileAndReadAsync(string tempDir, string source, string outputFileName)
+    private static async Task<JsonElement> CompileAndReadAsync(string tempDir, string source, string outputFileName, CompilerOptions? options = null)
     {
         var sourceFile = Path.Combine(tempDir, "appsettings.settex");
         var outputDir = Path.Combine(tempDir, "output");
         await File.WriteAllTextAsync(sourceFile, source);
 
-        var result = new SettexCompiler().Compile(sourceFile, outputDir);
+        var result = new SettexCompiler().Compile(sourceFile, outputDir, options);
         if (!result.Success)
         {
             throw new InvalidOperationException(
@@ -605,12 +605,58 @@ settings {
                 }
                 """;
 
-            var baseRoot = await CompileAndReadAsync(tempDir, source, "appsettings.json");
+            // Merged output so the effective per-environment config can be asserted.
+            var merged = new CompilerOptions { MergeEnvironments = true };
+
+            var baseRoot = await CompileAndReadAsync(tempDir, source, "appsettings.json", merged);
             await Assert.That(baseRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(8080L);
 
             // := in the overlay must not override the value already set in base.
-            var prodRoot = await CompileAndReadAsync(tempDir, source, "appsettings.Production.json");
+            var prodRoot = await CompileAndReadAsync(tempDir, source, "appsettings.Production.json", merged);
             await Assert.That(prodRoot.GetProperty("Server").GetProperty("Port").GetInt64()).IsEqualTo(8080L);
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_EnvOnlyKeyMissingElsewhere_WarnsButSucceeds()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            const string source = """
+                settings { ApplicationName = "MyApp" }
+
+                env "Development" {
+                  settings { DevOnly.Flag = true }
+                }
+
+                env "Production" {
+                  settings { Logging.LogLevel.Default = "Warning" }
+                }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            // Coverage drift is advisory: a warning, not a failure.
+            await Assert.That(result.Success).IsTrue();
+            await Assert.That(result.Warnings.Any(w => w.Message.Contains("DevOnly.Flag"))).IsTrue();
+
+            // Default output is delta: the environment file omits the base key.
+            var devContent = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Development.json"));
+            await Assert.That(devContent).DoesNotContain("ApplicationName");
+
+            // The check can be turned off.
+            var quiet = new SettexCompiler().Compile(
+                sourceFile, outputDir, new CompilerOptions { CheckCoverage = false });
+            await Assert.That(quiet.Warnings.Any(w => w.Message.Contains("DevOnly.Flag"))).IsFalse();
         }
         finally
         {
@@ -624,6 +670,7 @@ settings {
         var tempDir = this.GetTempDirectory();
         try
         {
+            // Merged output so the effective per-environment config can be asserted.
             var prodRoot = await CompileAndReadAsync(tempDir, """
                 settings {
                   Database { Host = "localhost" Port = 5432 }
@@ -636,7 +683,7 @@ settings {
                     Tags = ["prod"]
                   }
                 }
-                """, "appsettings.Production.json");
+                """, "appsettings.Production.json", new CompilerOptions { MergeEnvironments = true });
 
             var db = prodRoot.GetProperty("Database");
             await Assert.That(db.GetProperty("Host").GetString()).IsEqualTo("prod-server");
