@@ -416,3 +416,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Output of an ad-hoc `settex build` run at the repository root. Anchored with a
+# leading slash so the real, tracked samples under samples/ are unaffected.
+/appsettings.json
+/appsettings.*.json
+/debug_*.settex
