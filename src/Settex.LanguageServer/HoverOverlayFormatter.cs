@@ -331,7 +331,7 @@ public static class HoverOverlayFormatter
         try
         {
             var evaluator = new Evaluator();
-            var model = evaluator.Evaluate(ast);
+            var model = evaluator.Evaluate(ast, requireSettingsBlock: false);
             logger?.LogTrace("[FORMATTER-EVAL] Evaluation successful. BaseSettings={HasBase}, Overlays={Count}",
                 model.BaseSettings != null ? "present" : "null",
                 model.EnvironmentOverlays.Count);
