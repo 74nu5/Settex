@@ -67,12 +67,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
 
             if (letNode != null)
             {
-                var range = SettexDocument.LocationToRange(letNode.Location);
-                var location = new Location
-                {
-                    Uri = request.TextDocument.Uri,
-                    Range = range
-                };
+                var location = SettexDocument.ToLspLocation(letNode.Location, request.TextDocument.Uri);
                 return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
             }
         }
@@ -84,12 +79,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
 
         if (envNode != null)
         {
-            var range = SettexDocument.LocationToRange(envNode.Location);
-            var location = new Location
-            {
-                Uri = request.TextDocument.Uri,
-                Range = range
-            };
+            var location = SettexDocument.ToLspLocation(envNode.Location, request.TextDocument.Uri);
             return Task.FromResult<LocationOrLocationLinks?>(new LocationOrLocationLinks(location));
         }
 

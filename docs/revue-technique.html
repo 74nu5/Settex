@@ -92,7 +92,7 @@
 
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
-    <div class="score"><div class="big">238</div><div class="lbl">Tests · 100 % au vert</div></div>
+    <div class="score"><div class="big">240</div><div class="lbl">Tests · 100 % au vert</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">bugs restants (5 corrigés ✅)</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
@@ -123,7 +123,7 @@
   <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
   <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
   <ul class="tight">
-    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 238 tests (215 core + 17 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 240 tests (215 core + 19 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
     <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
     <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
   </ul>
@@ -175,7 +175,7 @@
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">deep-merge OK ; portée &amp; interpolation corrigées</span><div class="bar"><i style="width:70%"></i></div></div>
-    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">snapshot, portée, URI &amp; logs corrigés ; reste perf/cross-fichier</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 6.5/10 <span style="color:var(--muted);font-size:.85rem">snapshot, portée, URI, logs &amp; cross-fichier corrigés ; reste perf/cache</span><div class="bar"><i style="width:65%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 5.5/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save solide, mais 2 bugs LSP</span><div class="bar"><i style="width:55%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 2/10 <span style="color:var(--muted);font-size:.85rem">VSIX non fonctionnel à l'installation</span><div class="bar"><i style="width:20%"></i></div></div>
     <div style="margin:12px 0"><b>Site de documentation</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">propre, mais FOUC / SEO / i18n dupliqué</span><div class="bar"><i style="width:60%"></i></div></div>
@@ -192,7 +192,7 @@
   </div>
   <ul class="tight">
     <li><strong>✅ Résolution de portée corrigée</strong> : <code>ContainsPosition</code> n'avale plus ~1000 lignes en dur — <code>ScopeResolver</code> calcule désormais l'<strong>étendue réelle</strong> de chaque scope (dernière ligne de contenu ; le global couvre tout le fichier), donc la résolution avec plusieurs <code>env</code> est correcte. <em>Reste</em> : <code>LocationToRange</code> est encore mono-ligne (<code>SourceLocation</code> sans EndLine/EndColumn) → les <em>ranges de symboles</em> (folding) restent d'une ligne.</li>
-    <li><strong>Navigation cross-fichier cassée</strong> : les includes sont inlinés, mais Definition renvoie l'URI du fichier courant avec les lignes du fichier inclus → pointe au mauvais endroit. <em>(non traité)</em></li>
+    <li><strong>✅ Navigation cross-fichier corrigée</strong> : les includes sont inlinés, mais Definition/References renvoyaient l'URI du fichier courant avec les lignes du fichier inclus → mauvais fichier. <strong>Corrigé</strong> : le fichier principal est lexé avec son vrai chemin FS (au lieu de l'URI), donc chaque nœud porte un <code>FilePath</code> cohérent ; un helper <code>SettexDocument.ToLspLocation</code> construit l'URI depuis <code>FilePath</code> (via <code>DocumentUri.FromFileSystemPath</code>) et retombe sur l'URI courante pour un document non enregistré. Definition et References pointent désormais vers le bon fichier.</li>
     <li><strong>Performance</strong> : reparse complet + <code>File.ReadAllText</code> de tous les includes <strong>à chaque frappe</strong>, sans cache <em>(non traité)</em>. En revanche les <strong>arguments de log <code>Trace</code> les plus coûteux</strong> (<code>string.Join</code>/<code>Select</code>/<code>OfType().Count()</code> sur les chemins chauds de la complétion) sont désormais <strong>✅ protégés par <code>IsEnabled(LogLevel.Trace)</code></strong>.</li>
     <li><strong>✅ URI → chemin corrigé</strong> : le découpage maison (<code>Substring(8)</code>) est remplacé par <code>DocumentUri.Parse(…).GetFileSystemPath()</code> d'OmniSharp → décode le percent-encoding (<code>%20</code>), gère lettres de lecteur et UNC, et renvoie <code>null</code> pour les schémas non-<code>file</code>.</li>
     <li><strong>Manques</strong> : rename, code actions, formatting, semantic tokens, folding, sync incrémental. <em>(non traité)</em></li>
@@ -253,7 +253,7 @@
       <tr><td>2</td><td><s>Corriger le lexer des négatifs</s> — <strong>fait ✅</strong> : le lexer émet toujours <code>Minus</code>, le parser gère unaire/binaire + tests de non-régression</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Vrai block-scoping : <code>CreateChild()</code> par bloc imbriqué + tests</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Client LSP VS : drainer <code>stderr</code>, stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>5</td><td>LSP : <s>généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref/Symbols)</s> · <s>protéger les logs par <code>IsEnabled</code></s> · <s>remplacer <code>UriToFilePath</code> par <code>DocumentUri.GetFileSystemPath()</code></s> · <s>fiabiliser <code>ContainsPosition</code></s> — <strong>fait ✅</strong>. Reste : EndLine/EndColumn dans <code>SourceLocation</code> pour <code>LocationToRange</code> multi-ligne, navigation cross-fichier, cache de reparse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td>LSP : <s>généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref/Symbols)</s> · <s>protéger les logs par <code>IsEnabled</code></s> · <s>remplacer <code>UriToFilePath</code> par <code>DocumentUri.GetFileSystemPath()</code></s> · <s>fiabiliser <code>ContainsPosition</code></s> · <s>navigation cross-fichier</s> — <strong>fait ✅</strong>. Reste : EndLine/EndColumn dans <code>SourceLocation</code> pour <code>LocationToRange</code> multi-ligne, cache de reparse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> · <s>rattraper <code>OverflowException</code> en erreur localisée</s> · <s>borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>8</td><td>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie), assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message), cas CRLF/overflow/sans-espaces/scope</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
@@ -268,7 +268,7 @@
   </div>
 
   <footer>
-    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 238 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 240 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
   </footer>
 </div>
 </body>
