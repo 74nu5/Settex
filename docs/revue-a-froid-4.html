@@ -80,7 +80,7 @@
     <div class="meta">
       <span><b>Date</b> 19 juillet 2026</span>
       <span><b>Stack</b> .NET 10 (LTS) · C#</span>
-      <span><b>Tests</b> 364 · 0 échec</span>
+      <span><b>Tests</b> 371 · 0 échec</span>
       <span><b>CI</b> Linux · Windows · extension</span>
     </div>
   </div>
@@ -91,9 +91,9 @@
 <h2><span class="num">01</span>Verdict</h2>
 
 <div class="score-band">
-  <div class="score"><div class="big">8,2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-warn">−1,2</span></div></div>
-  <div class="score"><div class="big">364</div><div class="lbl">tests, tous verts</div></div>
-  <div class="score"><div class="big">5</div><div class="lbl">défauts élevés <span class="badge b-bad">nouveaux</span></div></div>
+  <div class="score"><div class="big">8,2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note à la publication <span class="badge b-warn">−1,2</span></div></div>
+  <div class="score"><div class="big">371</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">0</div><div class="lbl">défaut élevé restant <span class="badge b-ok">5 corrigés</span></div></div>
   <div class="score"><div class="big">0</div><div class="lbl">avertissement de build</div></div>
 </div>
 
@@ -103,6 +103,16 @@
   <div class="t">Ce que ce cinquième passage établit</div>
   <p style="margin:0 0 8px"><strong>La note mesurait la fermeture d'une liste, pas la densité de défauts.</strong> À chaque revue, les constats de la précédente ont été fermés puis la note remontée — mais chaque nouvelle relecture est allée plus profond que la précédente et a trouvé une nouvelle couche. Une liste vide ne signifie pas un logiciel sans défaut&nbsp;; elle signifie que la dernière méthode d'inspection a épuisé ce qu'elle savait voir.</p>
   <p style="margin:0"><strong>Deux des cinq défauts élevés viennent de correctifs de la campagne précédente</strong>&nbsp;: l'un parce qu'une correction se disait « systémique » sans l'être, l'autre parce que deux correctifs corrects séparément ouvrent un trou une fois combinés.</p>
+</div>
+
+<div class="callout ok">
+  <div class="t">Mise à jour — depuis la publication de cette revue</div>
+  <p style="margin:0 0 8px">Les <strong>cinq défauts élevés sont corrigés</strong>, en trois PR, chacune validée par la CI et accompagnée de tests dont l'échec a été vérifié sur le code non corrigé. 364 → <strong>371 tests</strong>.</p>
+  <ul class="tight" style="margin:0">
+    <li><strong>H1 · H2</strong>&nbsp;— la comparaison de casse est terminée là où elle manquait&nbsp;: dictionnaire des environnements, <code>PathExists</code>, blocs imbriqués. Deux environnements ne différant que par la casse fusionnent désormais, comme le fait déjà le modèle de .NET.</li>
+    <li><strong>H4 · H5</strong>&nbsp;— les deux heuristiques sont remplacées par une seule règle tirée du comportement réel du provider&nbsp;: comparer les jeux de clés aplaties. Elle couvre les index de queue, les champs omis, les tableaux imbriqués et l'élément objet remplacé par un primitif.</li>
+    <li><strong>H3</strong>&nbsp;— un diagnostic n'est plus jamais écarté. Le compromis est assumé&nbsp;: la duplication revient, et c'est préférable à une disparition.</li>
+  </ul>
 </div>
 
 <h2><span class="num">02</span>Vérité terrain</h2>
@@ -124,8 +134,8 @@
 
 <h2><span class="num">03</span>Défauts élevés</h2>
 
-<div class="finding">
-  <h3>H1 — Deux environnements ne différant que par la casse détruisent un overlay <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H1 — Deux environnements ne différant que par la casse détruisent un overlay</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">Evaluator.cs:63 · JsonWriter.cs:71</p>
   <p>Le dictionnaire des overlays compare en ordinal&nbsp;: <code>env "Dev"</code> et <code>env "dev"</code> sont deux environnements. Sur Windows, ils s'écrivent dans le même fichier.</p>
 <pre><code>✓ Successfully generated 3 file(s):
@@ -138,8 +148,8 @@ appsettings.Dev.json : { "A": 200 }   ← l'overlay Dev (A = 100) a disparu</cod
   <p>Perte de données silencieuse, annoncée comme un succès, avec une liste de fichiers qui ment. Le comportement diverge aussi entre plateformes&nbsp;: Linux écrit bien deux fichiers.</p>
 </div>
 
-<div class="finding">
-  <h3>H2 — <code>:=</code> est sensible à la casse et écrase la valeur de base <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H2 — <code>:=</code> est sensible à la casse et écrase la valeur de base</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">Evaluator.cs:309 · PathExists à :351</p>
   <p><code>PathExists</code> compare en ordinal, donc ne voit pas une clé de base orthographiée différemment&nbsp;:</p>
 <pre><code>base     : Timeout = 30      Db { Host = "base" }
@@ -154,8 +164,8 @@ overlay produit : { "timeout": 99, "db": { "Host": "prod" } }</code></pre>
   <p style="margin:0">La campagne précédente a rendu insensibles à la casse les trois analyseurs et <code>ValidateOverlayAgainstBase</code>, en qualifiant le point de «&nbsp;systémique&nbsp;». L'assistant <code>TryGetPropertyIgnoreCase</code> n'a été câblé que dans la validation — ni dans <code>PathExists</code>, ni dans la recherche de base des blocs imbriqués — et le dictionnaire des environnements n'a jamais été touché. Le diagnostic était juste&nbsp;; le correctif s'est arrêté là où le relecteur avait pointé, au lieu d'aller là où le diagnostic menait.</p>
 </div>
 
-<div class="finding">
-  <h3>H3 — Un avertissement de dérive disparaît quand la clé vit dans un fragment sans <code>settings</code> <span class="tag">régression</span> <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H3 — Un avertissement de dérive disparaît quand la clé vit dans un fragment sans <code>settings</code></s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">SettexDocument.cs:192 et :204</p>
   <p>Deux correctifs de la campagne, corrects séparément, ouvrent un trou une fois combinés&nbsp;:</p>
   <ul class="tight">
@@ -165,8 +175,8 @@ overlay produit : { "timeout": 99, "db": { "Host": "prod" } }</code></pre>
   <p>Découper un fichier en include supprime donc, dans l'éditeur, l'avertissement même que Settex existe pour produire. Nuance importante&nbsp;: <strong>le compilateur, lui, avertit toujours</strong> — la divergence est entre l'éditeur et la ligne de commande.</p>
 </div>
 
-<div class="finding">
-  <h3>H4 — L'analyse de superposition rate les tableaux imbriqués dans un élément objet <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H4 — L'analyse de superposition rate les tableaux imbriqués dans un élément objet</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">ArrayLayeringAnalyzer.cs:158</p>
   <p><code>CollectLeaves</code> traite un tableau comme une feuille&nbsp;: si l'override redéfinit le champ, il est réputé couvert. Mais .NET superpose aussi ce tableau interne, par index.</p>
 <pre><code>base : Svcs = [ svc { Name="a"  Tags=["t1","t2","t3"] } ]
@@ -176,8 +186,8 @@ aucun avertissement · runtime : Svcs:0:Tags = ["x","t2","t3"]</code></pre>
   <p>C'est exactement la fuite que l'analyseur existe pour attraper, un niveau plus bas.</p>
 </div>
 
-<div class="finding">
-  <h3>H5 — Un élément objet écrasé par un primitif est réputé «&nbsp;remplacé&nbsp;» <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H5 — Un élément objet écrasé par un primitif est réputé «&nbsp;remplacé&nbsp;»</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">ArrayLayeringAnalyzer.cs:96</p>
   <p>Le <code>continue</code> saute l'index dès que <em>l'un des deux</em> éléments n'est pas un objet, avec un commentaire affirmant que le primitif écrase franchement. Faux&nbsp;: base <code>[ p { Name="base" Port=1 } ]</code> surchargée par <code>[ 5 ]</code> donne à l'exécution <code>Prim:0 = 5</code> <strong>et</strong> <code>Prim:0:Name = base</code>. La garde ne devrait sauter que si l'élément <em>de base</em> n'est pas un objet.</p>
 </div>
@@ -266,9 +276,9 @@ aucun avertissement · runtime : Svcs:0:Tags = ["x","t2","t3"]</code></pre>
 <table>
 <thead><tr><th>#</th><th>Action</th><th>Pourquoi</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>Terminer la comparaison insensible à la casse&nbsp;: environnements, <code>PathExists</code>, blocs imbriqués</td><td>Ferme H1 et H2 d'un coup, dont la seule perte de données silencieuse de la liste.</td></tr>
-<tr><td>2</td><td>Faire tourner les analyseurs sur les fragments, ou ne plus écarter les clés étrangères</td><td>H3&nbsp;: l'éditeur se tait sur la dérive dès qu'on découpe en includes.</td></tr>
-<tr><td>3</td><td>Descendre dans les tableaux imbriqués et corriger la garde du primitif</td><td>H4 et H5&nbsp;: deux fuites réelles que l'outil censé les couvrir laisse passer.</td></tr>
+<tr><td>1</td><td><s>Terminer la comparaison insensible à la casse</s> <span class="badge b-ok">fait</span></td><td>Deux environnements ne différant que par la casse fusionnent&nbsp;; <code>:=</code> voit enfin la clé de base.</td></tr>
+<tr><td>2</td><td><s>Ne plus écarter les clés étrangères</s> <span class="badge b-ok">fait</span></td><td>Un avertissement dupliqué est du bruit&nbsp;; un avertissement manquant est un défaut.</td></tr>
+<tr><td>3</td><td><s>Descendre dans les tableaux imbriqués et corriger la garde du primitif</s> <span class="badge b-ok">fait</span></td><td>Remplacés par la comparaison des clés aplaties, qui couvre toutes les formes d'un coup.</td></tr>
 <tr><td>4</td><td>Fusionner les blocs imbriqués homonymes, ou refuser l'ambiguïté</td><td>M1&nbsp;: perte silencieuse dans un cas plausible avec des includes.</td></tr>
 <tr><td>5</td><td>Traverser les <code>for</code> dans le collecteur de références</td><td>M3&nbsp;: zéro référence pour une variable utilisée dans une boucle.</td></tr>
 <tr><td>6</td><td>Régénérer ou supprimer les sorties commitées de l'exemple</td><td>M6&nbsp;: démonstration fausse, hors solution et hors CI.</td></tr>
