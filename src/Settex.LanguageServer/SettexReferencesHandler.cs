@@ -77,23 +77,15 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         // Inclure la déclaration si demandée
         if (request.Context.IncludeDeclaration)
         {
-            locations.Add(new Location
-            {
-                Uri = request.TextDocument.Uri,
-                Range = SettexDocument.LocationToRange(targetLetNode.Location)
-            });
+            locations.Add(SettexDocument.ToLspLocation(targetLetNode.Location, request.TextDocument.Uri));
         }
 
         // Trouver toutes les références qui résolvent vers cette même définition
         var references = FindScopedReferences(snapshot.Ast, word, targetLetNode, rootScope);
-        
+
         foreach (var reference in references)
         {
-            locations.Add(new Location
-            {
-                Uri = request.TextDocument.Uri,
-                Range = SettexDocument.LocationToRange(reference.Location)
-            });
+            locations.Add(SettexDocument.ToLspLocation(reference.Location, request.TextDocument.Uri));
         }
 
         if (locations.Count == 0)

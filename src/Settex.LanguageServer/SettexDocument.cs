@@ -71,18 +71,23 @@ public class SettexDocument
         IReadOnlyList<Token> tokens = Array.Empty<Token>();
         FileNode? ast = null;
 
+        // Resolve the real filesystem path up front so every token/AST node of the
+        // main file carries it (or null for an unsaved document). This keeps the
+        // FilePath consistent with the included files' nodes, which lets
+        // go-to-definition point at the right file.
+        var filePath = UriToFilePath(uri);
+
         try
         {
             // Phase 1: Lexer
-            var lexer = new Core.Lexer.Lexer(text, uri);
+            var lexer = new Core.Lexer.Lexer(text, filePath);
             tokens = lexer.Tokenize().ToList();
 
             // Phase 2: Parser
-            var parser = new Parser(tokens.ToList());
+            var parser = new Parser(tokens.ToList(), filePath);
             var parsedAst = parser.Parse();
 
             // Phase 2.5: Resolve includes (if file is saved to disk)
-            var filePath = UriToFilePath(uri);
             if (filePath != null)
             {
                 try
@@ -154,6 +159,27 @@ public class SettexDocument
         }
 
         return new Snapshot(text, tokens, ast, diagnostics);
+    }
+
+    /// <summary>
+    /// Construit une LSP <see cref="Location"/> pour une <see cref="SourceLocation"/>,
+    /// en pointant vers le <strong>fichier réel</strong> du symbole. Les nœuds issus
+    /// d'un <c>include</c> portent le chemin du fichier inclus : sans cela, la
+    /// navigation renverrait l'URI du document courant avec les lignes du fichier
+    /// inclus (mauvais fichier). Retombe sur <paramref name="currentUri"/> quand la
+    /// localisation n'a pas de chemin (document non enregistré).
+    /// </summary>
+    public static Location ToLspLocation(SourceLocation location, DocumentUri currentUri)
+    {
+        var uri = string.IsNullOrEmpty(location.FilePath)
+            ? currentUri
+            : DocumentUri.FromFileSystemPath(location.FilePath);
+
+        return new Location
+        {
+            Uri = uri,
+            Range = LocationToRange(location),
+        };
     }
 
     /// <summary>
