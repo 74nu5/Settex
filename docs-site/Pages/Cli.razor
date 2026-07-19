@@ -35,6 +35,21 @@
 <CodeBlock Lang="text" Code="@Structure" />
 <p>@(Fr ? "Ajoutez *.settex au contrôle de version et, soit ignorez le JSON généré, soit committez-le pour le déploiement." : "Add *.settex to source control and either ignore the generated JSON or commit it for deployment.")</p>
 
+<h3 id="delta">@(Fr ? "Fichiers d'environnement : deltas" : "Environment files: deltas")</h3>
+<p>
+    @(Fr
+        ? "Par défaut, chaque appsettings.{Env}.json ne contient que les valeurs qui diffèrent de la base — exactement ce que le layering de configuration .NET superpose par-dessus appsettings.json à l'exécution. Les diffs restent petits et lisibles. Passez "
+        : "By default, each appsettings.{Env}.json contains only the values that differ from the base — exactly what .NET configuration layers on top of appsettings.json at runtime. Diffs stay small and readable. Pass ")<code>--merged</code>@(Fr ? " (ou " : " (or ")<code>SettexMergeEnvironments</code>@(Fr ? ") pour des fichiers d'environnement complets et auto-suffisants." : ") for full, self-contained environment files.")
+</p>
+
+<h3 id="coverage">@(Fr ? "Contrôle de couverture" : "Coverage check")</h3>
+<p>
+    @(Fr
+        ? "Settex avertit quand une clé est définie pour certains environnements mais absente des autres (et de la base) — la dérive typique où l'on ajoute une clé en dev et où l'on oublie la prod. C'est un avertissement, pas une erreur ; désactivez-le avec "
+        : "Settex warns when a key is set for some environments but missing from others (and from the base) — the classic drift where you add a key in dev and forget prod. It is a warning, not an error; turn it off with ")<code>--no-coverage-check</code>@(Fr ? " ou " : " or ")<code>SettexCheckCoverage=false</code>.
+</p>
+<CodeBlock Lang="text" Code="@("appsettings.settex: warning: Key 'DevOnly.Flag' is set in 'Development' but missing from 'Production', and is not in the base settings.")" />
+
 @code {
     private const string CliUsage = """
         # Compile a file (output next to it)
@@ -42,6 +57,12 @@
 
         # Specify an output directory
         settex build config.settex -o ./output
+
+        # Write full merged config in each env file (default: only overrides)
+        settex build appsettings.settex --merged
+
+        # Skip the cross-environment coverage check
+        settex build appsettings.settex --no-coverage-check
 
         # Help
         settex --help
@@ -52,6 +73,12 @@
         <PropertyGroup>
           <!-- Change output directory (default: project root) -->
           <SettexOutputDirectory>$(MSBuildProjectDirectory)\config</SettexOutputDirectory>
+
+          <!-- Full merged env files instead of overrides-only (default: false) -->
+          <SettexMergeEnvironments>false</SettexMergeEnvironments>
+
+          <!-- Warn about keys set in some environments but not others (default: true) -->
+          <SettexCheckCoverage>true</SettexCheckCoverage>
 
           <!-- Disable automatic compilation -->
           <EnableSettexCompilation>false</EnableSettexCompilation>
@@ -66,10 +93,10 @@
 
     private const string Structure = """
         MyProject/
-        ├── appsettings.settex           # source (in version control)
-        ├── appsettings.json             # generated (base)
-        ├── appsettings.Development.json  # generated (base + dev)
-        ├── appsettings.Production.json   # generated (base + prod)
+        ├── appsettings.settex            # source (in version control)
+        ├── appsettings.json              # generated (base)
+        ├── appsettings.Development.json  # generated (dev overrides only)
+        ├── appsettings.Production.json   # generated (prod overrides only)
         └── MyProject.csproj
         """;
 }

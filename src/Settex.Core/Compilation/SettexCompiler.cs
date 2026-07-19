@@ -18,9 +18,11 @@ public sealed class SettexCompiler
     /// </summary>
     /// <param name="sourceFilePath">Path to the .settex source file.</param>
     /// <param name="outputDirectory">Directory where JSON files will be written.</param>
+    /// <param name="options">Compilation options; defaults to <see cref="CompilerOptions.Default"/>.</param>
     /// <returns>Compilation result with diagnostics.</returns>
-    public CompilationResult Compile(string sourceFilePath, string outputDirectory)
+    public CompilationResult Compile(string sourceFilePath, string outputDirectory, CompilerOptions? options = null)
     {
+        options ??= CompilerOptions.Default;
         var diagnostics = new List<Diagnostic>();
 
         try
@@ -126,13 +128,19 @@ public sealed class SettexCompiler
                 return new(false, diagnostics);
             }
 
+            // Phase 3.5: Cross-environment coverage check (advisory warnings).
+            if (options.CheckCoverage)
+            {
+                diagnostics.AddRange(CoverageAnalyzer.Analyze(model));
+            }
+
             // Phase 4: Writing (includes merging via JsonWriter)
             List<string> generatedFiles;
 
             try
             {
                 var writer = new JsonWriter();
-                generatedFiles = writer.WriteSettings(model, outputDirectory);
+                generatedFiles = writer.WriteSettings(model, outputDirectory, options.MergeEnvironments);
             }
             catch (JsonWriterException ex)
             {

@@ -92,7 +92,7 @@
 
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
-    <div class="score"><div class="big">253</div><div class="lbl">Tests · 100 % au vert</div></div>
+    <div class="score"><div class="big">262</div><div class="lbl">Tests · 100 % au vert</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">bugs restants (5 corrigés ✅)</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
@@ -123,7 +123,7 @@
   <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
   <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
   <ul class="tight">
-    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 253 tests (215 core + 22 LSP + 5 CLI + 4 MSBuild + 7 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 262 tests (222 core + 22 LSP + 7 CLI + 4 MSBuild + 7 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
     <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
     <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
   </ul>
@@ -183,7 +183,7 @@
   </div>
 
   <h3>Compilateur</h3>
-  <p><strong>Points forts réels :</strong> pipeline en phases isolées, exceptions typées par phase, records immuables, deep-merge multi-blocs correct et bien testé, écriture conditionnelle idempotente, et surtout des <strong>diagnostics de qualité</strong> (voir §04). <strong>Faiblesses :</strong> les bugs du §02, plus des choix ouverts — les fichiers <code>appsettings.{Env}.json</code> contiennent la config <strong>complète mergée</strong> (base dupliquée dans chaque fichier, redondant avec le layering natif de .NET), les <code>let</code> sont hoistés (utilisables avant déclaration), et un peu de code mort subsiste (<code>Parser.ParseValue</code>, <code>Evaluator.EvaluateLiteral</code>).</p>
+  <p><strong>Points forts réels :</strong> pipeline en phases isolées, exceptions typées par phase, records immuables, deep-merge multi-blocs correct et bien testé, écriture conditionnelle idempotente, et surtout des <strong>diagnostics de qualité</strong> (voir §04). <strong>Faiblesses :</strong> les bugs du §02 ; les <code>let</code> sont hoistés (utilisables avant déclaration) et un peu de code mort subsiste (<code>Parser.ParseValue</code>, <code>Evaluator.EvaluateLiteral</code>). Le modèle de sortie a depuis été <strong>tranché ✅</strong> : delta par défaut (fichiers d'env = overrides seuls, fidèle au layering .NET), mode complet en option, plus un <strong>lint de couverture inter-environnements</strong>.</p>
 
   <h3>Serveur de langage — la plus grande sur-évaluation du 1<sup>er</sup> rapport</h3>
   <div class="callout ok">
@@ -226,14 +226,14 @@
       <tr><td>Clés = identifiants uniquement</td><td>Impossible d'avoir une clé <code>env</code>, <code>for</code>, <code>if</code>… ou contenant <code>:</code> (or <code>Logging:LogLevel</code> est idiomatique en .NET)</td></tr>
       <tr><td>Tableaux : remplacement seul</td><td>Pas d'ajout à une liste à travers les overlays (ex. étendre <code>AllowedHosts</code> par env)</td></tr>
       <tr><td>Pas de <code>else</code>/<code>elif</code></td><td>Conditionnelles verbeuses (fallback + surcharge)</td></tr>
-      <tr><td>Fichiers d'env auto-suffisants</td><td>Base dupliquée dans chaque <code>appsettings.{Env}.json</code> → diffs bruyants, redondance</td></tr>
+      <tr><td><s>Fichiers d'env auto-suffisants</s> ✅ corrigé</td><td>Sortie <strong>delta</strong> par défaut (overrides seuls) ; mode complet en option</td></tr>
       <tr><td><s>Fuite de portée des <code>let</code> imbriqués</s> ✅ corrigé</td><td>Le scope enfant empêche désormais l'écrasement du global</td></tr>
       <tr><td><s>Interpolation : jetons en trop ignorés</s> ✅ corrigé</td><td>Parse complet + erreur sur jeton résiduel, diagnostics ré-ancrés sur la chaîne</td></tr>
     </tbody>
   </table>
 
   <h3>Pertinence produit</h3>
-  <p>Settex concurrence des approches établies (transformations de config .NET, variables d'environnement + <code>dotnet user-secrets</code>, ou des langages comme CUE / Dhall / Jsonnet). Sa niche — un DSL lisible avec overlays et deep-merge pour .NET — est réelle mais étroite. Le choix de générer des fichiers d'env <em>complets</em> (plutôt que des deltas) le met en tension avec le modèle de superposition natif de .NET, ce qui mérite d'être tranché. L'adoption dépendra d'une expérience « ça marche du premier coup » irréprochable — que le bug de soustraction et le VSIX cassé compromettent aujourd'hui.</p>
+  <p>Settex concurrence des approches établies (transformations de config .NET, variables d'environnement + <code>dotnet user-secrets</code>, ou des langages comme CUE / Dhall / Jsonnet). Sa niche — un DSL lisible avec overlays et deep-merge pour .NET — est réelle mais étroite. La sortie génère désormais des <em>deltas par environnement</em> (alignés sur le layering natif de .NET ; mode complet en option), et un lint signale les clés définies dans certains environnements mais pas les autres — la valeur d'usage centrale du projet. L'adoption dépendra d'une expérience « ça marche du premier coup » irréprochable — que le bug de soustraction et le VSIX cassé compromettent aujourd'hui.</p>
 
   <!-- 5 -->
   <h2 id="critique"><span class="num">05</span>Évaluation critique</h2>
@@ -258,7 +258,7 @@
       <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> · <s>rattraper <code>OverflowException</code> en erreur localisée</s> · <s>borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td><s>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</s> — <strong>fait ✅</strong> : <code>dotnet --list-runtimes</code> vérifié avant démarrage ; message avec lien de téléchargement (message box VS OK/Annuler, notification VS Code) ; coloration/snippets restent actifs</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>8</td><td><s>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie)</s> · <s>assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message)</s> · <s>cas overflow/sans-espaces/scope</s> — <strong>fait ✅</strong> (CLI testé in-process : build valide → 0 + JSON, fichier absent → 1, erreur de syntaxe → 1, argument manquant → ≠0). Reste : cas CRLF explicites</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>9</td><td>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET) — décision de design</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
+      <tr><td>9</td><td><s>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET)</s> — <strong>fait ✅</strong> : sortie <strong>delta par défaut</strong> (fichiers d'env = overrides seuls), mode complet en option (<code>--merged</code> / <code>SettexMergeEnvironments</code>). <strong>Bonus</strong> : un <strong>lint de couverture</strong> avertit quand une clé est définie dans certains environnements mais pas les autres (la dérive à l'origine du projet)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>10</td><td>Docs : <s>mettre à jour <code>&lt;html lang&gt;</code> à la bascule</s> · <s>lire la langue avant le 1<sup>er</sup> rendu (anti-FOUC)</s> · <s>brancher une vraie coloration</s> — <strong>fait ✅</strong> (script inline + init synchrone in-process ; highlighter Settex maison, tokens colorés). SEO : meta Open Graph/Twitter + <code>&lt;noscript&gt;</code> ajoutés ; pré-rendu complet <em>volontairement hors périmètre</em> (nécessiterait un hôte SSG pour Blazor WASM)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
     </tbody>
   </table>
@@ -269,7 +269,7 @@
   </div>
 
   <footer>
-    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 253 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 262 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
   </footer>
 </div>
 </body>

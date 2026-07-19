@@ -61,6 +61,56 @@ public class CliTests
     }
 
     [Test]
+    public async Task Build_CoverageDrift_WarnsButSucceeds()
+    {
+        using var workspace = new TempWorkspace();
+        var source = workspace.WriteSource(
+            """
+            settings { ApplicationName = "MyApp" }
+
+            env "Development" {
+                settings { DevOnly.Flag = true }
+            }
+
+            env "Production" {
+                settings { Logging.LogLevel.Default = "Warning" }
+            }
+            """);
+
+        var (exitCode, output) = await RunAsync("build", source, "-o", workspace.OutputDirectory);
+
+        // Drift is advisory: the build still succeeds but surfaces the warning.
+        await Assert.That(exitCode).IsEqualTo(0);
+        await Assert.That(output).Contains("DevOnly.Flag");
+
+        // Default output is delta: the environment file omits the base key.
+        var dev = await File.ReadAllTextAsync(Path.Combine(workspace.OutputDirectory, "appsettings.Development.json"));
+        await Assert.That(dev).DoesNotContain("ApplicationName");
+    }
+
+    [Test]
+    public async Task Build_MergedFlag_IncludesBaseKeyInEnvironmentFile()
+    {
+        using var workspace = new TempWorkspace();
+        var source = workspace.WriteSource(
+            """
+            settings { ApplicationName = "MyApp" }
+
+            env "Development" {
+                settings { Logging.LogLevel.Default = "Debug" }
+            }
+            """);
+
+        var (exitCode, _) = await RunAsync("build", source, "-o", workspace.OutputDirectory, "--merged");
+
+        await Assert.That(exitCode).IsEqualTo(0);
+
+        var dev = await File.ReadAllTextAsync(Path.Combine(workspace.OutputDirectory, "appsettings.Development.json"));
+        await Assert.That(dev).Contains("ApplicationName");
+        await Assert.That(dev).Contains("Debug");
+    }
+
+    [Test]
     public async Task Build_WithoutFileArgument_ReturnsNonZero()
     {
         var (exitCode, _) = await RunAsync("build");
