@@ -16,7 +16,7 @@
         <tr><td>@(Fr ? "Overlay d'environnement" : "Environment overlay")</td><td><code>env "Prod" { settings { … } }</code></td></tr>
         <tr><td>Include</td><td><code>include "./common.settex"</code></td></tr>
         <tr><td>@(Fr ? "Variable" : "Variable")</td><td><code>let host = "localhost"</code></td></tr>
-        <tr><td>Interpolation</td><td><code>"${host}:${port}"</code></td></tr>
+        <tr><td>Interpolation</td><td><code>"${host}:${port}"</code> @(Fr ? "· littéral :" : "· literal:") <code>"$${HOME}"</code></td></tr>
         <tr><td>@(Fr ? "Conditionnelle" : "Conditional")</td><td><code>Level = "Debug" if verbose</code></td></tr>
         <tr><td>Set-if-missing</td><td><code>Port := 8080</code></td></tr>
         <tr><td>@(Fr ? "Boucle for" : "For loop")</td><td><code>[ for x in list { item { … } } ]</code></td></tr>

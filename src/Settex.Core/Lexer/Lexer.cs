@@ -215,6 +215,13 @@ public class Lexer(string source, string? filePath = null)
                     'n' => '\n',
                     'r' => '\r',
                     't' => '\t',
+
+                    // '$' is not an escape: interpolation is escaped with "$${".
+                    // Point the user at the right syntax rather than a bare error.
+                    '$' => throw new LexerException(
+                        "Invalid escape sequence '\\$'. To write a literal \"${\", use \"$${\" instead.",
+                        this.CreateLocation(this.line, this.column, 2)),
+
                     _ => throw new LexerException($"Invalid escape sequence '\\{this.Current}'", this.CreateLocation(this.line, this.column, 2)),
                 };
 

@@ -484,6 +484,15 @@ settings {
 }
 ```
 
+**Escaping** — write `$${` for a literal `${`, so a string can legitimately contain `${...}` without Settex evaluating it:
+
+```settex
+settings {
+  HomePath = "$${HOME}/bin"                    # "${HOME}/bin" — left alone
+  Mixed    = "$${NOT_INTERP} and ${realVar}"   # escape and interpolation in one string
+}
+```
+
 **Note**: Interpolating `null` throws an error. Use null coalescing: `"${value ?? "default"}"`.
 
 > `${...}` is resolved **at compile time** from Settex variables and expressions — it is not a placeholder for runtime environment variables. A name like `${DB_CONNECTION_STRING}` is looked up as a Settex variable and fails if undefined. Inject secrets at deployment time through .NET's environment-variable or user-secrets configuration providers rather than through `.settex`.

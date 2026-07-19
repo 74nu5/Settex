@@ -164,7 +164,13 @@ public class SettexHoverHandler : HoverHandlerBase
 
                     // Formater le nom du scope pour affichage
                     var scopeName = FormatScopeName(activeScope);
-                    var hoverText = FormatVariableHover(word, value, error, scopeName);
+
+                    // Un itérateur de boucle est une variable implicite : sa "valeur"
+                    // est la collection parcourue, pas l'élément courant — le hover le
+                    // dit explicitement plutôt que de laisser croire l'inverse.
+                    var hoverText = IsLoopIterator(activeScope, word)
+                        ? FormatIteratorHover(word, value, error, scopeName)
+                        : FormatVariableHover(word, value, error, scopeName);
 
                     return Task.FromResult<Hover?>(new Hover
                     {
@@ -341,6 +347,44 @@ public class SettexHoverHandler : HoverHandlerBase
             ScopeType.ForLoop => $"For loop (iterator: {scopeInfo.Name})",
             _ => "Unknown"
         };
+    }
+
+    /// <summary>
+    /// Indique si un nom résolu est l'itérateur d'une boucle for englobante.
+    /// </summary>
+    private static bool IsLoopIterator(ScopeInfo? scope, string name)
+    {
+        for (var current = scope; current != null; current = current.Parent)
+        {
+            if (current.Type == ScopeType.ForLoop && current.Name == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Formate le hover d'un itérateur de boucle : il est lié tour à tour à chaque
+    /// élément, donc on montre la collection parcourue plutôt qu'une "valeur".
+    /// </summary>
+    private static string FormatIteratorHover(string name, RuntimeValue? collection, string? error, string scope)
+    {
+        var result = $"**Loop iterator:** `{name}`\n\n";
+        result += $"**Scope:** {scope}\n\n";
+        result += "Bound to each element of the collection in turn.\n\n";
+
+        if (error != null)
+        {
+            result += $"**Error:** {error}";
+        }
+        else if (collection != null)
+        {
+            result += $"**Iterates over:**\n```settex\n{FormatRuntimeValue(collection)}\n```";
+        }
+
+        return result;
     }
 
     /// <summary>
