@@ -341,7 +341,9 @@ Settex warns when a key is set for **some** environments but missing from the ot
 appsettings.settex: warning: Key 'DevOnly.Flag' is set in 'Development' but missing from 'Production', and is not in the base settings. Add it to the base 'settings' block or to the missing environment(s) to keep configuration consistent.
 ```
 
-It's **advisory** (a warning, never a build failure) and on by default. Turn it off with `--no-coverage-check` (CLI) or `<SettexCheckCoverage>false</SettexCheckCoverage>` (MSBuild). Under MSBuild it surfaces as a `SETTEX` warning.
+It's **advisory** (a warning, never a build failure) and on by default. Turn it off with `--no-coverage-check` (CLI) or `<SettexCheckCoverage>false</SettexCheckCoverage>` (MSBuild). Under MSBuild it surfaces as a `SETTEX` warning.
+
+> The array-layering check has its **own** switch, `--no-array-layering-check` (`<SettexCheckArrayLayering>false</SettexCheckArrayLayering>` in MSBuild). The two report different hazards, so silencing one no longer silences the other.
 
 **What is *not* flagged, on purpose:** a key set in **every** environment but absent from the base. That configuration is correct as it stands, and the obvious "fix" — inventing a base default — is often worse for values that must be decided per environment (connection strings, endpoints, secret placeholders): a plausible-looking wrong default would apply silently. The deferred risk ("someone adds a new environment and forgets the key") is already covered: the moment that environment exists without the key, the key is in some environments but not all, and the warning above fires.
 

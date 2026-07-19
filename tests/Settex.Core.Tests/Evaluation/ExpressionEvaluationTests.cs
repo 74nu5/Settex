@@ -449,7 +449,7 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]
@@ -479,7 +479,7 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]
@@ -567,7 +567,7 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]
@@ -581,7 +581,7 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]
@@ -634,7 +634,7 @@ public class ExpressionEvaluationTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<Settex.Core.Parser.ParserException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]

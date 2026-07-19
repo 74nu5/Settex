@@ -17,6 +17,7 @@
 
     <!-- Warn about keys set for some environments but missing from others (enabled by default) -->
     <SettexCheckCoverage Condition="'$(SettexCheckCoverage)' == ''">true</SettexCheckCoverage>
+    <SettexCheckArrayLayering Condition="'$(SettexCheckArrayLayering)' == ''">true</SettexCheckArrayLayering>
   </PropertyGroup>
 
   <ItemGroup>
