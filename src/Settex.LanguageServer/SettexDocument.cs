@@ -203,16 +203,16 @@ public class SettexDocument
                             // them pointing at what to change.
                             var anchor = FindAssignmentLocation(ast, analysis.KeyPath, analysis.EnvironmentName, filePath);
 
-                            // No anchor means the key lives in an included file. It is
-                            // reported there, on the assignment itself, rather than here
-                            // where the reader cannot act on it — the AST is
-                            // include-flattened, so without this every includer
-                            // republished its includes' warnings verbatim.
-                            if (analysis.KeyPath != null && anchor == null)
-                            {
-                                continue;
-                            }
-
+                            // No anchor means the key comes from an included file. It is
+                            // still reported here, at the file start, rather than
+                            // dropped: this used to skip it on the assumption that the
+                            // file owning the key would report it instead — but a
+                            // fragment with no 'settings' block never runs the analyzers
+                            // at all, so splitting a file into an include deleted the
+                            // drift warning outright. A warning that is merely duplicated
+                            // across includer and include is noise; one that is missing
+                            // is a defect, and drift is the thing this tool exists to
+                            // catch.
                             diagnostics.Add(ToLspDiagnostic(analysis, anchor));
                         }
                     }
