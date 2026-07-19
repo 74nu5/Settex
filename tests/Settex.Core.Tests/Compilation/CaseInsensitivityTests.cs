@@ -14,35 +14,28 @@ using TUnit.Core;
 /// </summary>
 public class CaseInsensitivityTests
 {
+    /// <summary>
+    /// This originally asserted that the two merge into one file. Merging removed the
+    /// data loss they used to cause, but only by moving the failure: the generated file
+    /// is named after one spelling, so on a case-sensitive filesystem
+    /// ASPNETCORE_ENVIRONMENT=dev then loaded nothing at all. Two environments differing
+    /// only in case have no workable meaning, so the pair is rejected.
+    /// </summary>
     [Test]
-    public async Task Compile_TwoEnvironmentsDifferingOnlyInCase_ProduceOneFileAsync()
+    public async Task Compile_TwoEnvironmentsDifferingOnlyInCase_IsRejectedAsync()
     {
-        // These wrote to the same appsettings.Dev.json on Windows: one overlay silently
-        // overwrote the other, while the CLI reported three files and listed both.
         const string source = """
             settings { A = 1 }
             env "Dev" { settings { A = 100 } }
             env "dev" { settings { B = 200 } }
             """;
 
-        var (result, outputDir, tempDir) = Compile(source);
+        var (result, _, tempDir) = Compile(source);
 
         try
         {
-            await Assert.That(result.Success).IsTrue();
-
-            // One environment, so one overlay file — and the reported list must match
-            // what is actually on disk, which is what previously lied.
-            var written = Directory.GetFiles(outputDir, "appsettings.*.json");
-
-            await Assert.That(written.Length).IsEqualTo(1);
-            await Assert.That(result.GeneratedFiles.Count).IsEqualTo(2);
-
-            // The two blocks deep-merge, exactly as two identically spelled ones do.
-            var overlay = await File.ReadAllTextAsync(written[0]);
-
-            await Assert.That(overlay).Contains("100");
-            await Assert.That(overlay).Contains("200");
+            await Assert.That(result.Success).IsFalse();
+            await Assert.That(result.Errors.Any(e => e.Message.Contains("differ only in case"))).IsTrue();
         }
         finally
         {

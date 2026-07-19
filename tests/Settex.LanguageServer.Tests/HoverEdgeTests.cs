@@ -51,23 +51,31 @@ public sealed class HoverEdgeTests
         await Assert.That(hover!.Contents.MarkupContent!.Value).Contains("Port");
     }
 
+    /// <summary>
+    /// This used to guard its only assertion behind `if (hover is not null)` and use a
+    /// source where every candidate overlay contained the word it checked for — so it
+    /// passed whether or not the span bled one column past the assignment, which is the
+    /// regression it exists to forbid. The two keys are distinguishable now, and the
+    /// assertion is unconditional.
+    /// </summary>
     [Test]
-    public async Task Hover_OnTheColumnJustPastAnAssignment_DoesNotReturnTheOverlayAsync()
+    public async Task Hover_OnTheColumnJustPastAnAssignment_DoesNotReturnTheFirstOverlayAsync()
     {
-        // The span's end column is exclusive, so a position sitting on it is already
-        // outside. A repeated word immediately after the assignment must not trigger it.
-        const string source = "settings {\n    Port = 8080 Port = 1\n}";
+        const string source = "settings {\n    Alpha = 1 Beta = 2\n}";
         var handler = CreateHandler(source, out var uri);
 
-        // Cursor on the second "Port" (0-based line 1, column 16).
-        var hover = await handler.Handle(Request(uri, 1, 16), CancellationToken.None);
+        // Cursor on "Beta", the first column past the `Alpha = 1` assignment
+        // (0-based line 1, column 14).
+        var hover = await handler.Handle(Request(uri, 1, 14), CancellationToken.None);
 
-        // Either no hover, or one about the second assignment — never the first's span
-        // bleeding one column too far.
-        if (hover is not null)
-        {
-            await Assert.That(hover.Contents.MarkupContent!.Value).Contains("Port");
-        }
+        await Assert.That(hover).IsNotNull();
+
+        var content = hover!.Contents.MarkupContent!.Value;
+
+        // Whatever it reports, it must be about Beta — never Alpha's overlay bleeding
+        // one column too far.
+        await Assert.That(content).Contains("Beta");
+        await Assert.That(content).DoesNotContain("Alpha");
     }
 
     private static SettexHoverHandler CreateHandler(string source, out string uri)

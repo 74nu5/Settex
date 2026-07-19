@@ -27,8 +27,15 @@ public sealed class Merger
         // Apply overlay properties
         foreach (var kvp in overlay)
         {
-            var key = kvp.Key;
             var overlayValue = kvp.Value;
+
+            // Match the base key case-insensitively, and keep the base's spelling.
+            // Configuration keys are case-insensitive, so a base Server.Port and an
+            // overlay server.port are one key — writing both into the merged file
+            // produced JSON that .NET refuses to load outright ("A duplicate key
+            // 'server:port' was found"), which means merged output claimed an effective
+            // configuration that could not exist.
+            var key = FindKeyIgnoreCase(result, kvp.Key) ?? kvp.Key;
 
             if (!result.ContainsKey(key))
             {
@@ -44,6 +51,24 @@ public sealed class Merger
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     The key of <paramref name="source" /> that matches <paramref name="key" />
+    ///     case-insensitively, or <c>null</c>. Returns the existing spelling so a merge
+    ///     keeps one key rather than producing two that collide at runtime.
+    /// </summary>
+    public static string? FindKeyIgnoreCase(JsonObject source, string key)
+    {
+        foreach (var (candidate, _) in source)
+        {
+            if (string.Equals(candidate, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
