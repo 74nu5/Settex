@@ -104,7 +104,7 @@
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste relève de l'<strong>edge case ou de l'externe</strong> : le scanner d'accolades d'interpolation ignore les chaînes internes, les liens symboliques peuvent contourner la dédup d'includes, et les extensions ne sont pas publiées sur les marketplaces. Correction d'une affirmation antérieure de ce rapport : le runtime .NET 10 est <strong>publié (LTS)</strong>, pas une préversion — la dépendance runtime des utilisateurs est donc normale, et VS Code l'acquiert même automatiquement. Ne subsiste qu'une hygiène de build : épingler un SDK GA via <code>global.json</code>, la machine de dev n'ayant que des SDK pré-release.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste relève de l'<strong>edge case ou de l'externe</strong> : le scanner d'accolades d'interpolation ignore les chaînes internes, les liens symboliques peuvent contourner la dédup d'includes, et les extensions ne sont pas publiées sur les marketplaces. Correction d'une affirmation antérieure de ce rapport : le runtime .NET 10 est <strong>publié (LTS)</strong>, pas une préversion — la dépendance runtime des utilisateurs est donc normale, et VS Code l'acquiert même automatiquement. L'hygiène de build est désormais réglée : <code>global.json</code> épingle un SDK GA (<code>allowPrerelease: false</code>), vérifié 0 avertissement et 305 tests au vert sous ce SDK.
   </div>
 
   <div class="callout">
@@ -245,7 +245,7 @@
       <tr><td>4</td><td><s>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</s> — <strong>fait ✅</strong> (un seul changement Core ferme les deux findings)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td><s>Échappement pour <code>${…}</code> littéral</s> · <s>réutiliser l'URI de requête pour le go-to-def in-file</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
-      <tr><td>7</td><td>Publication marketplace (VS + VS Code) ; épingler un SDK .NET 10 GA via <code>global.json</code> (le runtime, lui, est déjà LTS publié)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>7</td><td><s>Épingler un SDK .NET 10 GA via <code>global.json</code></s> — <strong>fait ✅</strong>. Reste : publication marketplace (VS + VS Code)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
     </tbody>
   </table>
 
