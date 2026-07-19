@@ -479,7 +479,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
         // If we see: Ident ":=" → assignment
         // If we see: Ident "." → assignment (path)
         // If we see: Ident "{" → nested block
-        if (this.Check(TokenType.Identifier))
+        // A quoted key is accepted wherever an identifier is, so a key containing a dot
+        // can be written at all — see ParsePathSegment.
+        if (this.Check(TokenType.Identifier) || this.Check(TokenType.String))
         {
             if (this.Peek().Type == TokenType.Equals || this.Peek().Type == TokenType.ColonEquals || this.Peek().Type == TokenType.Dot)
             {
@@ -493,7 +495,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         }
 
         throw new ParserException(
-            $"Expected 'let', identifier for assignment or nested block, but got '{this.Current.Text}'",
+            $"Expected 'let', an identifier or a quoted key for assignment or nested block, but got '{this.Current.Text}'",
             this.Current.Location
         );
     }
@@ -560,10 +562,11 @@ public class Parser(List<Token> tokens, string? filePath = null)
     /// </summary>
     private NestedBlockNode ParseNestedBlockStatement()
     {
-        var identToken = this.Expect(TokenType.Identifier, "Expected identifier");
+        var startToken = this.Current;
+        var name = this.ParsePathSegment("Expected identifier");
         var block = this.ParseBlock();
 
-        return new(identToken.Text, block, SpanTo(identToken.Location, block.Location));
+        return new(name, block, SpanTo(startToken.Location, block.Location));
     }
 
     /// <summary>
@@ -572,16 +575,57 @@ public class Parser(List<Token> tokens, string? filePath = null)
     private PathNode ParsePath()
     {
         var segments = new List<string>();
-        var startToken = this.Expect(TokenType.Identifier, "Expected identifier");
-        segments.Add(startToken.Text);
+        var startToken = this.Current;
+        segments.Add(this.ParsePathSegment("Expected identifier"));
 
         while (this.Match(TokenType.Dot))
         {
-            var identToken = this.Expect(TokenType.Identifier, "Expected identifier after '.'");
-            segments.Add(identToken.Text);
+            segments.Add(this.ParsePathSegment("Expected identifier after '.'"));
         }
 
         return new(segments, startToken.Location);
+    }
+
+    /// <summary>
+    ///     Parses one segment of a configuration key: a bare identifier, or a quoted
+    ///     string when the key itself contains a dot.
+    ///     <para>
+    ///     The dot is this language's path separator, so <c>Microsoft.AspNetCore</c>
+    ///     written bare means two nested keys. .NET's own configuration flattens with a
+    ///     colon and treats a dot as an ordinary character, which is why
+    ///     <c>Logging:LogLevel:Microsoft.AspNetCore</c> — the most common ASP.NET Core
+    ///     setting there is — needs a literal dot in a single key. Quoting the segment
+    ///     is how you say that.
+    ///     </para>
+    /// </summary>
+    private string ParsePathSegment(string expectation)
+    {
+        if (this.Check(TokenType.String))
+        {
+            var stringToken = this.Current;
+            this.Advance();
+
+            var value = stringToken.Value as string ?? string.Empty;
+
+            if (value.Length == 0)
+            {
+                throw new ParserException("A configuration key cannot be empty", stringToken.Location);
+            }
+
+            // A key is part of the file's structure, not of its data: it has to be known
+            // before anything is evaluated. Silently treating "${x}" as a literal key
+            // would be a trap, so it is refused rather than guessed at.
+            if (value.Contains("${", StringComparison.Ordinal))
+            {
+                throw new ParserException(
+                    "A configuration key cannot contain an interpolation. Write the key out, or use a nested block.",
+                    stringToken.Location);
+            }
+
+            return value;
+        }
+
+        return this.Expect(TokenType.Identifier, expectation).Text;
     }
 
     /// <summary>
