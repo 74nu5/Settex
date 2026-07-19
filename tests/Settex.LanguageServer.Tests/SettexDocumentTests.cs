@@ -199,6 +199,49 @@ public sealed class SettexDocumentTests
     }
 
     [Test]
+    public async Task ToLspLocation_TargetIsCurrentDocument_ReusesRequestUriAsync()
+    {
+        // Rebuilding the URI from the path can change drive-letter casing on Windows,
+        // and a client comparing URIs would then treat it as a different document.
+        // Only observable on a case-insensitive filesystem.
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var path = Path.Combine(Path.GetTempPath(), "Settex-Uri-Test", "Main.settex");
+        var currentUri = DocumentUri.FromFileSystemPath(path);
+
+        // Same file, reached through a differently-cased path.
+        var location = new SourceLocation
+        {
+            Line = 1,
+            Column = 1,
+            Length = 4,
+            FilePath = path.ToLowerInvariant(),
+        };
+
+        var result = SettexDocument.ToLspLocation(location, currentUri);
+
+        await Assert.That(result.Uri).IsEqualTo(currentUri);
+    }
+
+    [Test]
+    public async Task ToLspLocation_TargetIsAnotherFile_UsesThatFilesUriAsync()
+    {
+        var currentPath = Path.Combine(Path.GetTempPath(), "settex-uri-test", "main.settex");
+        var otherPath = Path.Combine(Path.GetTempPath(), "settex-uri-test", "common.settex");
+        var currentUri = DocumentUri.FromFileSystemPath(currentPath);
+
+        var location = new SourceLocation { Line = 1, Column = 1, Length = 4, FilePath = otherPath };
+
+        var result = SettexDocument.ToLspLocation(location, currentUri);
+
+        await Assert.That(result.Uri).IsNotEqualTo(currentUri);
+        await Assert.That(Path.GetFileName(result.Uri.GetFileSystemPath())).IsEqualTo("common.settex");
+    }
+
+    [Test]
     public async Task ToLspLocation_WithoutFilePath_FallsBackToCurrentUriAsync()
     {
         // An unsaved document produces locations without a FilePath; those must

@@ -278,15 +278,40 @@ public class SettexDocument
     /// </summary>
     public static Location ToLspLocation(SourceLocation location, DocumentUri currentUri)
     {
-        var uri = string.IsNullOrEmpty(location.FilePath)
-            ? currentUri
-            : DocumentUri.FromFileSystemPath(location.FilePath);
-
         return new Location
         {
-            Uri = uri,
+            Uri = ResolveTargetUri(location.FilePath, currentUri),
             Range = LocationToRange(location),
         };
+    }
+
+    /// <summary>
+    /// Chooses the URI to report a target under. When the target is the current
+    /// document, the request's own URI is reused verbatim rather than rebuilt from
+    /// the filesystem path: a round-trip can change drive-letter casing or encoding
+    /// on Windows, and a client that compares URIs would then treat the result as a
+    /// different document (opening a new tab instead of revealing the position).
+    /// </summary>
+    private static DocumentUri ResolveTargetUri(string? targetFilePath, DocumentUri currentUri)
+    {
+        if (string.IsNullOrEmpty(targetFilePath))
+        {
+            return currentUri;
+        }
+
+        try
+        {
+            if (SamePath(targetFilePath, currentUri.GetFileSystemPath()))
+            {
+                return currentUri;
+            }
+        }
+        catch (Exception)
+        {
+            // Non-file URI (untitled:, etc.): fall through to the path-based URI.
+        }
+
+        return DocumentUri.FromFileSystemPath(targetFilePath);
     }
 
     /// <summary>
