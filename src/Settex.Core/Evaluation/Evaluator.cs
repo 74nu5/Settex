@@ -55,24 +55,52 @@ public class Evaluator
         {
             var context = baseSettings.Count > 0 ? baseSettings : null;
             var evaluated = this.EvaluateBlock(settingsBlock.Block, globalScope, context);
+
+            // Before merging: the merge itself collapses two case-colliding keys into
+            // one, which is what .NET does at runtime and what keeps the output
+            // loadable — but it would do so silently, and one of the two values the
+            // author wrote would simply vanish.
+            ValidateNoCaseCollisions(evaluated, settingsBlock.Location, "the base settings", string.Empty);
+
             baseSettings = SafeMerge(merger, baseSettings, evaluated, settingsBlock.Location);
         }
 
         // Evaluate environment overlays, deep-merging blocks that target the
         // same environment (again, so an include can contribute to an env).
-        // Case-insensitive, because .NET's own environment model is: IsDevelopment and
-        // IsEnvironment compare with OrdinalIgnoreCase, so env "Dev" and env "dev" are
-        // one environment there. Comparing ordinally here made them two overlays that
-        // then raced for a single appsettings.Dev.json on Windows — one silently
-        // overwrote the other, under a success message listing both files. They now
-        // deep-merge, exactly as two blocks spelled identically already did.
+        // Keyed case-insensitively, matching .NET: IsDevelopment and IsEnvironment
+        // compare with OrdinalIgnoreCase. Comparing ordinally here made env "Dev" and
+        // env "dev" two overlays racing for one appsettings.Dev.json on Windows, one
+        // silently overwriting the other. Merging them removed that, but only by moving
+        // the failure — on a case-sensitive filesystem the second environment then
+        // loaded nothing — so the pair is now rejected outright below.
         var environmentOverlays = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
         var environmentLocations = new Dictionary<string, SourceLocation>(StringComparer.OrdinalIgnoreCase);
+        var environmentNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var envBlock in envBlocks)
         {
             // Remember where each environment was first declared, to locate any
             // base/overlay type conflict reported below.
+            // Two environments differing only in case have no workable meaning. .NET
+            // matches the environment name case-insensitively, but the generated file is
+            // named after the spelling written here — so merging them (which is what the
+            // case-insensitive dictionary does) leaves only appsettings.Dev.json, and on
+            // a case-sensitive filesystem ASPNETCORE_ENVIRONMENT=dev then loads nothing
+            // at all. Silently picking one spelling traded a data loss for a
+            // disappearance; refusing the ambiguity is the honest answer.
+            if (environmentNames.TryGetValue(envBlock.EnvironmentName, out var firstSpelling)
+                && !string.Equals(firstSpelling, envBlock.EnvironmentName, StringComparison.Ordinal))
+            {
+                throw new EvaluatorException(
+                    $"Environments '{firstSpelling}' and '{envBlock.EnvironmentName}' differ only in case. " +
+                    ".NET matches environment names case-insensitively, but the generated file is named after " +
+                    "the spelling used here, so only one file would exist and the other environment would load " +
+                    "nothing on a case-sensitive filesystem. Use one spelling.",
+                    envBlock.Location);
+            }
+
+            environmentNames[envBlock.EnvironmentName] = envBlock.EnvironmentName;
+
             if (!environmentLocations.ContainsKey(envBlock.EnvironmentName))
             {
                 environmentLocations[envBlock.EnvironmentName] = envBlock.Location;
@@ -92,6 +120,8 @@ public class Evaluator
 
             var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope, context);
 
+            ValidateNoCaseCollisions(envSettings, envBlock.Location, $"environment '{envBlock.EnvironmentName}'", string.Empty);
+
             environmentOverlays[envBlock.EnvironmentName] = prior is null
                 ? envSettings
                 : SafeMerge(merger, prior, envSettings, envBlock.Location);
@@ -104,9 +134,51 @@ public class Evaluator
         foreach (var (envName, overlay) in environmentOverlays)
         {
             ValidateOverlayAgainstBase(baseSettings, overlay, envName, environmentLocations[envName], string.Empty);
+            ValidateNoCaseCollisions(overlay, environmentLocations[envName], $"environment '{envName}'", string.Empty);
         }
 
+        ValidateNoCaseCollisions(baseSettings, fileNode.Location, "the base settings", string.Empty);
+
         return new(baseSettings, environmentOverlays);
+    }
+
+    /// <summary>
+    ///     Rejects two keys in one object that differ only in case.
+    ///     <para>
+    ///     .NET's JSON configuration provider builds a case-insensitive dictionary and
+    ///     <strong>refuses the whole file</strong> when two keys collide — "A duplicate
+    ///     key 'foo' was found". Emitting such a file reported success while producing
+    ///     configuration that cannot load at all, so the application does not start.
+    ///     The realistic trigger is not a typo but two includes contributing the same
+    ///     key with different spellings.
+    ///     </para>
+    /// </summary>
+    private static void ValidateNoCaseCollisions(JsonObject settings, SourceLocation location, string where, string path)
+    {
+        var seen = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (key, value) in settings)
+        {
+            var currentPath = path.Length == 0 ? key : $"{path}.{key}";
+
+            if (seen.TryGetValue(key, out var existing))
+            {
+                throw new EvaluatorException(
+                    $"Keys '{existing}' and '{key}' in {where} differ only in case" +
+                    (path.Length == 0 ? string.Empty : $" under '{path}'") +
+                    ". .NET configuration keys are case-insensitive, so the generated file " +
+                    "would be rejected as containing a duplicate key and no configuration " +
+                    "would load at all. Use one spelling.",
+                    location);
+            }
+
+            seen[key] = key;
+
+            if (value is JsonObject child)
+            {
+                ValidateNoCaseCollisions(child, location, where, currentPath);
+            }
+        }
     }
 
     /// <summary>

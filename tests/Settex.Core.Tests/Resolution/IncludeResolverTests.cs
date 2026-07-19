@@ -56,14 +56,23 @@ public class IncludeResolverTests
         await Assert.That(exception).IsTypeOf<IncludeException>();
     }
 
+    /// <summary>
+    /// This used to call DetectCycle on a fresh resolver, whose stack is empty — so it
+    /// returned false for any argument regardless of the implementation, and protected
+    /// nothing. The stack has to hold something for the answer to mean anything.
+    /// </summary>
     [Test]
-    public async Task DetectCycle_WithoutCycle_ReturnsFalse()
+    public async Task DetectCycle_WithAPathNotOnTheStack_ReturnsFalse()
     {
         var resolver = new IncludeResolver();
+        var root = Path.Combine(Path.GetTempPath(), "settex-cycle", "main.settex");
 
-        var result = resolver.DetectCycle(@"D:\project\main.settex");
+        // Push a file by resolving an include-free AST, then ask about a different one.
+        var ast = new Parser(new Lexer("settings { A = 1 }").Tokenize()).Parse();
+        resolver.ResolveIncludes(ast, root);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(resolver.DetectCycle(root)).IsFalse();
+        await Assert.That(resolver.DetectCycle(Path.Combine(Path.GetTempPath(), "settex-cycle", "other.settex"))).IsFalse();
     }
 
     [Test]
