@@ -1,4 +1,0 @@
-let numbers = [1, 2]
-settings {
-    Items = [ for n in numbers { item { Value = n } } ]
-}
