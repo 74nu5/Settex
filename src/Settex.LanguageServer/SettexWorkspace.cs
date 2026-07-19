@@ -4,40 +4,60 @@ namespace Settex.LanguageServer;
 
 /// <summary>
 /// Gère tous les documents Settex ouverts dans l'éditeur.
+///
+/// Les <c>include</c> sont résolus contre les buffers ouverts (y compris non
+/// sauvegardés) plutôt que contre le disque, et modifier un fichier inclus
+/// ré-analyse les documents qui en dépendent — l'éditeur reste donc cohérent
+/// sans attendre une sauvegarde.
 /// </summary>
 public class SettexWorkspace
 {
     private readonly ConcurrentDictionary<string, SettexDocument> documents = new();
 
     /// <summary>
-    /// Ouvre un nouveau document.
+    /// Ouvre un nouveau document. Retourne le document ouvert suivi des documents
+    /// déjà ouverts qui l'incluent et ont été ré-analysés.
     /// </summary>
-    public SettexDocument DidOpen(string uri, string text)
+    public IReadOnlyList<SettexDocument> DidOpen(string uri, string text)
     {
-        var document = new SettexDocument(uri, text);
+        var document = new SettexDocument(uri, text, this.GetOpenBufferContent);
         this.documents[uri] = document;
-        return document;
+
+        var affected = new List<SettexDocument> { document };
+        affected.AddRange(this.RefreshDependents(document.FilePath, uri));
+        return affected;
     }
 
     /// <summary>
-    /// Modifie un document existant.
+    /// Modifie un document existant. Retourne le document modifié suivi de ceux qui
+    /// l'incluent et ont été ré-analysés (vide si le document n'est pas ouvert).
     /// </summary>
-    public SettexDocument? DidChange(string uri, string newText)
+    public IReadOnlyList<SettexDocument> DidChange(string uri, string newText)
     {
-        if (this.documents.TryGetValue(uri, out var document))
+        if (!this.documents.TryGetValue(uri, out var document))
         {
-            document.Update(newText);
-            return document;
+            return Array.Empty<SettexDocument>();
         }
-        return null;
+
+        document.Update(newText);
+
+        var affected = new List<SettexDocument> { document };
+        affected.AddRange(this.RefreshDependents(document.FilePath, uri));
+        return affected;
     }
 
     /// <summary>
-    /// Ferme un document.
+    /// Ferme un document. Retourne les documents qui l'incluaient et ont été
+    /// ré-analysés — leur analyse repasse sur la copie disque.
     /// </summary>
-    public void DidClose(string uri)
+    public IReadOnlyList<SettexDocument> DidClose(string uri)
     {
-        this.documents.TryRemove(uri, out _);
+        if (!this.documents.TryRemove(uri, out var removed))
+        {
+            return Array.Empty<SettexDocument>();
+        }
+
+        return this.RefreshDependents(removed.FilePath, uri);
     }
 
     /// <summary>
@@ -55,5 +75,52 @@ public class SettexWorkspace
     public IEnumerable<SettexDocument> GetAllDocuments()
     {
         return this.documents.Values;
+    }
+
+    /// <summary>
+    /// Contenu d'un fichier s'il est ouvert dans l'éditeur, sinon <c>null</c> pour
+    /// que le résolveur retombe sur le disque.
+    /// </summary>
+    private string? GetOpenBufferContent(string filePath)
+    {
+        foreach (var document in this.documents.Values)
+        {
+            if (SettexDocument.SamePath(document.FilePath, filePath))
+            {
+                return document.Text;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Ré-analyse les documents ouverts dont l'analyse dépend du fichier donné.
+    /// Le jeu d'includes étant transitif, une seule passe suffit.
+    /// </summary>
+    private List<SettexDocument> RefreshDependents(string? changedFilePath, string changedUri)
+    {
+        var refreshed = new List<SettexDocument>();
+
+        if (string.IsNullOrEmpty(changedFilePath))
+        {
+            return refreshed;
+        }
+
+        foreach (var (documentUri, document) in this.documents)
+        {
+            if (documentUri == changedUri)
+            {
+                continue;
+            }
+
+            if (document.Includes.Any(include => SettexDocument.SamePath(include, changedFilePath)))
+            {
+                document.Refresh();
+                refreshed.Add(document);
+            }
+        }
+
+        return refreshed;
     }
 }
