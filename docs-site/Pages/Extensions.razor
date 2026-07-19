@@ -72,8 +72,8 @@
 
 <div class="callout callout-note">
     @(Fr
-        ? "Les fonctionnalités d'éditeur reposent sur la présence du runtime .NET 10, puisque le serveur de langage s'exécute comme un processus dotnet <dll>. S'il est absent, la coloration et les snippets restent actifs et l'extension affiche un message avec un lien de téléchargement — installez .NET 10 pour activer l'IntelliSense."
-        : "Editor features rely on the .NET 10 runtime being present, since the language server runs as a dotnet <dll> process. If it's missing, syntax highlighting and snippets still work and the extension shows a message with a download link — install .NET 10 to enable IntelliSense.")
+        ? "Les fonctionnalités d'éditeur reposent sur le runtime .NET 10 (LTS), puisque le serveur de langage s'exécute comme un processus dotnet. Dans VS Code vous n'avez normalement rien à installer : l'extension dépend de l'outil « .NET Install Tool » de Microsoft, installé automatiquement avec Settex, qui récupère une copie privée du runtime au premier usage — sans droits administrateur ni téléchargement supplémentaire dans le VSIX. Sous Visual Studio, le runtime est généralement déjà présent via une charge de travail .NET, sinon ajoutez le composant « .NET 10.0 Runtime ». Dans tous les cas, s'il est introuvable, coloration et snippets restent actifs et un message avec lien de téléchargement s'affiche."
+        : "Editor features rely on the .NET 10 (LTS) runtime, since the language server runs as a dotnet process. In VS Code you normally install nothing: the extension depends on Microsoft's \".NET Install Tool\", installed automatically alongside Settex, which fetches a private copy of the runtime on first use — no administrator rights and nothing extra in the VSIX. Under Visual Studio the runtime usually comes with a .NET workload; otherwise add the \".NET 10.0 Runtime\" component. Either way, if it can't be found, syntax highlighting and snippets keep working and a message with a download link is shown.")
 </div>
 
 <h2 id="snippets">Snippets</h2>

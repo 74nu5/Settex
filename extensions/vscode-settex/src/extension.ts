@@ -23,7 +23,41 @@ const REQUIRED_RUNTIME_PREFIX = 'Microsoft.NETCore.App 10.';
 
 let client: LanguageClient;
 
+/** Extension id used when asking the .NET Install Tool for a runtime. */
+const EXTENSION_ID = 'settex.settex';
+
+/** Runtime major.minor the language server needs. */
+const REQUIRED_RUNTIME_VERSION = '10.0';
+
 type RuntimeCheck = { ok: true } | { ok: false; detail: string };
+
+interface DotnetAcquireResult {
+    dotnetPath: string;
+}
+
+/**
+ * Asks the ".NET Install Tool for extension authors"
+ * (ms-dotnettools.vscode-dotnet-runtime, a declared extensionDependency) for a
+ * runtime. It keeps a private, user-local copy — no admin rights, no system-wide
+ * install, and nothing extra shipped in this VSIX — and installs it on demand if
+ * it isn't there yet. Returns the dotnet executable to launch the server with, or
+ * undefined so the caller can fall back to a dotnet already on PATH.
+ */
+async function acquireDotnetRuntime(): Promise<string | undefined> {
+    try {
+        const result = await vscode.commands.executeCommand<DotnetAcquireResult>(
+            'dotnet.acquire',
+            { version: REQUIRED_RUNTIME_VERSION, requestingExtensionId: EXTENSION_ID }
+        );
+
+        return result?.dotnetPath;
+    } catch (err) {
+        // The install tool is unavailable or the acquisition failed; the caller
+        // falls back to whatever dotnet is on PATH.
+        console.warn(`Settex: could not acquire a .NET ${REQUIRED_RUNTIME_VERSION} runtime`, err);
+        return undefined;
+    }
+}
 
 /**
  * Verifies the .NET 10 runtime (which the language server needs) is installed by
@@ -94,33 +128,42 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    // The server is a .NET 10 app. Check the runtime up front so a missing runtime
-    // yields an actionable message instead of an opaque start failure.
-    const runtimeCheck = await checkDotnetRuntime();
+    // The server is a .NET 10 app. Prefer a runtime obtained through the .NET
+    // Install Tool: it installs a private copy on demand, so the user never has to
+    // install .NET by hand and nothing extra ships in this VSIX.
+    let dotnetCommand = await acquireDotnetRuntime();
 
-    if (!runtimeCheck.ok) {
-        const openDownload = 'Download .NET 10';
-        const choice = await vscode.window.showErrorMessage(
-            `Settex IntelliSense could not start: the .NET 10 runtime is unavailable. ${runtimeCheck.detail} ` +
-            'Syntax highlighting and snippets still work.',
-            openDownload
-        );
+    if (!dotnetCommand) {
+        // No managed runtime: fall back to a dotnet already on PATH, and only warn
+        // if that one can't satisfy the server either.
+        const runtimeCheck = await checkDotnetRuntime();
 
-        if (choice === openDownload) {
-            vscode.env.openExternal(vscode.Uri.parse(DOTNET_DOWNLOAD_URL));
+        if (!runtimeCheck.ok) {
+            const openDownload = 'Download .NET 10';
+            const choice = await vscode.window.showErrorMessage(
+                `Settex IntelliSense could not start: the .NET ${REQUIRED_RUNTIME_VERSION} runtime is unavailable. ` +
+                `${runtimeCheck.detail} Syntax highlighting and snippets still work.`,
+                openDownload
+            );
+
+            if (choice === openDownload) {
+                vscode.env.openExternal(vscode.Uri.parse(DOTNET_DOWNLOAD_URL));
+            }
+
+            return;
         }
 
-        return;
+        dotnetCommand = 'dotnet';
     }
 
     const serverOptions: ServerOptions = {
-        run: { 
-            command: 'dotnet', 
+        run: {
+            command: dotnetCommand,
             args: [serverModule],
             transport: TransportKind.stdio
         },
-        debug: { 
-            command: 'dotnet', 
+        debug: {
+            command: dotnetCommand,
             args: [serverModule],
             transport: TransportKind.stdio
         }
