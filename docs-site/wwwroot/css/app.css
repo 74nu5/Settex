@@ -11,6 +11,12 @@
     --accent-soft: #f6e5dd;
     --code-bg: #f6f4f0;
     --code-text: #2b2a26;
+    --tok-kw: #a83232;
+    --tok-str: #3f7d3f;
+    --tok-num: #8a5a1a;
+    --tok-comment: #8a857b;
+    --tok-bool: #7a3fa8;
+    --tok-interp: #1f6b6b;
     --sidebar-w: 264px;
     --topbar-h: 56px;
     --maxw: 860px;
@@ -31,6 +37,12 @@
         --accent-soft: #35231b;
         --code-bg: #1c1b15;
         --code-text: #e4e2d8;
+        --tok-kw: #e0714f;
+        --tok-str: #86c186;
+        --tok-num: #d6a860;
+        --tok-comment: #948e82;
+        --tok-bool: #c19be6;
+        --tok-interp: #74caca;
     }
 }
 
@@ -208,6 +220,14 @@ pre.code {
     tab-size: 2;
 }
 pre.code code { background: none; padding: 0; color: inherit; font-size: 1em; }
+
+/* Settex syntax highlighting (see SettexHighlighter) */
+.tok-kw { color: var(--tok-kw); font-weight: 600; }
+.tok-str { color: var(--tok-str); }
+.tok-num { color: var(--tok-num); }
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-bool { color: var(--tok-bool); }
+.tok-interp { color: var(--tok-interp); }
 
 /* ===== Hero ===== */
 .hero {
