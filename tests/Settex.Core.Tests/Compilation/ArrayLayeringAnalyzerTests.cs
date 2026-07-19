@@ -119,7 +119,7 @@ public class ArrayLayeringAnalyzerTests
 
         await Assert.That(diagnostics.Count).IsEqualTo(1);
         await Assert.That(diagnostics[0].Severity).IsEqualTo(DiagnosticSeverity.Warning);
-        await Assert.That(diagnostics[0].Message).Contains("[0] Port");
+        await Assert.That(diagnostics[0].Message).Contains("[0].Port");
         await Assert.That(diagnostics[0].Message).DoesNotContain("Name");
     }
 
@@ -172,7 +172,7 @@ public class ArrayLayeringAnalyzerTests
         var diagnostics = ArrayLayeringAnalyzer.Analyze(model);
 
         await Assert.That(diagnostics.Count).IsEqualTo(1);
-        await Assert.That(diagnostics[0].Message).Contains("[0] Tls.Cert");
+        await Assert.That(diagnostics[0].Message).Contains("[0].Tls.Cert");
     }
 
     /// <summary>
@@ -194,5 +194,85 @@ public class ArrayLayeringAnalyzerTests
 
         await Assert.That(diagnostics.Count).IsEqualTo(1);
         await Assert.That(diagnostics[0].Message).Contains("cased");
+    }
+    /// <summary>
+    /// An array nested inside an object element leaks by index just like a top-level
+    /// one. Treating it as an atomic leaf meant that redefining the field at all counted
+    /// as covering it — the same leak the analyzer exists for, one level down.
+    /// Runtime-confirmed: Svcs:0:Tags comes out as ["x","t2","t3"].
+    /// </summary>
+    [Test]
+    public async Task Analyze_NestedArrayInsideAnObjectElement_IsStillCheckedAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject
+            {
+                ["Svcs"] = new JsonArray(new JsonObject
+                {
+                    ["Name"] = "a",
+                    ["Tags"] = new JsonArray("t1", "t2", "t3"),
+                }),
+            },
+            new()
+            {
+                ["Dev"] = new JsonObject
+                {
+                    ["Svcs"] = new JsonArray(new JsonObject
+                    {
+                        ["Name"] = "a2",
+                        ["Tags"] = new JsonArray("x"),
+                    }),
+                },
+            });
+
+        var diagnostics = ArrayLayeringAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics.Count).IsEqualTo(1);
+        await Assert.That(diagnostics[0].Message).Contains("[0].Tags[1]");
+        await Assert.That(diagnostics[0].Message).Contains("[0].Tags[2]");
+    }
+
+    /// <summary>
+    /// A primitive at an index does not erase an object underneath it: the flattened
+    /// base keys have no counterpart in the override, so they survive alongside it.
+    /// The old guard skipped the index whenever either side was a non-object.
+    /// </summary>
+    [Test]
+    public async Task Analyze_ObjectElementReplacedByAPrimitive_WarnsAboutTheSurvivingFieldsAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject
+            {
+                ["Prim"] = new JsonArray(new JsonObject { ["Name"] = "base", ["Port"] = 1 }),
+            },
+            new()
+            {
+                ["Dev"] = new JsonObject { ["Prim"] = new JsonArray(5) },
+            });
+
+        var diagnostics = ArrayLayeringAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics.Count).IsEqualTo(1);
+        await Assert.That(diagnostics[0].Message).Contains("[0].Name");
+        await Assert.That(diagnostics[0].Message).Contains("[0].Port");
+    }
+
+    /// <summary>
+    /// The guard: a primitive array genuinely replaced element for element leaks
+    /// nothing, so the broader model must not start warning about every override.
+    /// </summary>
+    [Test]
+    public async Task Analyze_PrimitiveArrayReplacedElementForElement_DoesNotWarnAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject { ["Hosts"] = new JsonArray("a", "b") },
+            new()
+            {
+                ["Dev"] = new JsonObject { ["Hosts"] = new JsonArray("x", "y") },
+            });
+
+        var diagnostics = ArrayLayeringAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 }
