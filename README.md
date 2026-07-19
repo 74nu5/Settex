@@ -57,7 +57,7 @@ settex build config.settex -o ./output
 
 Visual Studio and VS Code extensions provide syntax highlighting, snippets, and a language server (hover, go-to-definition, find-references, diagnostics, completion).
 
-> The language server runs on the **.NET 10 runtime**. If it isn't installed, the extensions still give you syntax highlighting and snippets, and show an actionable message with a download link. Install .NET 10 from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0) to enable IntelliSense.
+> The language server runs on the **.NET 10 runtime** (LTS). In **VS Code you normally install nothing**: the extension depends on Microsoft's [.NET Install Tool](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.vscode-dotnet-runtime), installed automatically alongside Settex, which fetches a private user-local copy on first use — no admin rights, nothing extra in the VSIX. Under **Visual Studio** the runtime usually comes with a .NET workload; otherwise add the *.NET 10.0 Runtime* component. If it can't be found, syntax highlighting and snippets keep working and the extension shows a message with a link to [download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## 🚀 Quick Start
 

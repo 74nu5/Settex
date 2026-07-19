@@ -4,7 +4,12 @@ This directory contains editor extensions for Settex, providing IDE support for 
 
 📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
 
-> **Language-server requirement:** both extensions run the Settex language server (hover, go-to-definition, find-references, diagnostics, completion) on the **.NET 10 runtime**. If it isn't installed, syntax highlighting and snippets still work, and the extension shows an actionable message with a download link. Install .NET 10 from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+> **Language-server requirement:** both extensions run the Settex language server (hover, go-to-definition, find-references, diagnostics, completion) on the **.NET 10 runtime** (LTS).
+>
+> - **VS Code** acquires it for you: the extension depends on Microsoft's [.NET Install Tool](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.vscode-dotnet-runtime), installed automatically alongside Settex, which fetches a private user-local copy on first use — no admin rights, nothing extra in the VSIX.
+> - **Visual Studio** users generally already have it via a .NET workload; otherwise install it from the Visual Studio Installer (component *.NET 10.0 Runtime*) or from [dotnet.microsoft.com](https://dotnet.microsoft.com/download/dotnet/10.0).
+>
+> In every case, if the runtime can't be found, syntax highlighting and snippets keep working and the extension shows an actionable message with a download link.
 
 ## Available Extensions
 

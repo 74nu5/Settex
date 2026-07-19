@@ -78,7 +78,11 @@ env "Production" {
 ## Requirements
 
 - Visual Studio Code 1.85.0 or higher
-- **.NET 10 runtime** — required by the bundled Settex language server (IntelliSense, diagnostics, hover, go-to-definition). Without it, syntax highlighting and snippets still work; the extension detects the missing runtime and shows an actionable message with a download link. Install from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+- **.NET 10 runtime** (LTS) — required by the bundled Settex language server (IntelliSense, diagnostics, hover, go-to-definition).
+
+  **You normally don't have to install it yourself.** This extension depends on Microsoft's [.NET Install Tool](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.vscode-dotnet-runtime), which VS Code installs automatically alongside Settex. On first use it fetches a **private, user-local copy** of the runtime — no administrator rights, no system-wide install, and nothing extra downloaded with this extension.
+
+  If that acquisition can't run, the extension falls back to a `dotnet` already on your `PATH`. Only if neither is available does it show a message with a download link — and syntax highlighting and snippets keep working regardless. You can install .NET 10 manually from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## Extension Settings
 
