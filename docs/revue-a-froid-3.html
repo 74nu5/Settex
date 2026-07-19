@@ -83,8 +83,8 @@
       <span><b>Date</b> 19 juillet 2026</span>
       <span><b>Révision</b> 884f705</span>
       <span><b>Stack</b> .NET 10 (LTS) · C#</span>
-      <span><b>Tests</b> 326 · 0 échec</span>
-      <span><b>Mise à jour</b> CI · lexer · positions · fragments</span>
+      <span><b>Tests</b> 334 · 0 échec</span>
+      <span><b>Mise à jour</b> les 5 défauts élevés corrigés</span>
     </div>
   </div>
 </header>
@@ -94,19 +94,20 @@
 <h2><span class="num">01</span>Verdict</h2>
 
 <div class="score-band">
-  <div class="score"><div class="big">8,5<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-ok">+1,1</span></div></div>
-  <div class="score"><div class="big">326</div><div class="lbl">tests, tous verts</div></div>
-  <div class="score"><div class="big">1</div><div class="lbl">défaut élevé restant <span class="badge b-ok">4 corrigés</span></div></div>
+  <div class="score"><div class="big">8,8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-ok">+1,4</span></div></div>
+  <div class="score"><div class="big">334</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">0</div><div class="lbl">défaut élevé restant <span class="badge b-ok">5 corrigés</span></div></div>
   <div class="score"><div class="big">3</div><div class="lbl">jobs de CI · Linux, Windows, extension</div></div>
 </div>
 
 <div class="callout ok">
   <div class="t">Mise à jour — depuis la publication de cette revue</div>
-  <p style="margin:0 0 8px">Quatre défauts élevés et un moyen sont corrigés, et le rapport est annoté en conséquence&nbsp;:</p>
+  <p style="margin:0 0 8px">Les <strong>cinq</strong> défauts élevés et un moyen sont corrigés, et le rapport est annoté en conséquence&nbsp;:</p>
   <ul class="tight" style="margin:0">
     <li><strong>H1 — CI de build et de test</strong>&nbsp;: en place, sur Ubuntu et Windows, plus la compilation de l'extension VS&nbsp;Code. <span class="badge b-ok">fait</span></li>
     <li><strong>H2 — confusion de positions entre fichiers dans le LSP</strong>&nbsp;: corrigé, survol, définition et références répondent désormais depuis le bon fichier. <span class="badge b-ok">fait</span></li>
     <li><strong>H3 — erreur permanente sur les fragments d'include</strong>&nbsp;: corrigée, y compris sur l'exemple livré dans le dépôt. <span class="badge b-ok">fait</span></li>
+    <li><strong>H4 — angles morts de l'analyse de superposition</strong>&nbsp;: corrigés, tableaux d'objets et comparaison de casse. <span class="badge b-ok">fait</span></li>
     <li><strong>H5 — débordement de pile du lexer</strong>&nbsp;: corrigé, 200&nbsp;000 lignes vides passent désormais. <span class="badge b-ok">fait</span></li>
     <li><strong>M6 — CI contredisant l'épinglage GA</strong>&nbsp;: désamorcé avant qu'il ne se déclenche. <span class="badge b-ok">fait</span></li>
     <li><strong>Nouveau — validation des noms d'environnement dépendante de l'OS</strong>&nbsp;: trouvé <em>par la CI elle-même</em>, à sa toute première exécution, puis corrigé. <span class="badge b-ok">fait</span></li>
@@ -131,7 +132,7 @@
 <tbody>
 <tr><td>SDK résolu dans le dépôt</td><td><code>10.0.302</code> (GA) — hors dépôt&nbsp;: <code>10.0.400-preview</code>, le pin agit <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Build solution (Release)</td><td>0 avertissement, 0 erreur <span class="badge b-ok">OK</span></td></tr>
-<tr><td>Tests</td><td>305 → <strong>326</strong>, tous verts <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Tests</td><td>305 → <strong>334</strong>, tous verts <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Site de documentation</td><td>build propre <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Codes retour CLI</td><td>erreur → 1 · succès avec avertissement → 0 · fichier absent → 1 <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Scénario métier fondateur</td><td>delta + avertissement de dérive, de bout en bout <span class="badge b-ok">OK</span></td></tr>
@@ -185,15 +186,18 @@
   <p>Le CLI, lui, refuse toujours de compiler un fragment&nbsp;: vérifié après correctif.</p>
 </div>
 
-<div class="finding">
-  <h3>H4 — L'analyseur de superposition de tableaux rate les deux fuites qui comptent <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H4 — L'analyseur de superposition de tableaux rate les deux fuites qui comptent</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">ArrayLayeringAnalyzer.cs:38 et :59</p>
   <p>L'analyseur a été écrit pour couvrir le piège d'indexation des tableaux de .NET. Vérification faite contre un vrai <code>ConfigurationBuilder</code>, il laisse passer les deux cas les plus fréquents.</p>
   <p><strong>(a) Tableaux d'objets à longueur égale.</strong> La règle ne se déclenche que si l'overlay est <em>plus court</em>. Or&nbsp;:</p>
 <pre><code>base : "Svcs": [ { "Name": "a", "Port": 1 } ]
 Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
   <p>Longueurs identiques, donc silence — mais .NET fusionne l'index 0 champ par champ et <code>Port = 1</code> fuit de la base vers Dev. L'heuristique par comptage d'éléments est structurellement aveugle à cette classe.</p>
-  <p><strong>(b) Comparaison sensible à la casse.</strong> <code>Cased</code> et <code>cased</code> sont deux clés distinctes pour l'analyseur, une seule à l'exécution. Le point est <em>systémique</em>&nbsp;: <code>CoverageAnalyzer</code> et <code>ValidateOverlayAgainstBase</code> comparent également en <code>Ordinal</code> alors que la configuration .NET est <code>OrdinalIgnoreCase</code>. Ainsi <code>Foo = 1</code> en base avec <code>foo { Bar = 2 }</code> en Dev passe sans erreur, alors que primitif-contre-objet est précisément le conflit que la nouvelle validation doit détecter — et l'avertissement de couverture émis est trompeur, annonçant une clé absente là où le vrai problème est une divergence de casse.</p>
+  <p><strong>(b) Comparaison sensible à la casse.</strong> <code>Cased</code> et <code>cased</code> étaient deux clés distinctes pour l'analyseur, une seule à l'exécution. Le point était <em>systémique</em>&nbsp;: <code>CoverageAnalyzer</code> et <code>ValidateOverlayAgainstBase</code> comparaient également en <code>Ordinal</code> alors que la configuration .NET est <code>OrdinalIgnoreCase</code>. Ainsi <code>Foo = 1</code> en base avec <code>foo { Bar = 2 }</code> en Dev passait sans erreur, alors que primitif-contre-objet est précisément le conflit que la validation doit détecter — et l'avertissement de couverture émis était trompeur, annonçant une clé absente là où le vrai problème est une divergence de casse.</p>
+  <p><em>Correctif&nbsp;:</em> l'analyseur ne collecte plus des longueurs mais les tableaux eux-mêmes, et compare les éléments objet index par index. Les champs qui fuient sont <strong>nommés</strong> — <code>[0] Port</code>, <code>[0] Tls.Cert</code> pour un champ imbriqué — plutôt que signalés en bloc. Les trois analyseurs comparent désormais les clés en <code>OrdinalIgnoreCase</code>, ce qui rend au passage l'avertissement de couverture honnête&nbsp;: deux orthographes d'une même clé ne constituent plus une dérive.</p>
+  <p>Vérifié contre un vrai <code>ConfigurationBuilder</code>, et pas seulement en raisonnement&nbsp;: les fichiers générés donnent bien <code>Svcs:0:Port = 1</code> et <code>cased:1 = 2</code> à l'exécution. Les avertissements décrivent donc une fuite réelle, pas une hypothèse.</p>
+  <p>Huit tests, dont <strong>six vérifiés en échec sur le code non corrigé</strong>. L'ordre d'itération des environnements, jusque-là dépendant d'un <code>Dictionary</code> (constat mineur plus bas), est trié au passage dans les deux analyseurs.</p>
 </div>
 
 <div class="finding" style="border-left-color:var(--ok)">
@@ -324,8 +328,8 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 <tr><td>3</td><td><s>Comparer le fichier, pas seulement ligne/colonne, dans le LSP</s> <span class="badge b-ok">fait</span></td><td>Les trois recherches de position sont épinglées au bon fichier, sans toucher à la visibilité des variables.</td></tr>
 <tr><td>4</td><td><s>Ne pas exiger de bloc <code>settings</code> côté serveur</s> <span class="badge b-ok">fait</span></td><td>La règle est devenue explicite : exigée à la compilation, relâchée à l'analyse.</td></tr>
 <tr><td>5</td><td><s>Boucler <code>ScanNewline</code> au lieu de récurser</s> <span class="badge b-ok">fait</span></td><td>200 000 lignes vides compilent, contre un plantage à 6 000.</td></tr>
-<tr><td>6</td><td>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</td><td>Aligne les trois analyseurs sur la sémantique réelle de la configuration .NET.</td></tr>
-<tr><td>7</td><td>Étendre l'analyse de superposition aux tableaux d'objets</td><td>La classe de fuite la plus courante échappe aujourd'hui à l'outil censé la couvrir.</td></tr>
+<tr><td>6</td><td><s>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</s> <span class="badge b-ok">fait</span></td><td>Les trois analyseurs suivent désormais la sémantique réelle de la configuration .NET.</td></tr>
+<tr><td>7</td><td><s>Étendre l'analyse de superposition aux tableaux d'objets</s> <span class="badge b-ok">fait</span></td><td>Les champs qui fuient sont nommés un par un, vérification faite contre un vrai binder .NET.</td></tr>
 <tr><td>8</td><td>Porter les positions source jusqu'aux analyseurs</td><td>Rend exploitable l'avertissement qui justifie le produit.</td></tr>
 <tr><td>9</td><td>Nettoyer la racine du dépôt et documenter <code>$${</code></td><td>Hygiène et cohérence documentaire.</td></tr>
 <tr><td>10</td><td>Publication marketplace (VS + VS Code)</td><td>Seul reliquat de la revue précédente.</td></tr>
@@ -342,7 +346,9 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 
 <p>Ce filet est désormais posé, et il a justifié son existence avant même d'être fusionné&nbsp;: sa première exécution a mis au jour un défaut de portabilité que ni cette revue ni ses deux relecteurs n'avaient vu. C'est la meilleure démonstration possible de ce que trois mois de vérification manuelle ne peuvent pas remplacer.</p>
 
-<p>Restent trois défauts élevés, tous du côté produit et tous concentrés là où le diagnostic est le plus coûteux&nbsp;: la confusion de positions entre fichiers dans le serveur de langage, l'erreur permanente sur les fragments d'include, et les angles morts de l'analyse de superposition. Ils peuvent maintenant être corrigés sans avoir à parier qu'aucun autre ne réapparaît en silence.</p>
+<p>Les cinq défauts élevés sont depuis corrigés, chacun sous CI et chacun accompagné de tests dont l'échec a été vérifié sur le code non corrigé — la seule preuve qu'un test de régression teste réellement quelque chose. Restent les constats moyens et mineurs listés plus haut, dont plusieurs régressions de la campagne précédente qu'il serait cohérent de traiter ensemble.</p>
+
+<p>La leçon de fond ne change pas pour autant. Ces cinq défauts n'ont pas été trouvés par les 305 tests qui étaient au vert&nbsp;: ils l'ont été par une relecture adverse menée sans connaissance des intentions, et l'un d'eux — la validation dépendante de l'OS — n'a été trouvé ni par la revue ni par ses relecteurs, mais par la CI, à sa première exécution. Chaque mécanisme a attrapé ce que les autres ne pouvaient pas voir.</p>
 
 <footer>
   <p>Quatrième revue à froid — 19 juillet 2026, révision <code>884f705</code>. Deux relecteurs indépendants (cœur compilateur&nbsp;; serveur de langage et extensions) plus une passe d'usage bout-en-bout. Les constats marqués «&nbsp;reproduit&nbsp;» l'ont été sur du code exécuté, la plupart contre un vrai <code>ConfigurationBuilder</code> ou un serveur de langage instrumenté.</p>

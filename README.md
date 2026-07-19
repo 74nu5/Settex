@@ -281,7 +281,14 @@ Each `env` block generates a separate `appsettings.{Environment}.json` file. By 
 - **Arrays**: Replaced completely (no merging)
 - **Primitives**: Replaced
 
-> **⚠️ Array-layering caveat (a .NET limitation).** The rules above describe how Settex merges values into the *effective* config. At **runtime**, though, .NET loads `appsettings.json` and `appsettings.{Env}.json` as separate layers and merges arrays **by index**, not by replacement. So if the base defines `Hosts = ["a","b","c"]` and an environment overrides it with `Hosts = ["x"]`, the effective runtime value is `["x","b","c"]` — the base's extra elements leak. Settex cannot change how the .NET provider layers arrays, so it **warns at compile time** when an environment shortens an array that also exists in the base. To avoid it, keep the array at least as long per environment, or define it only per environment (not in the base) so nothing layers under it.
+> **⚠️ Array-layering caveat (a .NET limitation).** The rules above describe how Settex merges values into the *effective* config. At **runtime**, though, .NET loads `appsettings.json` and `appsettings.{Env}.json` as separate layers and merges arrays **by index**, not by replacement. So if the base defines `Hosts = ["a","b","c"]` and an environment overrides it with `Hosts = ["x"]`, the effective runtime value is `["x","b","c"]` — the base's extra elements leak. Settex cannot change how the .NET provider layers arrays, so it **warns at compile time** in the two cases where content leaks:
+>
+> - the environment's array is **shorter** than the base's, so the base's trailing elements survive;
+> - the elements are **objects**, in which case .NET merges the two objects at each shared index *field by field* — so any field the base element defines and the override omits survives, whatever the lengths. `[{ "Name": "a", "Port": 1 }]` overridden by `[{ "Name": "b" }]` yields `Port = 1` at runtime.
+>
+> To avoid either, keep the array at least as long per environment and repeat every field of an object element, or define the array only per environment (not in the base) so nothing layers under it.
+>
+> Because .NET configuration keys are **case-insensitive**, all of these checks compare keys that way too: a base `Hosts` and an environment `hosts` are one key at runtime, and are analysed as one.
 
 Example:
 

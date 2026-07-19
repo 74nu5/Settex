@@ -45,7 +45,9 @@ public static class CoverageAnalyzer
     public static IReadOnlyList<Diagnostic> Analyze(SettingsModel model)
     {
         var diagnostics = new List<Diagnostic>();
-        var envNames = model.EnvironmentOverlays.Keys.ToList();
+        // Sorted: EnvironmentOverlays is a Dictionary, and its enumeration order would
+        // otherwise leak into the environment lists quoted in the messages.
+        var envNames = model.EnvironmentOverlays.Keys.OrderBy(name => name, StringComparer.Ordinal).ToList();
 
         // Drift is only meaningful across two or more environments.
         if (envNames.Count < 2)
@@ -59,7 +61,9 @@ public static class CoverageAnalyzer
             kvp => CollectLeafPaths(kvp.Value));
 
         // Every leaf key that appears in some environment but not in the base.
-        var candidateKeys = new SortedSet<string>(StringComparer.Ordinal);
+        // Case-insensitive like the sets above, so two environments spelling the same
+        // key differently yield one candidate rather than two identical warnings.
+        var candidateKeys = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var keys in envKeys.Values)
         {
             foreach (var key in keys)
@@ -94,10 +98,16 @@ public static class CoverageAnalyzer
     /// <summary>
     ///     Collects the dotted paths of all leaf values (non-objects) in a settings
     ///     object. Arrays and primitives are leaves; nested objects are recursed into.
+    ///     <para>
+    ///     Paths are compared case-insensitively, because .NET configuration keys are.
+    ///     Treating <c>Timeout</c> and <c>timeout</c> as two keys made this analyzer
+    ///     report drift that does not exist — the two are one key at runtime — while
+    ///     hiding the real problem, which is that they disagree on spelling.
+    ///     </para>
     /// </summary>
     private static HashSet<string> CollectLeafPaths(JsonObject settings)
     {
-        var paths = new HashSet<string>(StringComparer.Ordinal);
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         Collect(settings, string.Empty, paths);
         return paths;
     }
