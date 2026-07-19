@@ -92,7 +92,7 @@
 
   <div class="score-band">
     <div class="score"><div class="big">5.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale (regard neuf) <span style="color:var(--muted)">— 1<sup>er</sup> rapport : 7,6</span></div></div>
-    <div class="score"><div class="big">243</div><div class="lbl">Tests · 100 % au vert</div></div>
+    <div class="score"><div class="big">248</div><div class="lbl">Tests · 100 % au vert</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">bugs restants (5 corrigés ✅)</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">livrable bloqué (VSIX VS Code corrigé ✅)</div></div>
   </div>
@@ -123,7 +123,7 @@
   <h2 id="methode"><span class="num">01</span>Méthode &amp; périmètre</h2>
   <p class="lead">L'objectif était une revue <em>indépendante</em> : ne pas se fier aux commentaires, aux noms de tests, ni aux rapports antérieurs — et reproduire les défauts avant de les affirmer.</p>
   <ul class="tight">
-    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 243 tests (215 core + 22 LSP + 4 MSBuild + 2 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
+    <li><strong>Vérifié dynamiquement</strong> : build de la solution (0 avertissement), 248 tests (215 core + 22 LSP + 4 MSBuild + 7 extension) tous au vert, et des dizaines de compilations CLI de sondage (messages d'erreur, cas limites, bugs).</li>
     <li><strong>Revue de code</strong> du pipeline complet (Lexer → Parser → IncludeResolver → Evaluator → Merger → JsonWriter), du serveur LSP, des deux extensions et du site de docs.</li>
     <li><strong>Reproduction</strong> : chaque bug listé au §02 a été déclenché au CLI ou constaté dans le paquet produit, pas seulement lu.</li>
   </ul>
@@ -256,7 +256,7 @@
       <tr><td>4</td><td><s>Client LSP VS : drainer <code>stderr</code>, stocker &amp; tuer le process serveur, try/catch si <code>dotnet</code> absent</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>LSP : <s>généraliser la capture de <code>Snapshot</code> (Hover/Def/Ref/Symbols)</s> · <s>protéger les logs par <code>IsEnabled</code></s> · <s>remplacer <code>UriToFilePath</code> par <code>DocumentUri.GetFileSystemPath()</code></s> · <s>fiabiliser <code>ContainsPosition</code></s> · <s>navigation cross-fichier</s> — <strong>fait ✅</strong>. Reste : EndLine/EndColumn dans <code>SourceLocation</code> pour <code>LocationToRange</code> multi-ligne, cache de reparse</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td><s>Fiabiliser l'interpolation (parse complet + propagation filePath)</s> · <s>rattraper <code>OverflowException</code> en erreur localisée</s> · <s>borner la récursion des includes, brancher <code>visited</code> (losange) + normaliser la casse</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
-      <tr><td>7</td><td>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>7</td><td><s>Détecter le runtime .NET 10 dans les deux extensions et afficher un message actionnable si absent</s> — <strong>fait ✅</strong> : <code>dotnet --list-runtimes</code> vérifié avant démarrage ; message avec lien de téléchargement (message box VS OK/Annuler, notification VS Code) ; coloration/snippets restent actifs</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>8</td><td>Tests : projet <code>Settex.Cli.Tests</code> (codes de sortie, sortie), assertions d'exception <em>typées</em> (<code>ThrowsAsync&lt;T&gt;</code> + message), cas CRLF/overflow/sans-espaces/scope</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>9</td><td>Trancher le modèle de sortie : deltas par env plutôt que fichiers complets (aligné sur le layering .NET) — décision de design</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>10</td><td>Docs : mettre à jour <code>&lt;html lang&gt;</code> à la bascule, lire la langue avant le 1<sup>er</sup> rendu (anti-FOUC), brancher une vraie coloration ou retirer la classe <code>lang-*</code> ; envisager un pré-rendu pour le SEO</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-info">Modéré</span></td></tr>
@@ -269,7 +269,7 @@
   </div>
 
   <footer>
-    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 243 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
+    Seconde revue, indépendante du premier rapport (<a href="etat-des-lieux.html">etat-des-lieux.html</a>). Menée à froid sur <code>main</code> @ 2ea3f72 : revue de code + build + 248 tests + reproduction au CLI de chaque bug listé. Les notes reflètent un regard adversarial délibéré ; elles sont plus sévères que le premier rapport, et assumées comme telles.
   </footer>
 </div>
 </body>
