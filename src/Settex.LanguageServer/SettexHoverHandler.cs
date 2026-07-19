@@ -105,7 +105,7 @@ public class SettexHoverHandler : HoverHandlerBase
             {
                 // Le chemin complet inclut les blocs imbriqués traversés, donc
                 // survoler "Port" dans `Server { Port = … }` cible bien "Server.Port".
-                var (pathSegments, envName, isObjectHeader) = assignmentInfo.Value;
+                var (pathSegments, envName, isObjectHeader, segmentIndex) = assignmentInfo.Value;
 
                 // Vérifier que le mot sous le curseur est bien le path (ou une partie du path)
                 var isOnPath = pathSegments.Any(segment => segment == word);
@@ -114,8 +114,14 @@ public class SettexHoverHandler : HoverHandlerBase
                 {
                     var path = string.Join(".", pathSegments);
 
-                    // Détecter si le mot survolé est un segment d'objet (pas le dernier segment)
-                    var wordIndex = pathSegments.IndexOf(word);
+                    // Quel segment est sous le curseur — déduit de la colonne, pas d'un
+                    // IndexOf : sur `A { B { A = 1 } }` le chemin est A.B.A, et chercher
+                    // la première occurrence de "A" renvoyait toujours 0, si bien que
+                    // survoler l'affectation la plus interne affichait l'objet A.
+                    var wordIndex = segmentIndex >= 0 && segmentIndex < pathSegments.Count
+                        ? segmentIndex
+                        : pathSegments.IndexOf(word);
+
                     var isObjectSegment = isObjectHeader || (wordIndex >= 0 && wordIndex < pathSegments.Count - 1);
 
                     if (isObjectSegment)
@@ -548,7 +554,7 @@ public class SettexHoverHandler : HoverHandlerBase
     /// <summary>
     /// Trouve une assignation à la position donnée et retourne l'assignation + l'environnement (null si dans base).
     /// </summary>
-    private static (List<string> Path, string? EnvName, bool IsObjectHeader)? FindAssignmentAtPosition(
+    private static (List<string> Path, string? EnvName, bool IsObjectHeader, int SegmentIndex)? FindAssignmentAtPosition(
         Core.Parser.Ast.FileNode ast,
         Position position,
         string? documentFilePath = null)
@@ -574,7 +580,7 @@ public class SettexHoverHandler : HoverHandlerBase
                 var found = FindAssignmentInStatements(settings.Block.Statements, new List<string>(), line, column);
                 if (found != null)
                 {
-                    return (found.Value.Path, null, found.Value.IsObjectHeader); // Base, pas d'environnement
+                    return (found.Value.Path, null, found.Value.IsObjectHeader, found.Value.SegmentIndex); // Base, pas d'environnement
                 }
             }
             else if (stmt is Core.Parser.Ast.EnvBlockNode env)
@@ -582,7 +588,7 @@ public class SettexHoverHandler : HoverHandlerBase
                 var found = FindAssignmentInStatements(env.SettingsBlock.Block.Statements, new List<string>(), line, column);
                 if (found != null)
                 {
-                    return (found.Value.Path, env.EnvironmentName, found.Value.IsObjectHeader); // Dans un environnement
+                    return (found.Value.Path, env.EnvironmentName, found.Value.IsObjectHeader, found.Value.SegmentIndex); // Dans un environnement
                 }
             }
         }
@@ -597,7 +603,7 @@ public class SettexHoverHandler : HoverHandlerBase
     /// (<c>Server.Port</c> et non <c>Port</c>) — c'est ce chemin que l'overlay
     /// recherche dans la configuration évaluée.
     /// </summary>
-    private static (List<string> Path, bool IsObjectHeader)? FindAssignmentInStatements(
+    private static (List<string> Path, bool IsObjectHeader, int SegmentIndex)? FindAssignmentInStatements(
         IReadOnlyList<Core.Parser.Ast.IStatement> statements,
         List<string> prefix,
         int line,
@@ -611,7 +617,8 @@ public class SettexHoverHandler : HoverHandlerBase
                 {
                     var fullPath = new List<string>(prefix);
                     fullPath.AddRange(assignment.Path.Segments);
-                    return (fullPath, false);
+
+                    return (fullPath, false, HoveredSegmentIndex(assignment, prefix.Count, line, column));
                 }
             }
             else if (stmt is Core.Parser.Ast.NestedBlockNode nested)
@@ -630,12 +637,48 @@ public class SettexHoverHandler : HoverHandlerBase
                 // ways. Checked after the body so an inner match still wins.
                 if (IsPositionOnBlockName(nested, line, column))
                 {
-                    return (nestedPrefix, true);
+                    // A header names the block itself: the last segment of its path.
+                    return (nestedPrefix, true, nestedPrefix.Count - 1);
                 }
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Index, dans le chemin complet, du segment réellement sous le curseur.
+    /// L'affectation démarre sur son chemin, donc les segments occupent des colonnes
+    /// consécutives séparées par un point ; on les parcourt pour trouver celui qui
+    /// contient la colonne. Renvoie -1 si le curseur est au-delà du chemin (sur la
+    /// valeur, par exemple), auquel cas l'appelant retombe sur son ancien calcul.
+    /// </summary>
+    private static int HoveredSegmentIndex(
+        Core.Parser.Ast.AssignmentNode assignment,
+        int prefixLength,
+        int line,
+        int column)
+    {
+        if (line != assignment.Location.Line)
+        {
+            return -1;
+        }
+
+        var segmentStart = assignment.Location.Column;
+
+        for (var i = 0; i < assignment.Path.Segments.Count; i++)
+        {
+            var segmentEnd = segmentStart + assignment.Path.Segments[i].Length;
+
+            if (column >= segmentStart && column < segmentEnd)
+            {
+                return prefixLength + i;
+            }
+
+            segmentStart = segmentEnd + 1; // le point
+        }
+
+        return -1;
     }
 
     /// <summary>
