@@ -82,18 +82,22 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
 
         this.logger.LogTrace("Closed: {Uri}", uri);
 
-        // Documents that included this one fall back to the on-disk copy.
-        foreach (var affected in this.workspace.DidClose(uri))
-        {
-            this.PublishDiagnostics(affected.Uri, affected);
-        }
+        var affectedDocuments = this.workspace.DidClose(uri);
 
-        // Efface les diagnostics
+        // Clear this document's diagnostics first. Republishing the dependents came
+        // before, inside the same guard, so a failure there was swallowed and left the
+        // closed file underlined in the Problems panel with no way to clear it.
         this.languageServer.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
         {
             Uri = request.TextDocument.Uri,
             Diagnostics = new Container<Diagnostic>()
         });
+
+        // Documents that included this one fall back to the on-disk copy.
+        foreach (var affected in affectedDocuments)
+        {
+            this.PublishDiagnostics(affected.Uri, affected);
+        }
     });
 
     public override Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken cancellationToken)

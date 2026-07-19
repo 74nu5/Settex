@@ -354,9 +354,25 @@ public class SettexReferencesHandler : ReferencesHandlerBase
             case Core.Parser.Ast.ArrayNode array:
                 foreach (var element in array.Elements)
                 {
-                    if (element is Core.Parser.Ast.IExpression expr)
+                    switch (element)
                     {
-                        FindReferencesInExpression(expr, name, references);
+                        // A ForNode is an IArrayElement but not an IExpression, so
+                        // filtering on IExpression dropped it silently — neither its
+                        // body nor the collection it walks was ever visited, and a
+                        // variable used only inside a loop reported zero references.
+                        case Core.Parser.Ast.ForNode forNode:
+                            FindReferencesInExpression(forNode.Collection, name, references);
+
+                            foreach (var stmt in forNode.Body.Statements)
+                            {
+                                FindReferencesInBlockStatement(stmt, name, references);
+                            }
+
+                            break;
+
+                        case Core.Parser.Ast.IExpression expr:
+                            FindReferencesInExpression(expr, name, references);
+                            break;
                     }
                 }
                 break;
