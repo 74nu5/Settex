@@ -55,8 +55,10 @@ public class IncludeResolver
         => this.contentProvider = contentProvider;
 
     /// <summary>
-    ///     Every file touched during resolution: the root plus all transitively
-    ///     included files. Lets a host track which documents depend on which files.
+    ///     Every file touched during resolution: the root, all transitively included
+    ///     files, and any file an <c>include</c> pointed at but that could not be found.
+    ///     Lets a host track which documents depend on which files — including the
+    ///     missing one, whose later creation is exactly what should clear the error.
     /// </summary>
     public IReadOnlyCollection<string> ResolvedFiles => this.included;
 
@@ -151,6 +153,13 @@ public class IncludeResolver
                         $"Include depth limit ({MaxIncludeDepth}) exceeded while including '{includePath}'; the include chain is too deeply nested.",
                         includeNode.Location);
                 }
+
+                // Record the file before trying to load it. When it does not exist this
+                // is the only point at which its path is known — and it is precisely the
+                // file whose creation should re-analyse this document, so a host that
+                // tracked only successfully resolved files could never clear the
+                // "include not found" error without an unrelated edit.
+                this.included.Add(includePath);
 
                 var includedFile = this.LoadAndParseFile(includePath);
                 var includedStatements = this.ResolveIncludes(includedFile, includePath);

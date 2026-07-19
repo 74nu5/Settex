@@ -22,6 +22,10 @@ public class SettexDocument
 {
     private readonly string uri;
     private readonly Func<string, string?>? includeContentProvider;
+
+    /// <summary>Serialises the writers. Readers stay lock-free via the volatile field.</summary>
+    private readonly object writeLock = new();
+
     private volatile Snapshot current;
 
     /// <summary>
@@ -65,16 +69,29 @@ public class SettexDocument
     /// </summary>
     public void Update(string newText)
     {
-        this.current = Parse(this.uri, newText, this.includeContentProvider);
+        lock (this.writeLock)
+        {
+            this.current = Parse(this.uri, newText, this.includeContentProvider);
+        }
     }
 
     /// <summary>
     /// Re-analyses the document with its current text. Used when an included file
     /// changed, so the document picks up the new content.
+    /// <para>
+    /// Serialised with <see cref="Update" />: unlike it, this is a read-modify-write —
+    /// it re-reads the current text — and the two now have different callers. Update
+    /// comes from the document's own didChange, Refresh from a change to a file it
+    /// includes. Interleaved, Refresh could re-parse text captured before an Update
+    /// and publish it, silently rewinding the server's copy of the buffer.
+    /// </para>
     /// </summary>
     public void Refresh()
     {
-        this.current = Parse(this.uri, this.current.Text, this.includeContentProvider);
+        lock (this.writeLock)
+        {
+            this.current = Parse(this.uri, this.current.Text, this.includeContentProvider);
+        }
     }
 
     /// <summary>
