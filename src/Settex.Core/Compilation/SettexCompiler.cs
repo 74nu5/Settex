@@ -140,10 +140,12 @@ public sealed class SettexCompiler
                 return new(false, diagnostics);
             }
 
-            // Phase 3.5: Cross-environment coverage check (advisory warnings).
+            // Phase 3.5: Advisory static checks — cross-environment coverage drift
+            // and the .NET array-layering trap.
             if (options.CheckCoverage)
             {
                 diagnostics.AddRange(CoverageAnalyzer.Analyze(model));
+                diagnostics.AddRange(ArrayLayeringAnalyzer.Analyze(model));
             }
 
             // Phase 4: Writing (includes merging via JsonWriter)

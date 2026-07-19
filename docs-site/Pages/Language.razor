@@ -88,6 +88,12 @@ else
 }
 <CodeBlock Code="@Merging" />
 
+<div class="callout callout-note">
+    @(Fr
+        ? "⚠️ Piège des tableaux (limite .NET). Les règles ci-dessus décrivent la fusion vers la config effective. À l'exécution, .NET charge appsettings.json et appsettings.{Env}.json en couches et fusionne les tableaux par index, pas par remplacement : base [\"a\",\"b\",\"c\"] + env [\"x\"] donne [\"x\",\"b\",\"c\"] à l'exécution. Settex ne peut pas changer ce comportement du provider, donc il avertit à la compilation quand un environnement raccourcit un tableau présent dans la base. Évitez-le en gardant le tableau au moins aussi long par environnement, ou en ne le définissant que par environnement (pas dans la base)."
+        : "⚠️ Array-layering caveat (a .NET limitation). The rules above describe merging into the effective config. At runtime, .NET loads appsettings.json and appsettings.{Env}.json as layers and merges arrays by index, not by replacement: base [\"a\",\"b\",\"c\"] + env [\"x\"] yields [\"x\",\"b\",\"c\"] at runtime. Settex cannot change how the provider layers arrays, so it warns at compile time when an environment shortens an array that also exists in the base. Avoid it by keeping the array at least as long per environment, or defining it only per environment (not in the base).")
+</div>
+
 <h2 id="includes">@(Fr ? "Includes de fichiers" : "File includes")</h2>
 <p>
     @(Fr

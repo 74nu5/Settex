@@ -281,6 +281,8 @@ Each `env` block generates a separate `appsettings.{Environment}.json` file. By 
 - **Arrays**: Replaced completely (no merging)
 - **Primitives**: Replaced
 
+> **⚠️ Array-layering caveat (a .NET limitation).** The rules above describe how Settex merges values into the *effective* config. At **runtime**, though, .NET loads `appsettings.json` and `appsettings.{Env}.json` as separate layers and merges arrays **by index**, not by replacement. So if the base defines `Hosts = ["a","b","c"]` and an environment overrides it with `Hosts = ["x"]`, the effective runtime value is `["x","b","c"]` — the base's extra elements leak. Settex cannot change how the .NET provider layers arrays, so it **warns at compile time** when an environment shortens an array that also exists in the base. To avoid it, keep the array at least as long per environment, or define it only per environment (not in the base) so nothing layers under it.
+
 Example:
 
 ```settex

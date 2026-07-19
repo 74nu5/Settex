@@ -49,6 +49,17 @@ public sealed class SettexDocumentTests
     }
 
     [Test]
+    public async Task Diagnostics_ArrayShortenedAcrossLayers_ReportsWarningAsync()
+    {
+        var doc = new SettexDocument("untitled:Untitled-1",
+            "settings { AllowedHosts = [\"a\", \"b\", \"c\"] }\n"
+            + "env \"Production\" { settings { AllowedHosts = [\"x\"] } }");
+
+        await Assert.That(doc.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Warning
+            && d.Message.Contains("AllowedHosts"))).IsTrue();
+    }
+
+    [Test]
     public async Task IncludedSymbol_ResolvesToTheIncludedFile_NotTheCurrentDocumentAsync()
     {
         // A variable declared in an included file must, via go-to-definition,

@@ -665,6 +665,37 @@ settings {
     }
 
     [Test]
+    public async Task Compile_EnvShortensBaseArray_WarnsButSucceeds()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            const string source = """
+                settings { AllowedHosts = ["a", "b", "c"] }
+                env "Production" { settings { AllowedHosts = ["x"] } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            // Advisory: the array-layering trap is a warning, not a failure.
+            await Assert.That(result.Success).IsTrue();
+            await Assert.That(result.Warnings.Any(w => w.Message.Contains("AllowedHosts") && w.Message.Contains("index"))).IsTrue();
+
+            // Silenced together with the coverage check.
+            var quiet = new SettexCompiler().Compile(sourceFile, outputDir, new CompilerOptions { CheckCoverage = false });
+            await Assert.That(quiet.Warnings.Any(w => w.Message.Contains("AllowedHosts"))).IsFalse();
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
     public async Task Compile_TypeMismatchBetweenBlocks_ReportsLocatedError()
     {
         var tempDir = this.GetTempDirectory();

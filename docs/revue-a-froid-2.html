@@ -91,10 +91,10 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">7.5<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">267</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">7.7<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">274</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
-    <div class="score"><div class="big">1</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (2 corrigés ✅)</div></div>
+    <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
@@ -104,7 +104,7 @@
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Les deux plus gros trous ont été fermés dans la foulée de cette revue (diagnostics sémantiques &amp; couverture en éditeur ; conflit de type localisé — voir §03). Il reste des défauts <strong>réels</strong> : le piège d'indexation des tableaux de .NET casse silencieusement la sémantique « les tableaux se remplacent » (les deux modes), le mode delta ne valide pas les types base ↔ overlay, et la couche éditeur garde des ranges mono-ligne et une étendue de scope imparfaite. Plusieurs de ces défauts sont des <strong>angles morts des correctifs récents</strong> — c'est noté explicitement.
+    Les trois défauts élevés ont été adressés dans la foulée de cette revue (diagnostics sémantiques &amp; couverture en éditeur ; conflit de type localisé ; détection + doc du piège des tableaux — voir §03). Il reste des défauts <strong>moyens</strong> : le mode delta ne valide pas les types base ↔ overlay, et la couche éditeur garde des ranges mono-ligne et une étendue de scope imparfaite (nécessitent EndLine/EndColumn dans <code>SourceLocation</code>). Plusieurs sont des <strong>angles morts des correctifs récents</strong> — c'est noté explicitement.
   </div>
 
   <div class="callout">
@@ -161,10 +161,10 @@
     <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (Parse, ToLspDiagnostic) · reste : la couverture n'a pas de localisation source → ancrée en tête de fichier</div>
   </div>
 
-  <div class="callout bad">
-    <div class="t">La sémantique « les tableaux se remplacent » est fausse à l'exécution <span class="tag">reproduit</span></div>
-    Base <code class="sx">Hosts = ["a","b","c"]</code>, env <code class="sx">Hosts = ["x"]</code>. Settex présente le remplacement complet (le <code>Merger</code> l'applique). Mais .NET aplatit les tableaux en clés indexées (<code>Hosts:0/1/2</code>) et superpose <strong>par index</strong> les deux fichiers → valeur effective <code class="sx">["x","b","c"]</code>, pas <code class="sx">["x"]</code>. Vrai en mode <strong>delta ET <code>--merged</code></strong> (le fichier de base contient toujours le tableau). Aucun avertissement, aucune doc du piège. Le format ne peut pas exprimer « raccourcir un tableau » à travers les couches.
-    <div class="fp">src/Settex.Core/Writing/JsonWriter.cs · Merger.cs — au minimum : documenter le piège ; idéalement, avertir quand un env raccourcit un tableau présent en base</div>
+  <div class="callout ok">
+    <div class="t">✅ Adressé — le piège d'indexation des tableaux est détecté, averti &amp; documenté</div>
+    .NET superpose les tableaux <strong>par index</strong> (base <code class="sx">["a","b","c"]</code> + env <code class="sx">["x"]</code> → <code class="sx">["x","b","c"]</code> à l'exécution, vérifié empiriquement via le binder .NET réel). Settex <strong>ne peut pas</strong> changer ce comportement du provider — aucun « clear array » n'existe dans les fichiers appsettings, et un padding par <code>null</code> ne ferait que produire <code class="sx">["x",null,null]</code>. Le correctif mûr : un <code>ArrayLayeringAnalyzer</code> <strong>avertit à la compilation</strong> quand un environnement raccourcit un tableau présent en base (le cas où la fuite est garantie), et le piège est désormais <strong>documenté</strong> (README + guide du langage). Vérifié : Production 3→1 avertit, Staging 3→3 non ; 5 tests unitaires + tests compilateur/LSP. Reste une limite .NET intrinsèque, pas un bug Settex.
+    <div class="fp">src/Settex.Core/Compilation/ArrayLayeringAnalyzer.cs (nouveau) — surfacé au CLI, au build MSBuild et dans l'éditeur</div>
   </div>
 
   <div class="callout ok">
@@ -221,7 +221,7 @@
   <h2 id="composant"><span class="num">04</span>Évaluation par composant</h2>
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
-    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture solides ; piège des tableaux &amp; validation delta manquante</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture + détection du piège des tableaux ; reste validation delta</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">diagnostics sémantiques &amp; couverture désormais en éditeur ; reste ranges mono-ligne &amp; scope</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
@@ -240,7 +240,7 @@
     <tbody>
       <tr><td>1</td><td><s>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> — <strong>fait ✅</strong>. Reste : valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>3</td><td>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>3</td><td><s>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</s> — <strong>fait ✅</strong> (<code>ArrayLayeringAnalyzer</code> + doc README/site)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
