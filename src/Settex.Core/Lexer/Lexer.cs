@@ -492,10 +492,24 @@ public class Lexer(string source, string? filePath = null)
     {
         if (!this.IsAtEnd)
         {
-            if (this.Current == '\n')
+            // A line ends on CR as well as on LF. ScanNewline already accepts a lone CR
+            // — classic-Mac endings, and the CR of a CRLF pair — but only LF advanced
+            // the counter here, so every diagnostic in such a file reported line 1
+            // while the column kept accumulating across the whole file.
+            if (this.Current == '\r')
             {
                 this.line++;
                 this.column = 1;
+            }
+            else if (this.Current == '\n')
+            {
+                // In a CRLF pair the CR has already advanced the line; the LF is the
+                // rest of the same terminator and must not advance it again.
+                if (this.position == 0 || this.source[this.position - 1] != '\r')
+                {
+                    this.line++;
+                    this.column = 1;
+                }
             }
             else
             {

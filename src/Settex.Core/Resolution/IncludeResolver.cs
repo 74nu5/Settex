@@ -1,5 +1,6 @@
 namespace Settex.Core.Resolution;
 
+using Settex.Core.Diagnostics;
 using Settex.Core.Lexer;
 using Settex.Core.Parser;
 using Settex.Core.Parser.Ast;
@@ -81,7 +82,7 @@ public class IncludeResolver
     /// <param name="filePath">Absolute path to the file</param>
     /// <returns>Parsed FileNode AST</returns>
     /// <exception cref="IncludeException">If file cannot be read or parsed</exception>
-    public FileNode LoadAndParseFile(string filePath)
+    public FileNode LoadAndParseFile(string filePath, SourceLocation? location = null)
     {
         // An open editor buffer wins over the on-disk copy, so analysis reflects
         // unsaved edits in included files.
@@ -89,7 +90,7 @@ public class IncludeResolver
 
         if (providedSource is null && !File.Exists(filePath))
         {
-            throw new IncludeException($"Include file not found: {filePath}", null);
+            throw new IncludeException($"Include file not found: {filePath}", location);
         }
 
         try
@@ -102,7 +103,7 @@ public class IncludeResolver
         }
         catch (Exception ex) when (ex is not IncludeException)
         {
-            throw new IncludeException($"Failed to parse include file '{filePath}': {ex.Message}", null, ex);
+            throw new IncludeException($"Failed to parse include file '{filePath}': {ex.Message}", location, ex);
         }
     }
 
@@ -161,7 +162,7 @@ public class IncludeResolver
                 // "include not found" error without an unrelated edit.
                 this.included.Add(includePath);
 
-                var includedFile = this.LoadAndParseFile(includePath);
+                var includedFile = this.LoadAndParseFile(includePath, includeNode.Location);
                 var includedStatements = this.ResolveIncludes(includedFile, includePath);
                 result.AddRange(includedStatements);
             }
