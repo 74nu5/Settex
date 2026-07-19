@@ -336,6 +336,8 @@ appsettings.settex: warning: Key 'DevOnly.Flag' is set in 'Development' but miss
 
 It's **advisory** (a warning, never a build failure) and on by default. Turn it off with `--no-coverage-check` (CLI) or `<SettexCheckCoverage>false</SettexCheckCoverage>` (MSBuild). Under MSBuild it surfaces as a `SETTEX` warning.
 
+**What is *not* flagged, on purpose:** a key set in **every** environment but absent from the base. That configuration is correct as it stands, and the obvious "fix" — inventing a base default — is often worse for values that must be decided per environment (connection strings, endpoints, secret placeholders): a plausible-looking wrong default would apply silently. The deferred risk ("someone adds a new environment and forgets the key") is already covered: the moment that environment exists without the key, the key is in some environments but not all, and the warning above fires.
+
 ## 🆕 V2 Features
 
 ### File Includes

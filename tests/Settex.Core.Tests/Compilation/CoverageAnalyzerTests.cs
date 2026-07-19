@@ -53,6 +53,8 @@ public class CoverageAnalyzerTests
     [Test]
     public async Task Analyze_KeyDefinedInAllEnvironments_DoesNotWarnAsync()
     {
+        // Deliberate: the config is correct as it stands, and hoisting such a key
+        // into the base would mean inventing a default that applies silently.
         var model = new SettingsModel(
             new JsonObject(),
             new()
@@ -64,6 +66,27 @@ public class CoverageAnalyzerTests
         var diagnostics = CoverageAnalyzer.Analyze(model);
 
         await Assert.That(diagnostics.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Analyze_NewEnvironmentAddedWithoutTheKey_WarnsAsync()
+    {
+        // This is why the case above can stay silent: the deferred risk — "someone
+        // adds an environment and forgets the key" — is caught the moment it becomes
+        // real, because the key is then in some environments but not all.
+        var model = new SettingsModel(
+            new JsonObject(),
+            new()
+            {
+                ["Development"] = new JsonObject { ["Key"] = 1 },
+                ["Production"] = new JsonObject { ["Key"] = 2 },
+                ["Staging"] = new JsonObject { ["Other"] = 3 },
+            });
+
+        var diagnostics = CoverageAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics.Any(d => d.Message.Contains("'Key'")
+            && d.Message.Contains("Staging"))).IsTrue();
     }
 
     [Test]
