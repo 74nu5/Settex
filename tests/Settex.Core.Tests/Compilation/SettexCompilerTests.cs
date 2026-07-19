@@ -696,6 +696,108 @@ settings {
     }
 
     [Test]
+    public async Task Compile_BaseOverlayTypeConflict_RejectedInBothOutputModes()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Base says Foo is a number, the overlay makes it an object. Delta output
+            // never merges base and overlay, so this used to slip through and emit an
+            // incoherent pair of files; it must be rejected regardless of mode.
+            const string source = """
+                settings { Foo = 1 }
+                env "Dev" { settings { Foo { Bar = 2 } } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var delta = new SettexCompiler().Compile(sourceFile, outputDir);
+            await Assert.That(delta.Success).IsFalse();
+
+            var deltaError = delta.Errors.FirstOrDefault(e => e.Message.Contains("Type mismatch"));
+            await Assert.That(deltaError).IsNotNull();
+            await Assert.That(deltaError!.Message).Contains("Dev");
+            await Assert.That(deltaError.Location).IsNotNull();
+
+            // Merged output rejects it too — the two modes agree.
+            var merged = new SettexCompiler().Compile(
+                sourceFile, outputDir, new CompilerOptions { MergeEnvironments = true });
+            await Assert.That(merged.Success).IsFalse();
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_NestedBaseOverlayConflict_NamesFullPath()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            const string source = """
+                settings { Server { Port = 1 } }
+                env "Dev" { settings { Server { Port { Deep = 2 } } } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsFalse();
+            await Assert.That(result.Errors.Any(e => e.Message.Contains("Server.Port"))).IsTrue();
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_CompatibleOverlayTypes_StillCompile()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Objects deep-merge, arrays replace, primitives replace — none of these
+            // are conflicts and must keep compiling.
+            const string source = """
+                settings {
+                  Server { Host = "localhost" Port = 5432 }
+                  Tags = ["dev"]
+                  Name = "app"
+                }
+
+                env "Dev" {
+                  settings {
+                    Server { Port = 6000 }
+                    Tags = ["a", "b"]
+                    Name = "app-dev"
+                    NewKey = true
+                  }
+                }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
     public async Task Compile_TypeMismatchBetweenBlocks_ReportsLocatedError()
     {
         var tempDir = this.GetTempDirectory();

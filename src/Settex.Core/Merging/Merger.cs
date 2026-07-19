@@ -64,28 +64,31 @@ public sealed class Merger
         }
 
         // If both are primitives (or null), replace (overlay wins)
-        if (this.IsPrimitive(baseValue) && this.IsPrimitive(overlayValue))
+        if (IsPrimitive(baseValue) && IsPrimitive(overlayValue))
         {
             return this.DeepClone(overlayValue);
         }
 
         // Type mismatch - error
-        var baseType = this.GetNodeTypeName(baseValue);
-        var overlayType = this.GetNodeTypeName(overlayValue);
         throw new MergerException(
-            $"Type mismatch for key '{key}': base is {baseType}, overlay is {overlayType}");
+            $"Type mismatch for key '{key}': base is {DescribeNodeType(baseValue)}, overlay is {DescribeNodeType(overlayValue)}");
     }
 
     /// <summary>
-    ///     Checks if a JSON node is a primitive value (string, number, boolean, null).
+    ///     Whether a base value and an overlay value can be combined: both objects
+    ///     (deep merge), both arrays (replace) or both primitives (replace). Anything
+    ///     else is a type conflict. Shared with the compile-time validation so the
+    ///     rules cannot drift from the merge itself.
     /// </summary>
-    private bool IsPrimitive(JsonNode? node)
-        => node is null or JsonValue;
+    public static bool AreCompatible(JsonNode? baseValue, JsonNode? overlayValue)
+        => (baseValue is JsonObject && overlayValue is JsonObject)
+           || (baseValue is JsonArray && overlayValue is JsonArray)
+           || (IsPrimitive(baseValue) && IsPrimitive(overlayValue));
 
     /// <summary>
     ///     Gets a human-readable type name for a JSON node.
     /// </summary>
-    private string GetNodeTypeName(JsonNode? node)
+    public static string DescribeNodeType(JsonNode? node)
     {
         return node switch
         {
@@ -96,6 +99,12 @@ public sealed class Merger
             _ => "unknown",
         };
     }
+
+    /// <summary>
+    ///     Checks if a JSON node is a primitive value (string, number, boolean, null).
+    /// </summary>
+    private static bool IsPrimitive(JsonNode? node)
+        => node is null or JsonValue;
 
     /// <summary>
     ///     Deep clones a JSON node.

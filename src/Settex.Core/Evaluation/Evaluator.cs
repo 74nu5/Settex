@@ -53,9 +53,17 @@ public class Evaluator
         // Evaluate environment overlays, deep-merging blocks that target the
         // same environment (again, so an include can contribute to an env).
         var environmentOverlays = new Dictionary<string, JsonObject>();
+        var environmentLocations = new Dictionary<string, SourceLocation>();
 
         foreach (var envBlock in envBlocks)
         {
+            // Remember where each environment was first declared, to locate any
+            // base/overlay type conflict reported below.
+            if (!environmentLocations.ContainsKey(envBlock.EnvironmentName))
+            {
+                environmentLocations[envBlock.EnvironmentName] = envBlock.Location;
+            }
+
             // Create child scope for this environment
             var envScope = globalScope.CreateChild();
 
@@ -75,7 +83,57 @@ public class Evaluator
                 : SafeMerge(merger, prior, envSettings, envBlock.Location);
         }
 
+        // Validate every overlay against the base, independently of the output mode.
+        // Merged output would surface a conflict when it merges; delta output never
+        // merges base and overlay, so without this check it would silently emit an
+        // incoherent pair of files (e.g. base "Foo": 1 next to an overlay "Foo": {…}).
+        foreach (var (envName, overlay) in environmentOverlays)
+        {
+            ValidateOverlayAgainstBase(baseSettings, overlay, envName, environmentLocations[envName], string.Empty);
+        }
+
         return new(baseSettings, environmentOverlays);
+    }
+
+    /// <summary>
+    ///     Walks an environment overlay against the base settings and throws on the
+    ///     first type conflict (a key that is an object on one side and a primitive or
+    ///     array on the other). Uses <see cref="Merger.AreCompatible" /> so the rule is
+    ///     exactly the one the merge itself applies.
+    /// </summary>
+    private static void ValidateOverlayAgainstBase(
+        JsonObject baseObject,
+        JsonObject overlay,
+        string environmentName,
+        SourceLocation location,
+        string path)
+    {
+        foreach (var (key, overlayValue) in overlay)
+        {
+            var currentPath = path.Length == 0 ? key : $"{path}.{key}";
+
+            // A key the base doesn't define can never conflict.
+            if (!baseObject.TryGetPropertyValue(key, out var baseValue))
+            {
+                continue;
+            }
+
+            if (baseValue is JsonObject baseChild && overlayValue is JsonObject overlayChild)
+            {
+                ValidateOverlayAgainstBase(baseChild, overlayChild, environmentName, location, currentPath);
+                continue;
+            }
+
+            if (Merger.AreCompatible(baseValue, overlayValue))
+            {
+                continue;
+            }
+
+            throw new EvaluatorException(
+                $"Type mismatch for key '{currentPath}' in environment '{environmentName}': " +
+                $"base is {Merger.DescribeNodeType(baseValue)}, overlay is {Merger.DescribeNodeType(overlayValue)}",
+                location);
+        }
     }
 
     /// <summary>

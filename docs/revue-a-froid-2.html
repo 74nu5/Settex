@@ -91,20 +91,20 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">7.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">284</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">7.9<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">287</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
-    <div class="t">Pourquoi la note remonte (5,8 → 7,8)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>284 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
+    <div class="t">Pourquoi la note remonte (5,8 → 7,9)</div>
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>287 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Les trois défauts élevés ont été adressés dans la foulée de cette revue (diagnostics sémantiques &amp; couverture en éditeur ; conflit de type localisé ; détection + doc du piège des tableaux — voir §03). Il reste des défauts <strong>moyens</strong> : le mode delta ne valide pas les types base ↔ overlay, et la couche éditeur garde des ranges mono-ligne et une étendue de scope imparfaite (nécessitent EndLine/EndColumn dans <code>SourceLocation</code>). Plusieurs sont des <strong>angles morts des correctifs récents</strong> — c'est noté explicitement.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : le LSP lit les includes depuis le disque en ignorant les buffers non sauvegardés (pas de watcher, pas de cache de reparse), les itérateurs de <code>for</code> ne sont pas modélisés comme variables de scope, il n'existe pas d'échappement pour un <code>${…}</code> littéral, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
   </div>
 
   <div class="callout">
@@ -175,10 +175,10 @@
 
   <h3>🟠 Moyens</h3>
 
-  <div class="callout warn">
-    <div class="t">Le mode delta n'effectue aucune validation de type base ↔ overlay <span class="tag">reproduit</span> <span class="tag">issu du dernier cycle</span></div>
-    Base <code class="sx">Foo = 1</code>, env <code class="sx">Foo { Bar = 2 }</code> : en mode delta (défaut) ça compile et écrit un JSON <strong>incohérent</strong> (base <code>Foo:1</code> + env <code>Foo:Bar:2</code>), qui casse le binding .NET. Le <strong>même</strong> fichier est <strong>rejeté</strong> en <code>--merged</code>. La validité dépend donc d'un drapeau de sortie, et c'est le défaut par défaut qui masque le problème — parce que les overlays ne sont jamais fusionnés contre la base en mode delta.
-    <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs · JsonWriter.cs — valider la compatibilité base/overlay indépendamment du mode</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — la compatibilité de type base ↔ overlay est validée dans les deux modes</div>
+    Base <code class="sx">Foo = 1</code>, env <code class="sx">Foo { Bar = 2 }</code> : en mode delta (défaut) ça compilait et écrivait un JSON <strong>incohérent</strong>, alors que <code>--merged</code> le rejetait — la validité dépendait d'un drapeau de sortie, et le défaut masquait le problème. <strong>Corrigé</strong> : l'<code>Evaluator</code> valide chaque overlay contre la base <strong>après évaluation, indépendamment du mode de sortie</strong>, via <code>Merger.AreCompatible</code> — la règle est donc littéralement celle qu'applique la fusion, sans risque de dérive. Le diagnostic nomme le <strong>chemin complet et l'environnement</strong> (<code>Type mismatch for key 'Server.Port' in environment 'Dev'</code>), mieux que le message historique limité à la clé feuille. Vérifié : delta et merged rejettent au même endroit ; overlays compatibles (objets, tableaux, primitives, clés nouvelles) inchangés ; 3 tests de non-régression.
+    <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs (ValidateOverlayAgainstBase) · Merging/Merger.cs (AreCompatible, DescribeNodeType)</div>
   </div>
 
   <div class="callout ok">
@@ -221,7 +221,7 @@
   <h2 id="composant"><span class="num">04</span>Évaluation par composant</h2>
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
-    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture + détection du piège des tableaux ; reste validation delta</span><div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">deltas, couverture, piège des tableaux détecté, types base/overlay validés</span><div class="bar"><i style="width:80%"></i></div></div>
     <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges multi-lignes &amp; portée corrects ; reste cache de reparse &amp; buffers non sauvegardés</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
@@ -239,7 +239,7 @@
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
       <tr><td>1</td><td><s>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> — <strong>fait ✅</strong>. Reste : valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> · <s>valider la compatibilité de type base ↔ overlay aussi en mode delta</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</s> — <strong>fait ✅</strong> (<code>ArrayLayeringAnalyzer</code> + doc README/site)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</s> — <strong>fait ✅</strong> (un seul changement Core ferme les deux findings)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
