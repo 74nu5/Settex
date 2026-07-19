@@ -1,3 +1,9 @@
+# Secrets are NOT stored here. Keys like JwtSettings.SecretKey carry an obvious
+# placeholder so the shape of the configuration is visible; the real value is supplied
+# at deployment through .NET's environment-variable or user-secrets provider, which
+# layers on top of these files. Settex interpolation resolves 'let' bindings at compile
+# time — it is not a placeholder for runtime environment variables.
+
 // Sample Web API Configuration
 // This file demonstrates Settex syntax with a realistic ASP.NET Core Web API setup
 
@@ -89,7 +95,7 @@ env "Staging" {
     ConnectionStrings.DefaultConnection = "Server=staging-sql.example.com;Database=SampleWebApiDb;User Id=apiuser;Password=StaginPass123;Encrypt=true"
     ConnectionStrings.CacheConnection = "staging-redis.example.com:6379"
     
-    JwtSettings.SecretKey = "${JWT_SECRET_STAGING}"
+    JwtSettings.SecretKey = "set-at-deployment"
     JwtSettings.ExpirationMinutes = 120
     
     RateLimiting.Enabled = true
@@ -99,7 +105,7 @@ env "Staging" {
     Features.EnableMetrics = true
     
     ExternalServices.EmailService.Provider = "SendGrid"
-    ExternalServices.EmailService.ApiKey = "${SENDGRID_API_KEY_STAGING}"
+    ExternalServices.EmailService.ApiKey = "set-at-deployment"
   }
 }
 
@@ -109,10 +115,10 @@ env "Production" {
     Logging.LogLevel.Default = "Warning"
     Logging.LogLevel.Microsoft.AspNetCore = "Error"
     
-    ConnectionStrings.DefaultConnection = "${DATABASE_CONNECTION_STRING}"
-    ConnectionStrings.CacheConnection = "${REDIS_CONNECTION_STRING}"
+    ConnectionStrings.DefaultConnection = "set-at-deployment"
+    ConnectionStrings.CacheConnection = "set-at-deployment"
     
-    JwtSettings.SecretKey = "${JWT_SECRET_KEY}"
+    JwtSettings.SecretKey = "set-at-deployment"
     JwtSettings.ExpirationMinutes = 30
     JwtSettings.RefreshTokenExpirationDays = 30
     
@@ -125,11 +131,11 @@ env "Production" {
     Features.EnableHealthChecks = true
     Features.EnableMetrics = true
     
-    ExternalServices.WeatherApi.ApiKey = "${WEATHER_API_KEY}"
+    ExternalServices.WeatherApi.ApiKey = "set-at-deployment"
     ExternalServices.WeatherApi.TimeoutSeconds = 10
     
     ExternalServices.EmailService.Provider = "SendGrid"
-    ExternalServices.EmailService.ApiKey = "${SENDGRID_API_KEY}"
+    ExternalServices.EmailService.ApiKey = "set-at-deployment"
     ExternalServices.EmailService.FromAddress = "noreply@sampleapi.com"
   }
 }
