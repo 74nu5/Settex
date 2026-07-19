@@ -25,6 +25,12 @@ on:
     paths:
       - 'docs-site/**'
 
+# Least privilege. This is the workflow that carries a deployment secret, so it is
+# the one whose token scope matters most — it was inheriting the repository default
+# while the CI workflow already restricted itself.
+permissions:
+  contents: read
+
 jobs:
   build_and_deploy:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
@@ -47,7 +53,11 @@ jobs:
       - name: Publish Blazor WebAssembly
         run: dotnet publish docs-site/Settex.Docs.csproj -c Release -o publish
 
+      # A pull request from a fork gets an empty secret, so the deploy step fails on
+      # every external contribution — a red run that says nothing about the change.
+      # Build still runs and still has to pass; only the upload is skipped.
       - name: Deploy to Azure Static Web Apps
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
