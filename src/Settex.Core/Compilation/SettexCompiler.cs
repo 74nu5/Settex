@@ -140,11 +140,18 @@ public sealed class SettexCompiler
                 return new(false, diagnostics);
             }
 
-            // Phase 3.5: Advisory static checks — cross-environment coverage drift
-            // and the .NET array-layering trap.
+            // Phase 3.5: advisory static checks. Two different hazards, two flags:
+            // coverage is about a key you forgot to set somewhere, array layering is
+            // about .NET keeping base elements you thought you had replaced. They shared
+            // a switch, so turning off the first silently turned off the second — and
+            // the second was documented as unconditional.
             if (options.CheckCoverage)
             {
                 diagnostics.AddRange(CoverageAnalyzer.Analyze(model));
+            }
+
+            if (options.CheckArrayLayering)
+            {
                 diagnostics.AddRange(ArrayLayeringAnalyzer.Analyze(model));
             }
 

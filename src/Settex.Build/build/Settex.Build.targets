@@ -32,7 +32,8 @@
     <CompileSettexTask SourceFile="%(SettexFile.FullPath)"
                        OutputDirectory="$(SettexOutputDirectory)"
                        MergeEnvironments="$(SettexMergeEnvironments)"
-                       CheckCoverage="$(SettexCheckCoverage)">
+                       CheckCoverage="$(SettexCheckCoverage)"
+                       CheckArrayLayering="$(SettexCheckArrayLayering)">
       <Output TaskParameter="GeneratedFiles" ItemName="FileWrites" />
     </CompileSettexTask>
 

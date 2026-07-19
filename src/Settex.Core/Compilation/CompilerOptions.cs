@@ -21,6 +21,14 @@ public sealed class CompilerOptions
     /// </summary>
     public bool CheckCoverage { get; init; } = true;
 
+    /// <summary>
+    ///     Whether to warn when an environment override would leak base array content
+    ///     through .NET's index-based layering. Separate from <see cref="CheckCoverage" />:
+    ///     the two report different hazards, and sharing one switch meant silencing the
+    ///     drift check also silenced this one.
+    /// </summary>
+    public bool CheckArrayLayering { get; init; } = true;
+
     /// <summary>Default options: delta output, coverage check enabled.</summary>
     public static CompilerOptions Default { get; } = new();
 }

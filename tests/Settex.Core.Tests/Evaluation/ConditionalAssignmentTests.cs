@@ -156,7 +156,7 @@ public class ConditionalAssignmentTests
             }
             """;
 
-        await Assert.ThrowsAsync(() => Task.FromResult(CompileSource(source)));
+        await Assert.ThrowsAsync<EvaluatorException>(() => Task.FromResult(CompileSource(source)));
     }
 
     [Test]

@@ -171,11 +171,17 @@ public sealed class ForLoopTests
     [Test]
     public async Task ForLoop_IteratorVariable_IsLocalToForScope()
     {
+        // This used to assert only that two elements came out, which is true whether or
+        // not the iterator is scoped. It now declares an outer variable of the same name
+        // and checks both directions: the loop must see its own iterator, and the outer
+        // binding must survive the loop unchanged.
         var source = """
             let items = [1, 2]
+            let item = 99
 
             settings {
-                Values = [ for item in items { item { Value = item } } ]
+                Values = [ for item in items { entry { Value = item } } ]
+                AfterLoop = item
             }
             """;
 
@@ -189,6 +195,13 @@ public sealed class ForLoopTests
         var values = model.BaseSettings["Values"]?.AsArray();
         await Assert.That(values).IsNotNull();
         await Assert.That(values!.Count).IsEqualTo(2);
+
+        // The loop body saw the iterator, not the outer 99.
+        await Assert.That(values[0]!["Value"]!.GetValue<long>()).IsEqualTo(1);
+        await Assert.That(values[1]!["Value"]!.GetValue<long>()).IsEqualTo(2);
+
+        // And the outer binding is intact afterwards.
+        await Assert.That(model.BaseSettings["AfterLoop"]!.GetValue<long>()).IsEqualTo(99);
     }
 
     /// <summary>

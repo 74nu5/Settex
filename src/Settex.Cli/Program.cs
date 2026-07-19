@@ -42,19 +42,31 @@ internal static class Program
 
         buildCommand.AddOption(noCoverageOption);
 
-        buildCommand.SetHandler(ExecuteBuildAsync, fileArgument, outputOption, mergedOption, noCoverageOption);
+        var noArrayLayeringOption = new Option<bool>(
+            ["--no-array-layering-check"],
+            description: "Disable the array-layering check (an environment override that would keep base elements at runtime)");
+
+        buildCommand.AddOption(noArrayLayeringOption);
+
+        buildCommand.SetHandler(ExecuteBuildAsync, fileArgument, outputOption, mergedOption, noCoverageOption, noArrayLayeringOption);
 
         rootCommand.AddCommand(buildCommand);
 
         return await rootCommand.InvokeAsync(args);
     }
 
-    private static async Task<int> ExecuteBuildAsync(FileInfo sourceFile, DirectoryInfo? outputDirectory, bool merged, bool noCoverageCheck)
+    private static async Task<int> ExecuteBuildAsync(
+        FileInfo sourceFile,
+        DirectoryInfo? outputDirectory,
+        bool merged,
+        bool noCoverageCheck,
+        bool noArrayLayeringCheck)
     {
         var options = new CompilerOptions
         {
             MergeEnvironments = merged,
             CheckCoverage = !noCoverageCheck,
+            CheckArrayLayering = !noArrayLayeringCheck,
         };
 
         return await Task.Run(() => ExecuteBuild(sourceFile, outputDirectory ?? new DirectoryInfo("."), options));

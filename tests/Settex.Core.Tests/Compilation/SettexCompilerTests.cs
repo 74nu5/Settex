@@ -686,7 +686,13 @@ settings {
             await Assert.That(result.Warnings.Any(w => w.Message.Contains("AllowedHosts") && w.Message.Contains("index"))).IsTrue();
 
             // Silenced together with the coverage check.
-            var quiet = new SettexCompiler().Compile(sourceFile, outputDir, new CompilerOptions { CheckCoverage = false });
+            // Silencing the drift check must NOT silence this one: they report
+            // different hazards, and sharing a switch meant the array-layering warning
+            // — documented as unconditional — disappeared with it.
+            var noCoverage = new SettexCompiler().Compile(sourceFile, outputDir, new CompilerOptions { CheckCoverage = false });
+            await Assert.That(noCoverage.Warnings.Any(w => w.Message.Contains("AllowedHosts"))).IsTrue();
+
+            var quiet = new SettexCompiler().Compile(sourceFile, outputDir, new CompilerOptions { CheckArrayLayering = false });
             await Assert.That(quiet.Warnings.Any(w => w.Message.Contains("AllowedHosts"))).IsFalse();
         }
         finally
