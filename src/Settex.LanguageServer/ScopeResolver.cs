@@ -213,8 +213,13 @@ public class ScopeResolver
 
                 parentScope.Children.Add(forScope);
 
-                // Note: L'iterator lui-même n'est pas un LetNode, mais une variable implicite
-                // On pourrait créer un LetNode synthétique si nécessaire pour FindVariable
+                // L'itérateur est une variable implicite : on l'enregistre comme un
+                // LetNode synthétique pointant sur la boucle. Sans lui, résoudre
+                // l'itérateur dans le corps remontait au scope parent et tombait sur
+                // une variable homonyme externe (mauvais go-to-definition). Sa valeur
+                // référence la collection parcourue — voir le hover, qui l'affiche
+                // explicitement comme un itérateur.
+                forScope.Variables.Add(new LetNode(forNode.IteratorName, forNode.Collection, forNode.Location));
 
                 // Parcourir le corps de la boucle
                 this.ProcessBlock(forNode.Body, forScope);

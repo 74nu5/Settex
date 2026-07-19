@@ -637,6 +637,19 @@ public class Parser(List<Token> tokens, string? filePath = null)
                 break;
             }
 
+            // "$${" escapes a literal "${", so a string can legitimately contain
+            // "${...}" (shell/compose templates, regexes, runtime placeholders)
+            // without Settex trying to evaluate it.
+            if (dollarPos > currentPos && str[dollarPos - 1] == '$')
+            {
+                var beforeEscape = dollarPos - 1 - currentPos;
+                var literal = beforeEscape > 0 ? str.Substring(currentPos, beforeEscape) : string.Empty;
+
+                segments.Add(new LiteralSegment(literal + "${"));
+                currentPos = dollarPos + 2;
+                continue;
+            }
+
             // Add literal segment before ${
             if (dollarPos > currentPos)
             {

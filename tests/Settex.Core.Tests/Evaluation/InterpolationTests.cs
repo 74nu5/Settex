@@ -190,6 +190,50 @@ public class InterpolationTests
     }
 
     [Test]
+    public async Task Evaluate_EscapedInterpolation_StaysLiteral()
+    {
+        // "$${" lets a string legitimately contain "${...}" (shell templates,
+        // regexes, runtime placeholders) without Settex evaluating it.
+        var source = """
+            settings {
+                Path = "$${HOME}/bin"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Path"]!.GetValue<string>()).IsEqualTo("${HOME}/bin");
+    }
+
+    [Test]
+    public async Task Evaluate_EscapedAndRealInterpolationInSameString_BothHandled()
+    {
+        var source = """
+            let port = 8080
+
+            settings {
+                Mixed = "$${NOT_INTERP} and ${port}"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Mixed"]!.GetValue<string>()).IsEqualTo("${NOT_INTERP} and 8080");
+    }
+
+    [Test]
+    public async Task Evaluate_EscapedInterpolation_DoesNotRequireTheVariableToExist()
+    {
+        // The whole point: an undefined name inside an escaped ${...} must not fail.
+        var source = """
+            settings {
+                Template = "$${UNDEFINED_EVERYWHERE}"
+            }
+            """;
+
+        var json = CompileSource(source);
+        await Assert.That(json!["Template"]!.GetValue<string>()).IsEqualTo("${UNDEFINED_EVERYWHERE}");
+    }
+
+    [Test]
     public async Task Evaluate_InterpolationWithTrailingTokens_ThrowsAnchoredError()
     {
         // "${a b}" must be rejected: previously the parser kept only 'a' and

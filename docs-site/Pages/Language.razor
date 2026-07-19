@@ -127,6 +127,12 @@ else
         ? "est résolu à la compilation à partir des variables et expressions Settex — ce n'est pas un emplacement pour des variables d'environnement runtime. Injectez les secrets au déploiement via les fournisseurs de configuration .NET (variables d'environnement ou user-secrets)."
         : "is resolved at compile time from Settex variables and expressions — it is not a placeholder for runtime environment variables. Inject secrets at deployment time through .NET's environment-variable or user-secrets providers instead.")
 </div>
+<p>
+    @(Fr
+        ? "Pour écrire un ${ littéral — un template shell, une regex, un emplacement destiné à un autre outil — échappez-le avec $${ : "
+        : "To write a literal ${ — a shell template, a regex, a placeholder meant for another tool — escape it with $${ : ")
+</p>
+<CodeBlock Code="@EscapedInterpolation" />
 
 <h2 id="conditionals">@(Fr ? "Affectations conditionnelles" : "Conditional assignments")</h2>
 <p>@(Fr ? "Affecte une valeur seulement si une condition booléenne est vraie. Écrivez le repli d'abord, la surcharge conditionnelle après." : "Assign a value only when a boolean condition holds. Write the fallback first, the conditional override after.")</p>
@@ -303,6 +309,15 @@ else
           ShouldCache = enabled and timeout > 10
           LogLevel = null ?? "Information"
           Label = "v" + 2 + ".0"        // "v2.0" — + concatenates with a string
+        }
+        """;
+
+    private const string EscapedInterpolation = """
+        let port = 8080
+
+        settings {
+          HomePath = "$${HOME}/bin"                  // -> "${HOME}/bin", left alone
+          Mixed    = "$${NOT_INTERP} and ${port}"    // -> "${NOT_INTERP} and 8080"
         }
         """;
 

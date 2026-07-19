@@ -394,6 +394,66 @@ public sealed class ScopeResolverTests
         await Assert.That(scope.Name).IsEqualTo("Empty");
     }
 
+    [Test]
+    public async Task FindVariableInScope_ForIterator_ResolvesToTheLoopNotAnOuterHomonymAsync()
+    {
+        // Regression: the iterator was not registered as a scope variable, so
+        // resolving it inside the body walked up and hit the global 'svc'.
+        var source = """
+            let svc = "outer"
+            let services = ["a", "b"]
+
+            settings {
+                Items = [
+                    for svc in services {
+                        item { Name = svc }
+                    }
+                ]
+            }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+
+        var forScope = this.FindFirstForScope(globalScope);
+        await Assert.That(forScope).IsNotNull();
+
+        var resolved = resolver.FindVariableInScope("svc", forScope!);
+        await Assert.That(resolved).IsNotNull();
+
+        // It must be the loop's own declaration, not the global `let svc`.
+        var globalSvc = globalScope.Variables.Single(v => v.Name == "svc");
+        await Assert.That(ReferenceEquals(resolved, globalSvc)).IsFalse();
+        await Assert.That(resolved!.Location.Line).IsEqualTo(forScope!.Location.Line);
+    }
+
+    [Test]
+    public async Task FindVariableInScope_OuterVariableStillVisibleFromLoopAsync()
+    {
+        // Shadowing the iterator must not hide unrelated outer variables.
+        var source = """
+            let host = "localhost"
+            let ports = [1, 2]
+
+            settings {
+                Items = [
+                    for p in ports {
+                        item { Url = host }
+                    }
+                ]
+            }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+        var forScope = this.FindFirstForScope(globalScope);
+
+        var resolved = resolver.FindVariableInScope("host", forScope!);
+
+        await Assert.That(resolved).IsNotNull();
+        await Assert.That(resolved!.Name).IsEqualTo("host");
+    }
+
     // Helpers
 
     private FileNode Parse(string source)

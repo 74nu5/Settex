@@ -92,19 +92,19 @@
 
   <div class="score-band">
     <div class="score"><div class="big">7.9<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">292</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">297</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
     <div class="t">Pourquoi la note remonte (5,8 → 7,9)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>292 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>297 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : les itérateurs de <code>for</code> ne sont pas modélisés comme variables de scope, il n'existe pas d'échappement pour un <code>${…}</code> littéral, les handlers LSP n'ont pas de try/catch défensif, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : les handlers LSP n'ont pas de try/catch défensif, le hover overlay est insensible aux colonnes, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
   </div>
 
   <div class="callout">
@@ -199,10 +199,10 @@
     <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (ToLspLocation) — réutiliser l'URI de la requête pour le fichier courant</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">Aucun moyen d'émettre un <code>${…}</code> littéral — <code>$</code> n'a pas d'échappement <span class="tag">reproduit</span></div>
-    L'interpolation se déclenche sur un simple <code>str.Contains("${")</code>, et l'échappement du lexer se limite à <code>\" \\ \n \r \t</code> (<code>\$</code> lève « Invalid escape sequence »). Toute chaîne contenant légitimement <code>${…}</code> (templates shell/docker-compose, regex, jetons .NET) est forcée en interpolation : <code class="sx">"${HOME}"</code> échoue « Variable 'HOME' is not defined » sans échappatoire évidente.
-    <div class="fp">src/Settex.Core/Lexer/Lexer.cs · Parser.cs — supporter <code>\$</code> ou <code>$${</code></div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — <code>$${</code> échappe un <code>${…}</code> littéral</div>
+    Toute chaîne contenant légitimement <code>${…}</code> (templates shell/compose, regex, jetons destinés à un autre outil) était forcée en interpolation, sans échappatoire (<code>\$</code> levait « Invalid escape sequence »). <strong>Corrigé</strong> : <code class="sx">$${</code> produit un <code>${</code> littéral. L'échappement est traité <strong>là où la décision d'interpolation se prend</strong> (le parser) et non dans le lexer — un <code>\$</code> décodé en <code>$</code> aurait été indiscernable et se serait heurté à l'ambiguïté avec <code class="sx">"\\$"</code>. Le message d'erreur de <code>\$</code> oriente désormais vers la bonne syntaxe. Vérifié : littéral préservé, variable inexistante non évaluée, et <strong>échappement + interpolation réelle dans la même chaîne</strong> ; 3 tests, syntaxe documentée (README, guide, aide-mémoire).
+    <div class="fp">src/Settex.Core/Parser/Parser.cs (ParseInterpolatedString) · Lexer.cs (message d'aide)</div>
   </div>
 
   <h3>🟡 Faibles</h3>
@@ -212,7 +212,7 @@
     <li><strong>Scanner d'accolades d'interpolation</strong> ignore les chaînes internes : <code class="sx">"${ y == \"}\" }"</code> s'arrête sur le <code>}</code> dans la chaîne interne <span class="tag">raisonné</span>.</li>
     <li><strong>Dédup/cycle d'includes</strong> comparent des chemins <code>GetFullPath</code> : liens symboliques/durs et noms courts 8.3 peuvent les contourner (borné par <code>MaxIncludeDepth</code>, donc pas de blocage) <span class="tag">raisonné</span>.</li>
     <li><strong>✅ Corrigé — LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés, sans re-parse quand un fichier inclus changeait. L'<code>IncludeResolver</code> accepte désormais un fournisseur de contenu (les buffers ouverts gagnent sur le disque) et expose les fichiers résolus ; le workspace suit ces dépendances et <strong>ré-analyse les documents dépendants</strong> à l'ouverture, la modification et la fermeture d'un fichier inclus. Vérifié : buffer non sauvegardé pris en compte, dépendants rafraîchis, retour au disque à la fermeture, documents non concernés épargnés.</li>
-    <li><strong>LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> → go-to-def sur l'itérateur saute vers une variable homonyme externe <span class="tag">raisonné</span>.</li>
+    <li><strong>✅ Corrigé — LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> (go-to-def sautait vers une variable homonyme externe). L'itérateur est désormais enregistré comme un <code>LetNode</code> synthétique pointant sur la boucle, donc il <strong>masque</strong> correctement les homonymes externes ; le hover l'affiche explicitement comme itérateur avec la collection parcourue, plutôt que de laisser croire que sa valeur <em>est</em> la collection.</li>
     <li><strong>LSP : handlers sans try/catch</strong> <span class="tag">raisonné</span>. Le risque de position négative (<code>Column-1</code>) est en revanche <strong>fermé ✅</strong> : <code>LocationToRange</code> borne désormais les coordonnées à zéro.</li>
     <li><strong>Highlighter des docs ignore les commentaires <code>#</code></strong> (Settex en supporte deux styles) — latent, aucun exemple actuel ne l'utilise <span class="tag">reproduit</span>.</li>
   </ul>
@@ -242,7 +242,7 @@
       <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> · <s>valider la compatibilité de type base ↔ overlay aussi en mode delta</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</s> — <strong>fait ✅</strong> (<code>ArrayLayeringAnalyzer</code> + doc README/site)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</s> — <strong>fait ✅</strong> (un seul changement Core ferme les deux findings)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td><s>Échappement pour <code>${…}</code> littéral</s> — <strong>fait ✅</strong> (<code>$${</code>). Reste : réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Publication marketplace (VS + VS Code) ; dépendance SDK .NET 10 <em>preview</em> à retirer à la sortie stable</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
     </tbody>
