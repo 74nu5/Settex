@@ -121,7 +121,7 @@ public class Evaluator
             var currentPath = path.Length == 0 ? key : $"{path}.{key}";
 
             // A key the base doesn't define can never conflict.
-            if (!baseObject.TryGetPropertyValue(key, out var baseValue))
+            if (!TryGetPropertyIgnoreCase(baseObject, key, out var baseValue))
             {
                 continue;
             }
@@ -142,6 +142,33 @@ public class Evaluator
                 $"base is {Merger.DescribeNodeType(baseValue)}, overlay is {Merger.DescribeNodeType(overlayValue)}",
                 location);
         }
+    }
+
+    /// <summary>
+    ///     Looks a property up the way .NET configuration does: case-insensitively.
+    ///     <see cref="JsonObject" /> compares ordinally, so a base <c>Foo</c> and an
+    ///     overlay <c>foo</c> looked like two independent keys here — which meant the
+    ///     one case where they collide at runtime, and therefore the one case worth
+    ///     reporting, was the one that slipped through unchecked.
+    /// </summary>
+    private static bool TryGetPropertyIgnoreCase(JsonObject source, string key, out JsonNode? value)
+    {
+        if (source.TryGetPropertyValue(key, out value))
+        {
+            return true;
+        }
+
+        foreach (var (candidate, candidateValue) in source)
+        {
+            if (string.Equals(candidate, key, StringComparison.OrdinalIgnoreCase))
+            {
+                value = candidateValue;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
     }
 
     /// <summary>

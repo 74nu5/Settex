@@ -121,4 +121,69 @@ public class CoverageAnalyzerTests
         await Assert.That(diagnostics.Any(d => d.Message.Contains("Server.Timeout"))).IsTrue();
         await Assert.That(diagnostics.Any(d => d.Message.Contains("Server.Host"))).IsTrue();
     }
+    /// <summary>
+    /// A key spelled 'Timeout' in the base and 'timeout' in an environment is one key
+    /// at runtime, so the environment is covered and there is no drift. Comparing
+    /// ordinally produced a warning that was not merely noisy but actively misleading:
+    /// it announced a missing key when the real story was a spelling disagreement.
+    /// </summary>
+    [Test]
+    public async Task Analyze_EnvKeyDifferingFromBaseOnlyInCase_DoesNotWarnAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject { ["Timeout"] = 30 },
+            new()
+            {
+                ["Dev"] = new JsonObject { ["timeout"] = 5 },
+                ["Prod"] = new JsonObject { ["Other"] = 1 },
+            });
+
+        var diagnostics = CoverageAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics.Any(d => d.Message.Contains("imeout"))).IsFalse();
+    }
+
+    /// <summary>
+    /// Two environments spelling the same environment-only key differently cover each
+    /// other, so nothing is missing — and in any case only one candidate exists, not
+    /// two producing duplicate warnings.
+    /// </summary>
+    [Test]
+    public async Task Analyze_EnvironmentsSpellingTheSameKeyDifferently_DoNotDriftAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject(),
+            new()
+            {
+                ["Dev"] = new JsonObject { ["Feature"] = true },
+                ["Prod"] = new JsonObject { ["feature"] = false },
+            });
+
+        var diagnostics = CoverageAnalyzer.Analyze(model);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    /// <summary>
+    /// Environment names are quoted in the message, so their order must not depend on
+    /// Dictionary enumeration.
+    /// </summary>
+    [Test]
+    public async Task Analyze_QuotesEnvironmentsInASortedOrderAsync()
+    {
+        var model = new SettingsModel(
+            new JsonObject(),
+            new()
+            {
+                ["Zulu"] = new JsonObject { ["Only"] = 1 },
+                ["Alpha"] = new JsonObject { ["Other"] = 2 },
+                ["Mike"] = new JsonObject { ["Other"] = 3 },
+            });
+
+        var diagnostics = CoverageAnalyzer.Analyze(model);
+
+        var onlyWarning = diagnostics.Single(d => d.Message.Contains("'Only'"));
+
+        await Assert.That(onlyWarning.Message).Contains("missing from 'Alpha', 'Mike'");
+    }
 }

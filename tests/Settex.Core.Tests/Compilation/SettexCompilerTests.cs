@@ -972,4 +972,38 @@ settings {
             this.CleanupDirectory(tempDir);
         }
     }
+    [Test]
+    public async Task Compile_BaseOverlayTypeConflictDifferingOnlyInCase_IsRejected()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Same conflict as above, but the overlay spells the key 'foo'. .NET
+            // configuration keys are case-insensitive, so the two collide at runtime
+            // exactly as 'Foo'/'Foo' would. Looking the base key up ordinally made this
+            // the one variant that compiled cleanly — the conflict most worth catching
+            // was the one that slipped through.
+            const string source = """
+                settings { Foo = 1 }
+                env "Dev" { settings { foo { Bar = 2 } } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsFalse();
+
+            var error = result.Errors.FirstOrDefault(e => e.Message.Contains("Type mismatch"));
+
+            await Assert.That(error).IsNotNull();
+            await Assert.That(error!.Message).Contains("foo");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
 }
