@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -14,18 +15,43 @@ namespace Settex.LanguageServer;
 public class SettexDefinitionHandler : DefinitionHandlerBase
 {
     private readonly SettexWorkspace workspace;
+    private readonly ILogger<SettexDefinitionHandler> logger;
     private readonly ScopeResolver scopeResolver;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
 
-    public SettexDefinitionHandler(SettexWorkspace workspace)
+    public SettexDefinitionHandler(SettexWorkspace workspace, ILogger<SettexDefinitionHandler> logger)
     {
         this.workspace = workspace;
+        this.logger = logger;
         this.scopeResolver = new ScopeResolver();
     }
 
-    public override Task<LocationOrLocationLinks?> Handle(
+    /// <summary>
+    /// Degrades to "no result" instead of faulting the request: an unexpected
+    /// failure in analysis should not surface as a broken LSP call in the editor.
+    /// </summary>
+    public override async Task<LocationOrLocationLinks?> Handle(
+        DefinitionParams request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await this.HandleCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Go to definition failed for {Uri}", request.TextDocument.Uri);
+            return null;
+        }
+    }
+
+    private Task<LocationOrLocationLinks?> HandleCoreAsync(
         DefinitionParams request,
         CancellationToken cancellationToken)
     {

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -14,16 +15,40 @@ namespace Settex.LanguageServer;
 public class SettexDocumentSymbolHandler : DocumentSymbolHandlerBase
 {
     private readonly SettexWorkspace workspace;
+    private readonly ILogger<SettexDocumentSymbolHandler> logger;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
 
-    public SettexDocumentSymbolHandler(SettexWorkspace workspace)
+    public SettexDocumentSymbolHandler(SettexWorkspace workspace, ILogger<SettexDocumentSymbolHandler> logger)
     {
         this.workspace = workspace;
+        this.logger = logger;
     }
 
-    public override Task<SymbolInformationOrDocumentSymbolContainer?> Handle(
+    /// <summary>
+    /// Degrades to "no symbols" instead of faulting the request.
+    /// </summary>
+    public override async Task<SymbolInformationOrDocumentSymbolContainer?> Handle(
+        DocumentSymbolParams request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await this.HandleCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Document symbols failed for {Uri}", request.TextDocument.Uri);
+            return null;
+        }
+    }
+
+    private Task<SymbolInformationOrDocumentSymbolContainer?> HandleCoreAsync(
         DocumentSymbolParams request,
         CancellationToken cancellationToken)
     {

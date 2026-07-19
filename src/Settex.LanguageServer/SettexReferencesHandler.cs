@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -15,18 +16,42 @@ namespace Settex.LanguageServer;
 public class SettexReferencesHandler : ReferencesHandlerBase
 {
     private readonly SettexWorkspace workspace;
+    private readonly ILogger<SettexReferencesHandler> logger;
     private readonly ScopeResolver scopeResolver;
     private readonly TextDocumentSelector documentSelector = new(
         new TextDocumentFilter { Pattern = "**/*.settex" }
     );
 
-    public SettexReferencesHandler(SettexWorkspace workspace)
+    public SettexReferencesHandler(SettexWorkspace workspace, ILogger<SettexReferencesHandler> logger)
     {
         this.workspace = workspace;
+        this.logger = logger;
         this.scopeResolver = new ScopeResolver();
     }
 
-    public override Task<LocationContainer?> Handle(
+    /// <summary>
+    /// Degrades to "no result" instead of faulting the request.
+    /// </summary>
+    public override async Task<LocationContainer?> Handle(
+        ReferenceParams request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await this.HandleCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Find references failed for {Uri}", request.TextDocument.Uri);
+            return null;
+        }
+    }
+
+    private Task<LocationContainer?> HandleCoreAsync(
         ReferenceParams request,
         CancellationToken cancellationToken)
     {
