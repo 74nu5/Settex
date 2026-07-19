@@ -38,7 +38,27 @@ public class SettexCompletionHandler : CompletionHandlerBase
         this.logger = logger;
     }
 
-    public override Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+    /// <summary>
+    /// Degrades to an empty completion list instead of faulting the request.
+    /// </summary>
+    public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await this.HandleCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (System.Exception ex)
+        {
+            this.logger.LogError(ex, "Completion failed for {Uri}", request.TextDocument.Uri);
+            return new CompletionList();
+        }
+    }
+
+    private Task<CompletionList> HandleCoreAsync(CompletionParams request, CancellationToken cancellationToken)
     {
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);

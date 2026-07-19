@@ -34,7 +34,28 @@ public class SettexHoverHandler : HoverHandlerBase
         this.scopeResolver = new ScopeResolver();
     }
 
-    public override Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
+    /// <summary>
+    /// Degrades to "no hover" instead of faulting the request: an unexpected
+    /// failure in analysis should not surface as a broken LSP call in the editor.
+    /// </summary>
+    public override async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await this.HandleCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Hover failed for {Uri}", request.TextDocument.Uri);
+            return null;
+        }
+    }
+
+    private Task<Hover?> HandleCoreAsync(HoverParams request, CancellationToken cancellationToken)
     {
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
