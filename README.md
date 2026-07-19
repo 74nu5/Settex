@@ -493,6 +493,32 @@ settings {
 }
 ```
 
+### Keys containing a dot
+
+The dot separates path segments, so `Logging.LogLevel.Microsoft.AspNetCore` means four
+nested keys. .NET flattens configuration with a **colon** and treats a dot as an
+ordinary character, so `Logging:LogLevel:Microsoft.AspNetCore` — the log-level filter
+every ASP.NET Core app sets — needs a literal dot inside one key.
+
+**Quote the segment** to say that:
+
+```settex
+settings {
+  Logging {
+    LogLevel {
+      Default = "Information"
+      "Microsoft.AspNetCore" = "Warning"   # one key, with a dot in it
+    }
+  }
+  "Content-Type" = "application/json"     # also works for any other character
+}
+```
+
+A quoted segment is accepted anywhere an identifier is — on its own, in the middle of a
+dotted path (`Nested."A.B".C`), and as a nested block name. It may not contain an
+interpolation: a key has to be known before anything is evaluated, so `"${x}"` is
+refused rather than silently taken literally.
+
 **Escaping** — write `$${` for a literal `${`, so a string can legitimately contain `${...}` without Settex evaluating it:
 
 ```settex
@@ -928,7 +954,7 @@ settings {
   Logging {
     LogLevel {
       Default = "Information"
-      Microsoft.AspNetCore = "Warning"
+      "Microsoft.AspNetCore" = "Warning"
     }
   }
 
@@ -957,7 +983,7 @@ env "Development" {
 env "Production" {
   settings {
     Logging.LogLevel.Default = "Warning"
-    Logging.LogLevel.Microsoft.AspNetCore = "Error"
+    Logging.LogLevel."Microsoft.AspNetCore" = "Error"
     # Keep real secrets out of source: use a non-secret placeholder here and
     # override at runtime via the environment / user-secrets providers.
     ConnectionStrings.DefaultConnection = "Server=prod-db;Database=MyApi"
