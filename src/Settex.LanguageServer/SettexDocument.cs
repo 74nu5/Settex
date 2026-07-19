@@ -53,13 +53,16 @@ public class SettexDocument
     }
 
     /// <summary>
-    /// Snapshot immuable de l'état analysé d'un document.
+    /// Snapshot immuable de l'état analysé d'un document. <see cref="FilePath"/> est
+    /// le chemin FS résolu du document (null s'il n'est pas enregistré) — il permet
+    /// de distinguer les nœuds propres au fichier de ceux issus d'un <c>include</c>.
     /// </summary>
     internal sealed record Snapshot(
         string Text,
         IReadOnlyList<Token> Tokens,
         FileNode? Ast,
-        IReadOnlyList<Diagnostic> Diagnostics);
+        IReadOnlyList<Diagnostic> Diagnostics,
+        string? FilePath);
 
     /// <summary>
     /// Analyse complète du document (Lexer + Parser + résolution des includes)
@@ -158,7 +161,29 @@ public class SettexDocument
             });
         }
 
-        return new Snapshot(text, tokens, ast, diagnostics);
+        return new Snapshot(text, tokens, ast, diagnostics, filePath);
+    }
+
+    /// <summary>
+    /// Indique si un symbole à la localisation donnée appartient <strong>à ce
+    /// document</strong> (et non à un fichier inclus). Un nœud sans <c>FilePath</c>
+    /// (document non enregistré) est considéré comme propre au document.
+    /// </summary>
+    public static bool IsFromSameFile(SourceLocation location, string? documentFilePath)
+    {
+        if (string.IsNullOrEmpty(location.FilePath) || string.IsNullOrEmpty(documentFilePath))
+        {
+            return true;
+        }
+
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        return string.Equals(
+            Path.GetFullPath(location.FilePath),
+            Path.GetFullPath(documentFilePath),
+            comparison);
     }
 
     /// <summary>
