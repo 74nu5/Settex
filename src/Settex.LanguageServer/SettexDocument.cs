@@ -135,6 +135,11 @@ public class SettexDocument
                     {
                         diagnostics.Add(ToLspDiagnostic(coverage));
                     }
+
+                    foreach (var layering in Settex.Compilation.ArrayLayeringAnalyzer.Analyze(model))
+                    {
+                        diagnostics.Add(ToLspDiagnostic(layering));
+                    }
                 }
                 catch (Core.Evaluation.EvaluatorException ex)
                 {
