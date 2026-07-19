@@ -270,7 +270,7 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 <h2><span class="num">05</span>Défauts mineurs</h2>
 <ul class="tight">
   <li><strong>Reliquats de debug commités à la racine</strong>&nbsp;: <code>debug_for.settex</code> et trois <code>appsettings*.json</code>, tracés depuis d'anciens commits. Les appsettings contiennent du contenu <em>fusionné</em>, qui contredit visuellement le mode delta actuel. Rien dans <code>.gitignore</code> ne les couvre.</li>
-  <li><strong>L'échappement <code>$${</code> n'est documenté nulle part</strong> — zéro occurrence dans le README comme dans le site. Fonctionnalité livrée, invisible.</li>
+  <li><s><strong>L'échappement <code>$${</code> n'est documenté nulle part</strong></s> <span class="badge b-bad">faux positif</span> — <strong>ce constat était faux</strong>. L'échappement est documenté dans le README et sur deux pages du site, depuis le commit même qui l'a introduit. La commande de vérification que j'avais lancée était cassée par l'échappement du shell et ne remontait rien ; j'en ai conclu une absence au lieu de conclure que ma commande ne marchait pas. Corrigé après vérification directe des fichiers.</li>
   <li><strong>Changement de sens silencieux</strong>&nbsp;: il n'existe plus d'échappement produisant un <code>$</code> littéral suivi d'une interpolation. <code>"cost: $${price}"</code> est passé de <code>cost: 42</code> au littéral <code>cost: ${price}</code> sans avertir. Le contournement <code>"$" + "${price}"</code> fonctionne, mais mérite une note de version.</li>
   <li><strong>Ordre des environnements non déterministe</strong> dans les deux analyseurs&nbsp;: itération d'un <code>Dictionary</code>, y compris pour les listes citées dans le texte des messages.</li>
   <li><strong>Étendues absentes sur <code>LetNode</code> et <code>IncludeNode</code></strong> — limitées au mot-clé, incohérent avec le traitement des affectations.</li>
@@ -327,7 +327,7 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 <tr><td>6</td><td><s>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</s> <span class="badge b-ok">fait</span></td><td>Les trois analyseurs suivent désormais la sémantique réelle de la configuration .NET.</td></tr>
 <tr><td>7</td><td><s>Étendre l'analyse de superposition aux tableaux d'objets</s> <span class="badge b-ok">fait</span></td><td>Les champs qui fuient sont nommés un par un, vérification faite contre un vrai binder .NET.</td></tr>
 <tr><td>8</td><td>Porter les positions source jusqu'aux analyseurs</td><td>Rend exploitable l'avertissement qui justifie le produit.</td></tr>
-<tr><td>9</td><td>Nettoyer la racine du dépôt et documenter <code>$${</code></td><td>Hygiène et cohérence documentaire.</td></tr>
+<tr><td>9</td><td>Nettoyer la racine du dépôt <span class="badge b-warn">reste</span></td><td>Reliquats de debug commités. Le volet « documenter <code>$${</code> » tombe : c'était un faux positif de cette revue.</td></tr>
 <tr><td>10</td><td>Publication marketplace (VS + VS Code)</td><td>Seul reliquat de la revue précédente.</td></tr>
 </tbody>
 </table>
