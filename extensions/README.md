@@ -4,20 +4,22 @@ This directory contains editor extensions for Settex, providing IDE support for 
 
 📖 **Documentation:** [settex.74nu5.dev](https://settex.74nu5.dev)
 
+> **Language-server requirement:** both extensions run the Settex language server (hover, go-to-definition, find-references, diagnostics, completion) on the **.NET 10 runtime**. If it isn't installed, syntax highlighting and snippets still work, and the extension shows an actionable message with a download link. Install .NET 10 from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
+
 ## Available Extensions
 
 ### 1. Visual Studio Code Extension
 
 **Location**: `vscode-settex/`
 
-A VS Code extension providing syntax highlighting and basic editor support for Settex. Language server integration and advanced IntelliSense features are under active development.
+A VS Code extension providing syntax highlighting, snippets, and language-server support (IntelliSense, diagnostics, hover, navigation) for Settex.
 
 **Features**:
 - ✅ Syntax highlighting
-- 🔄 Language server integration (planned)
-- 🔄 Code completion / IntelliSense (planned)
-- 🔄 Diagnostics and error checking (planned)
-- 🔄 Hover information (planned)
+- ✅ Language server integration
+- ✅ Code completion / IntelliSense
+- ✅ Diagnostics and error checking
+- ✅ Hover information
 - ✅ Code snippets
 
 **Installation**:

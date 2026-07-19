@@ -148,8 +148,8 @@ env Production {
 ## Requirements
 
 - Visual Studio 2022 (version 17.0) or later, **including Visual Studio 2026**
-- .NET Framework 4.7.2 or later (for the extension itself)
-- Optional: Settex.LanguageServer for IntelliSense (auto-detected if available)
+- .NET Framework 4.7.2 or later (for the extension host itself)
+- **.NET 10 runtime** — required to run the bundled Settex language server (IntelliSense, diagnostics, hover, navigation). If it's missing, syntax highlighting and snippets still work and the extension shows an actionable message with a link to [download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0).
 - Optional: Settex.Build for automatic compilation during build
 
 ## Supported Visual Studio Editions

@@ -72,8 +72,8 @@
 
 <div class="callout callout-note">
     @(Fr
-        ? "Les fonctionnalités d'éditeur reposent sur la présence du runtime .NET 10, puisque le serveur de langage et la CLI s'exécutent comme des processus dotnet <dll>."
-        : "Editor features rely on the .NET 10 runtime being present, since the language server and CLI run as dotnet <dll> processes.")
+        ? "Les fonctionnalités d'éditeur reposent sur la présence du runtime .NET 10, puisque le serveur de langage s'exécute comme un processus dotnet <dll>. S'il est absent, la coloration et les snippets restent actifs et l'extension affiche un message avec un lien de téléchargement — installez .NET 10 pour activer l'IntelliSense."
+        : "Editor features rely on the .NET 10 runtime being present, since the language server runs as a dotnet <dll> process. If it's missing, syntax highlighting and snippets still work and the extension shows a message with a download link — install .NET 10 to enable IntelliSense.")
 </div>
 
 <h2 id="snippets">Snippets</h2>
