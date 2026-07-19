@@ -51,27 +51,18 @@ public static class ArrayLayeringAnalyzer
                     continue;
                 }
 
-                if (baseArray.Count > overlayArray.Count)
-                {
-                    diagnostics.Add(new Diagnostic(
-                        DiagnosticSeverity.Warning,
-                        $"Environment '{envName}' overrides array '{path}' with {overlayArray.Count} element(s), but the base array has {baseArray.Count}. " +
-                        ".NET merges arrays by index across appsettings files, so the effective runtime value keeps the base's extra trailing element(s) instead of replacing the array. " +
-                        $"Either keep '{path}' at least as long in this environment, or define it only per environment (not in the base) so nothing layers under it.",
-                        keyPath: path,
-                        environmentName: envName));
-                }
-
-                var leaks = FindLeakedFields(baseArray, overlayArray);
+                // One rule, derived from what the provider actually does rather than from
+                // heuristics about lengths and element kinds: every base entry whose
+                // flattened key the override does not redefine survives at runtime.
+                var leaks = FindLeakedEntries(baseArray, overlayArray);
 
                 if (leaks.Count > 0)
                 {
                     diagnostics.Add(new Diagnostic(
                         DiagnosticSeverity.Warning,
-                        $"Environment '{envName}' overrides array '{path}', whose elements are objects. " +
-                        "At a shared index .NET merges those objects field by field, so every field the base element defines and this one omits survives at runtime: " +
-                        $"{string.Join(", ", leaks)}. " +
-                        $"Either repeat those fields here, or define '{path}' only per environment (not in the base) so nothing layers under it.",
+                        $"Environment '{envName}' overrides array '{path}', but .NET merges arrays by index across appsettings files rather than replacing them, " +
+                        $"so these base entries survive at runtime: {string.Join(", ", leaks)}. " +
+                        $"Either redefine them in this environment, or define '{path}' only per environment (not in the base) so nothing layers under it.",
                         keyPath: path,
                         environmentName: envName));
                 }
@@ -82,35 +73,64 @@ public static class ArrayLayeringAnalyzer
     }
 
     /// <summary>
-    ///     For each index present in both arrays, the fields of the base element that the
-    ///     override does not redefine — the ones that leak. Reported as
-    ///     <c>[index] field</c>, ordered by index then field.
+    ///     The base entries an override does not redefine — the ones that leak.
+    ///     <para>
+    ///     .NET does not replace an array: it flattens every file into one key/value
+    ///     dictionary (<c>Svcs:0:Port</c>) and layers the entries. So the question is not
+    ///     how long each array is, nor whether its elements are objects — it is simply
+    ///     which flattened keys the override redefines. Comparing the two flattened key
+    ///     sets answers every shape at once: trailing indices left behind by a shorter
+    ///     override, fields omitted from an object element, arrays nested inside an
+    ///     element, and an object element replaced by a primitive (whose fields survive
+    ///     underneath it). The earlier length-and-shape heuristics missed the last three.
+    ///     </para>
     /// </summary>
-    private static List<string> FindLeakedFields(JsonArray baseArray, JsonArray overlayArray)
+    private static List<string> FindLeakedEntries(JsonArray baseArray, JsonArray overlayArray)
     {
-        var leaks = new List<string>();
-        var shared = Math.Min(baseArray.Count, overlayArray.Count);
+        var overlayKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectEntries(overlayArray, string.Empty, overlayKeys);
 
-        for (var index = 0; index < shared; index++)
+        var baseKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectEntries(baseArray, string.Empty, baseKeys);
+
+        return baseKeys
+            .Where(key => !overlayKeys.Contains(key))
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    ///     Flattens an array the way the configuration provider does: one entry per leaf
+    ///     value, keyed by its index path (<c>[0].Tls.Cert</c>, <c>[1]</c>).
+    /// </summary>
+    private static void CollectEntries(JsonArray array, string prefix, HashSet<string> entries)
+    {
+        for (var index = 0; index < array.Count; index++)
         {
-            if (baseArray[index] is not JsonObject baseElement || overlayArray[index] is not JsonObject overlayElement)
-            {
-                // A primitive at this index is genuinely overwritten by the override.
-                continue;
-            }
-
-            var overlayFields = CollectLeafPaths(overlayElement);
-
-            foreach (var field in CollectLeafPaths(baseElement).OrderBy(f => f, StringComparer.Ordinal))
-            {
-                if (!overlayFields.Contains(field))
-                {
-                    leaks.Add($"[{index}] {field}");
-                }
-            }
+            CollectEntries(array[index], $"{prefix}[{index}]", entries);
         }
+    }
 
-        return leaks;
+    private static void CollectEntries(JsonNode? node, string prefix, HashSet<string> entries)
+    {
+        switch (node)
+        {
+            case JsonObject obj:
+                foreach (var (key, value) in obj)
+                {
+                    CollectEntries(value, $"{prefix}.{key}", entries);
+                }
+
+                break;
+
+            case JsonArray nested:
+                CollectEntries(nested, prefix, entries);
+                break;
+
+            default:
+                entries.Add(prefix);
+                break;
+        }
     }
 
     /// <summary>
@@ -140,34 +160,6 @@ public static class ArrayLayeringAnalyzer
                 case JsonObject child:
                     Collect(child, path, arrays);
                     break;
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Dotted paths of the leaf values inside one array element. Nested arrays are
-    ///     leaves here: what matters is whether the override redefines the entry at all.
-    /// </summary>
-    private static HashSet<string> CollectLeafPaths(JsonObject element)
-    {
-        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        CollectLeaves(element, string.Empty, paths);
-        return paths;
-    }
-
-    private static void CollectLeaves(JsonObject settings, string prefix, HashSet<string> paths)
-    {
-        foreach (var (key, value) in settings)
-        {
-            var path = prefix.Length == 0 ? key : $"{prefix}.{key}";
-
-            if (value is JsonObject child)
-            {
-                CollectLeaves(child, path, paths);
-            }
-            else
-            {
-                paths.Add(path);
             }
         }
     }
