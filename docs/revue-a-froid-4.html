@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — Cinquième revue (à froid)</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  }
+  :root[data-theme="dark"]{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  :root[data-theme="light"]{ --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:60px 24px 36px;border-bottom:1px solid var(--border);
+    background:radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:940px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.12rem;color:var(--muted);margin:0 0 22px;max-width:700px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.55rem;margin:52px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.05rem;margin-right:10px}
+  h3{font-size:1.12rem;margin:26px 0 6px}
+  p{margin:12px 0}.lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.5;margin:12px 0}
+  pre code{background:none;padding:0;font-size:1em}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  ul.tight{margin:12px 0;padding-left:22px}ul.tight li{margin:6px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}.callout.ok{border-left-color:var(--ok)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .tag{font-family:var(--mono);font-size:.7rem;padding:.1em .5em;border-radius:5px;background:var(--surface-2);color:var(--muted);margin-left:6px}
+  .finding{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--bad);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:18px 0}
+  .finding.med{border-left-color:var(--warn)}
+  .finding h3{margin:0 0 4px;font-size:1.05rem}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .verdict{font-size:1.12rem;font-weight:600}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Cinquième revue · à froid</p>
+    <h1>Settex — après la campagne</h1>
+    <p class="subtitle">Relecture indépendante après seize PR fermant l'intégralité de la quatrième revue. Deux relecteurs adverses (cœur compilateur, serveur de langage et infrastructure) plus une passe d'usage, tous menés sans connaissance des intentions.</p>
+    <div class="meta">
+      <span><b>Date</b> 19 juillet 2026</span>
+      <span><b>Stack</b> .NET 10 (LTS) · C#</span>
+      <span><b>Tests</b> 364 · 0 échec</span>
+      <span><b>CI</b> Linux · Windows · extension</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<h2><span class="num">01</span>Verdict</h2>
+
+<div class="score-band">
+  <div class="score"><div class="big">8,2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-warn">−1,2</span></div></div>
+  <div class="score"><div class="big">364</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">5</div><div class="lbl">défauts élevés <span class="badge b-bad">nouveaux</span></div></div>
+  <div class="score"><div class="big">0</div><div class="lbl">avertissement de build</div></div>
+</div>
+
+<p class="lead">La quatrième revue s'est fermée à 9,4/10, tous constats traités. Cette cinquième en trouve cinq nouveaux défauts élevés, dont une perte de données silencieuse. La note baisse — et c'est la note précédente qui était trompeuse, pas celle-ci.</p>
+
+<div class="callout bad">
+  <div class="t">Ce que ce cinquième passage établit</div>
+  <p style="margin:0 0 8px"><strong>La note mesurait la fermeture d'une liste, pas la densité de défauts.</strong> À chaque revue, les constats de la précédente ont été fermés puis la note remontée — mais chaque nouvelle relecture est allée plus profond que la précédente et a trouvé une nouvelle couche. Une liste vide ne signifie pas un logiciel sans défaut&nbsp;; elle signifie que la dernière méthode d'inspection a épuisé ce qu'elle savait voir.</p>
+  <p style="margin:0"><strong>Deux des cinq défauts élevés viennent de correctifs de la campagne précédente</strong>&nbsp;: l'un parce qu'une correction se disait « systémique » sans l'être, l'autre parce que deux correctifs corrects séparément ouvrent un trou une fois combinés.</p>
+</div>
+
+<h2><span class="num">02</span>Vérité terrain</h2>
+
+<table>
+<thead><tr><th>Contrôle</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>SDK résolu</td><td><code>10.0.302</code> (GA, épinglé) <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Build solution Release</td><td>0 avertissement, 0 erreur <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Tests</td><td>364 / 364 — Core 269 · LSP 69 · CLI 7 · Build 4 · VS 7 <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Site docs · tâche MSBuild</td><td>build propre <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Scénario fondateur</td><td>delta + avertissement de dérive, de bout en bout <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Dérive définie dans un include (CLI)</td><td>toujours signalée <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Volumétrie</td><td>Core 4 313 lignes · LSP 3 928</td></tr>
+</tbody>
+</table>
+
+<p>La promesse centrale tient toujours&nbsp;: une clé posée dans un environnement et oubliée ailleurs produit un avertissement nommant la clé, les environnements et l'action, avec trois fichiers en delta. Et le filtrage de diagnostics introduit dans le serveur de langage <em>n'a pas</em> fui dans le compilateur — vérifié explicitement, c'était un risque réel.</p>
+
+<h2><span class="num">03</span>Défauts élevés</h2>
+
+<div class="finding">
+  <h3>H1 — Deux environnements ne différant que par la casse détruisent un overlay <span class="tag">reproduit</span></h3>
+  <p class="fp">Evaluator.cs:63 · JsonWriter.cs:71</p>
+  <p>Le dictionnaire des overlays compare en ordinal&nbsp;: <code>env "Dev"</code> et <code>env "dev"</code> sont deux environnements. Sur Windows, ils s'écrivent dans le même fichier.</p>
+<pre><code>✓ Successfully generated 3 file(s):
+  → appsettings.json
+  → appsettings.Dev.json
+  → appsettings.dev.json     ← le même fichier
+
+fichiers réellement présents : 2
+appsettings.Dev.json : { "A": 200 }   ← l'overlay Dev (A = 100) a disparu</code></pre>
+  <p>Perte de données silencieuse, annoncée comme un succès, avec une liste de fichiers qui ment. Le comportement diverge aussi entre plateformes&nbsp;: Linux écrit bien deux fichiers.</p>
+</div>
+
+<div class="finding">
+  <h3>H2 — <code>:=</code> est sensible à la casse et écrase la valeur de base <span class="tag">reproduit</span></h3>
+  <p class="fp">Evaluator.cs:309 · PathExists à :351</p>
+  <p><code>PathExists</code> compare en ordinal, donc ne voit pas une clé de base orthographiée différemment&nbsp;:</p>
+<pre><code>base     : Timeout = 30      Db { Host = "base" }
+env Prod : timeout := 99     db { Host := "prod" }
+
+overlay produit : { "timeout": 99, "db": { "Host": "prod" } }</code></pre>
+  <p>L'opérateur dont le contrat entier est «&nbsp;ne pas écraser&nbsp;» écrase.</p>
+</div>
+
+<div class="callout bad">
+  <div class="t">H1 et H2 ont la même origine : un correctif qui se disait systémique</div>
+  <p style="margin:0">La campagne précédente a rendu insensibles à la casse les trois analyseurs et <code>ValidateOverlayAgainstBase</code>, en qualifiant le point de «&nbsp;systémique&nbsp;». L'assistant <code>TryGetPropertyIgnoreCase</code> n'a été câblé que dans la validation — ni dans <code>PathExists</code>, ni dans la recherche de base des blocs imbriqués — et le dictionnaire des environnements n'a jamais été touché. Le diagnostic était juste&nbsp;; le correctif s'est arrêté là où le relecteur avait pointé, au lieu d'aller là où le diagnostic menait.</p>
+</div>
+
+<div class="finding">
+  <h3>H3 — Un avertissement de dérive disparaît quand la clé vit dans un fragment sans <code>settings</code> <span class="tag">régression</span> <span class="tag">reproduit</span></h3>
+  <p class="fp">SettexDocument.cs:192 et :204</p>
+  <p>Deux correctifs de la campagne, corrects séparément, ouvrent un trou une fois combinés&nbsp;:</p>
+  <ul class="tight">
+    <li>Dans la <strong>racine</strong>, un diagnostic dont la clé n'est pas assignée dans ce fichier est écarté — «&nbsp;il est signalé là-bas, sur l'affectation elle-même&nbsp;».</li>
+    <li>Dans le <strong>fragment</strong>, il ne l'est pas&nbsp;: sans bloc <code>settings</code>, les analyseurs ne tournent pas du tout.</li>
+  </ul>
+  <p>Découper un fichier en include supprime donc, dans l'éditeur, l'avertissement même que Settex existe pour produire. Nuance importante&nbsp;: <strong>le compilateur, lui, avertit toujours</strong> — la divergence est entre l'éditeur et la ligne de commande.</p>
+</div>
+
+<div class="finding">
+  <h3>H4 — L'analyse de superposition rate les tableaux imbriqués dans un élément objet <span class="tag">reproduit</span></h3>
+  <p class="fp">ArrayLayeringAnalyzer.cs:158</p>
+  <p><code>CollectLeaves</code> traite un tableau comme une feuille&nbsp;: si l'override redéfinit le champ, il est réputé couvert. Mais .NET superpose aussi ce tableau interne, par index.</p>
+<pre><code>base : Svcs = [ svc { Name="a"  Tags=["t1","t2","t3"] } ]
+Prod : Svcs = [ svc { Name="a2" Tags=["x"] } ]
+
+aucun avertissement · runtime : Svcs:0:Tags = ["x","t2","t3"]</code></pre>
+  <p>C'est exactement la fuite que l'analyseur existe pour attraper, un niveau plus bas.</p>
+</div>
+
+<div class="finding">
+  <h3>H5 — Un élément objet écrasé par un primitif est réputé «&nbsp;remplacé&nbsp;» <span class="tag">reproduit</span></h3>
+  <p class="fp">ArrayLayeringAnalyzer.cs:96</p>
+  <p>Le <code>continue</code> saute l'index dès que <em>l'un des deux</em> éléments n'est pas un objet, avec un commentaire affirmant que le primitif écrase franchement. Faux&nbsp;: base <code>[ p { Name="base" Port=1 } ]</code> surchargée par <code>[ 5 ]</code> donne à l'exécution <code>Prim:0 = 5</code> <strong>et</strong> <code>Prim:0:Name = base</code>. La garde ne devrait sauter que si l'élément <em>de base</em> n'est pas un objet.</p>
+</div>
+
+<h2><span class="num">04</span>Défauts moyens</h2>
+
+<div class="finding med">
+  <h3>M1 — Deux blocs imbriqués de même nom s'écrasent au lieu de fusionner <span class="tag">reproduit</span></h3>
+  <p><code>settings { Db { Host = "h" } Db { Port = 5 } }</code> émet <code>{ "Db": { "Port": 5 } }</code> — <code>Host</code> est perdu sans diagnostic, alors que le modèle documenté pour les blocs <code>settings</code> multiples est la fusion profonde. Pré-existant, mais sur la ligne même que la campagne a réécrite.</p>
+</div>
+
+<div class="finding med">
+  <h3>M2 — Le saut des blocs vides repose sur une justification fausse <span class="tag">reproduit</span></h3>
+  <p>Le commentaire affirme qu'un objet vide ne produit aucune clé à l'exécution. Le relecteur a nourri <code>{ "A": {}, "B": [] }</code> à un vrai <code>ConfigurationBuilder</code>&nbsp;: <code>A</code> et <code>B</code> ressortent comme des clés réelles. La décision reste bonne pour le conflit qu'elle corrigeait, mais elle supprime aussi les blocs <em>explicitement</em> vides, ce que le raisonnement ne couvrait pas.</p>
+</div>
+
+<div class="finding med">
+  <h3>M3 — «&nbsp;Rechercher les références&nbsp;» ignore tout ce qui est dans une boucle <span class="tag">reproduit</span></h3>
+  <p><code>ForNode</code> implémente <code>IArrayElement</code> mais pas <code>IExpression</code>, et le collecteur filtre sur <code>IExpression</code>&nbsp;: ni le corps ni la collection ne sont parcourus. Une variable utilisée uniquement dans une boucle renvoie <strong>zéro</strong> référence. La résolution de portée, elle, gère correctement les boucles — c'est le collecteur seul.</p>
+</div>
+
+<div class="finding med">
+  <h3>M4 — Le survol d'un segment de chemin répété résout le mauvais objet <span class="tag">reproduit</span></h3>
+  <p><code>IndexOf(word)</code> prend la <em>première</em> occurrence. Sur <code>settings { A { B { A = 1 } } }</code>, survoler le <code>A</code> le plus interne affiche l'overlay de <code>A</code> au lieu de la valeur de <code>A.B.A</code>. L'ajout du survol d'en-tête de bloc, qui produit des chemins multi-segments, élargit le cas.</p>
+</div>
+
+<div class="finding med">
+  <h3>M5 — Un fichier racine sans <code>settings</code> est propre dans l'éditeur et échoue au build</h3>
+  <p>La relaxation nécessaire aux fragments masque aussi l'erreur pour un fichier destiné à être une racine. Rien ne distingue les deux intentions, donc il n'y a pas de correctif gratuit — mais la divergence éditeur/compilateur est réelle et n'est documentée nulle part.</p>
+</div>
+
+<div class="finding med">
+  <h3>M6 — Sorties générées commitées et périmées dans le projet d'exemple <span class="tag">reproduit</span></h3>
+  <p><code>tests/IntegrationTests/SampleProject/</code> contient six <code>appsettings*.json</code> commités dont le contenu est <strong>entièrement fusionné</strong>, soit ce que le compilateur émettait avant le mode delta. Recompilation à l'appui, ils diffèrent de ce que l'outil produit aujourd'hui. Le répertoire n'est de plus <strong>pas dans la solution</strong>, donc ni construit ni vérifié par la CI. C'est la classe de défaut nettoyée à la racine du dépôt — la campagne n'avait regardé que la racine.</p>
+</div>
+
+<div class="finding med">
+  <h3>M7 — Le workflow de déploiement n'a pas de bloc <code>permissions</code> et casse sur les PR de fork</h3>
+  <p>C'est pourtant lui qui détient un secret de déploiement, alors que <code>ci.yml</code> restreint correctement à <code>contents: read</code>. Il se déclenche par ailleurs sur <code>pull_request</code> et lit un secret vide pour un fork, ce qui fait échouer l'étape de déploiement.</p>
+</div>
+
+<h2><span class="num">05</span>Défauts mineurs</h2>
+<ul class="tight">
+  <li><strong>Fins de ligne <code>CR</code> seules&nbsp;: tous les diagnostics annoncent la ligne 1.</strong> <code>ScanNewline</code> gère le <code>\r</code> nu, mais <code>Advance()</code> n'incrémente la ligne que sur <code>\n</code>.</li>
+  <li><strong>Les erreurs d'include introuvable ou illisible n'ont pas de position</strong> — ancrées en 0:0, alors que <code>IncludeNode</code> vient justement de recevoir une vraie étendue.</li>
+  <li><strong>Des tableaux frères ne différant que par la casse s'effondrent</strong> dans l'analyseur&nbsp;: le dernier écrase le premier dans la table, ce qui masque un raccourcissement réel.</li>
+  <li><strong><code>TryGetPropertyIgnoreCase</code> dépend de l'ordre d'insertion</strong> quand deux clés frères ne diffèrent que par la casse.</li>
+  <li><strong>La complétion n'offre que les <code>let</code> de premier niveau</strong> — ni variables d'environnement, ni itérateur de boucle, sans aucune conscience de la position.</li>
+  <li><strong><code>didClose</code> peut laisser des soulignements périmés</strong>&nbsp;: l'effacement des diagnostics vient après une boucle dont une exception serait avalée par la garde.</li>
+  <li><strong>Deux URI ouverts pour le même fichier</strong> rendent la résolution d'includes non déterministe (dépendante de l'ordre d'énumération).</li>
+  <li><strong><code>cancel-in-progress</code> annule la CI d'un commit déjà fusionné</strong> quand la fusion suivante arrive.</li>
+  <li><strong><code>client.start()</code> est une promesse flottante</strong> dans l'extension, et ni le client ni l'observateur ne sont ajoutés à <code>context.subscriptions</code>.</li>
+</ul>
+
+<h2><span class="num">06</span>Ce qui a été attaqué et a tenu</h2>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Concurrence du serveur</h3>
+    <p>Aucun ordre de verrous à inverser&nbsp;: <code>Refresh</code> tient son verrou et ne fait qu'une lecture volatile sans verrou sur les autres documents. 300 <code>DidChange</code> concurrents sur deux fichiers s'incluant mutuellement&nbsp;: 18 ms, textes finaux corrects, aucun recul.</p>
+  </div>
+  <div class="card">
+    <h3>Le débordement de pile</h3>
+    <p>Réellement corrigé&nbsp;: 50 000 lignes vides compilent. La boucle ne peut pas tourner à vide — <code>ScanNewline</code> n'est atteint que sur un vrai saut de ligne, qui est toujours consommé.</p>
+  </div>
+  <div class="card">
+    <h3>Étendues du parser</h3>
+    <p><code>this.Previous</code> ne peut jamais précéder le chemin. Aucune étendue inversée ni de largeur nulle trouvée, et aucun consommateur ne supposait que le bloc démarre sur <code>settings</code>.</p>
+  </div>
+  <div class="card">
+    <h3>Asymétrie du <code>null</code></h3>
+    <p>Implémentée correctement et de façon cohérente&nbsp;: base nulle plus overlay objet compile, overlay nul sur base structurée échoue — identiquement en mode delta et fusionné.</p>
+  </div>
+  <div class="card">
+    <h3>Tampons non enregistrés</h3>
+    <p>Pas de trou&nbsp;: sans chemin, les includes ne sont pas résolus du tout, donc le défaut par défaut de <code>IsFromSameFile</code> n'a rien à confondre.</p>
+  </div>
+  <div class="card">
+    <h3>Le résolveur d'includes</h3>
+    <p>Enregistrer le chemin avant le chargement ne casse ni la déduplication en losange, ni la détection de cycle, ni le double include d'un fichier manquant.</p>
+  </div>
+</div>
+
+<h2><span class="num">07</span>Priorités</h2>
+
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Terminer la comparaison insensible à la casse&nbsp;: environnements, <code>PathExists</code>, blocs imbriqués</td><td>Ferme H1 et H2 d'un coup, dont la seule perte de données silencieuse de la liste.</td></tr>
+<tr><td>2</td><td>Faire tourner les analyseurs sur les fragments, ou ne plus écarter les clés étrangères</td><td>H3&nbsp;: l'éditeur se tait sur la dérive dès qu'on découpe en includes.</td></tr>
+<tr><td>3</td><td>Descendre dans les tableaux imbriqués et corriger la garde du primitif</td><td>H4 et H5&nbsp;: deux fuites réelles que l'outil censé les couvrir laisse passer.</td></tr>
+<tr><td>4</td><td>Fusionner les blocs imbriqués homonymes, ou refuser l'ambiguïté</td><td>M1&nbsp;: perte silencieuse dans un cas plausible avec des includes.</td></tr>
+<tr><td>5</td><td>Traverser les <code>for</code> dans le collecteur de références</td><td>M3&nbsp;: zéro référence pour une variable utilisée dans une boucle.</td></tr>
+<tr><td>6</td><td>Régénérer ou supprimer les sorties commitées de l'exemple</td><td>M6&nbsp;: démonstration fausse, hors solution et hors CI.</td></tr>
+<tr><td>7</td><td>Restreindre les permissions du workflow de déploiement, garder les PR de fork</td><td>M7&nbsp;: c'est le workflow qui porte un secret.</td></tr>
+</tbody>
+</table>
+
+<h2><span class="num">08</span>Conclusion</h2>
+
+<p class="verdict">Le produit tient sa promesse&nbsp;; c'est la confiance dans la note qui doit baisser, pas la confiance dans l'outil.</p>
+
+<p>Rien ici ne remet en cause ce que Settex fait&nbsp;: le scénario fondateur fonctionne, la sortie delta respecte le mécanisme <code>appsettings</code> de .NET, la CI est saine et couvre deux plateformes, et la concurrence du serveur de langage a résisté à une attaque directe.</p>
+
+<p>Ce que cette cinquième relecture établit tient en une phrase&nbsp;: <strong>une liste de constats vide ne mesure pas l'absence de défauts, elle mesure l'épuisement d'une méthode</strong>. Quatre revues ont chacune fermé la liste de la précédente, et chacune a été suivie d'une nouvelle qui trouvait plus profond. La note montait parce qu'elle suivait la fermeture&nbsp;; elle redescend ici parce qu'un regard neuf a trouvé une couche que les précédents n'atteignaient pas.</p>
+
+<p>Deux des cinq défauts élevés viennent directement de la campagne précédente, pour deux raisons qui méritent d'être distinguées. L'un parce qu'un correctif s'est arrêté aux trois endroits que le relecteur avait nommés, alors que son propre diagnostic disait «&nbsp;systémique&nbsp;» — corriger là où l'on a été pointé, pas là où le raisonnement mène. L'autre parce que deux correctifs justes séparément se combinent en un trou&nbsp;: aucune relecture de l'un ou de l'autre ne pouvait le voir, seule une relecture de l'ensemble le pouvait.</p>
+
+<footer>
+  <p>Cinquième revue à froid — 19 juillet 2026. Deux relecteurs indépendants (cœur compilateur&nbsp;; serveur de langage, extensions et infrastructure) plus une passe d'usage bout-en-bout. Les constats marqués «&nbsp;reproduit&nbsp;» l'ont été sur du code exécuté&nbsp;; les effets d'exécution ont été vérifiés contre un vrai <code>ConfigurationBuilder</code> et contre des harnais liés aux types réels du serveur.</p>
+  <p>Revues précédentes&nbsp;: <a href="etat-des-lieux.html">état des lieux</a> · <a href="revue-technique.html">revue technique</a> · <a href="revue-a-froid-2.html">troisième</a> · <a href="revue-a-froid-3.html">quatrième</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>
