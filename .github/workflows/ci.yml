@@ -1,0 +1,77 @@
+name: CI
+
+# Builds the solution and runs every test suite on each push to main and on
+# every pull request targeting it.
+#
+# Deliberately not path-filtered. The docs workflow is, and that is how a
+# global.json change once slipped through without the build that depended on it
+# ever running.
+#
+# The .NET version is taken from global.json rather than pinned here, so the SDK
+# used by CI and the SDK used on a developer machine cannot drift apart.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to a branch makes the previous run obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Include resolution compares paths case-insensitively on Windows and
+        # case-sensitively elsewhere, so both platforms are genuinely exercised.
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Settex.slnx
+
+      # Directory.Build.props sets TreatWarningsAsErrors, so a new analyzer
+      # diagnostic fails here rather than reaching main.
+      - name: Build
+        run: dotnet build Settex.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test Settex.slnx -c Release --no-build
+
+  extension:
+    name: VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: extensions/vscode-settex/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: extensions/vscode-settex
+
+      # The extension's TypeScript is shipped code with no test suite; compiling
+      # it is the one automated check that it still builds.
+      - name: Compile
+        run: npm run compile
+        working-directory: extensions/vscode-settex

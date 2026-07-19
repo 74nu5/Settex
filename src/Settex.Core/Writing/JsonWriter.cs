@@ -19,7 +19,18 @@ public sealed class JsonWriter
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private static readonly char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+    /// <summary>
+    ///     Characters an environment name may not contain, because the name becomes
+    ///     part of an <c>appsettings.{Environment}.json</c> filename.
+    ///     Deliberately <b>not</b> <see cref="Path.GetInvalidFileNameChars" />: that set is
+    ///     platform-dependent — around forty characters on Windows, only NUL and
+    ///     <c>/</c> on Unix — so the same source file would compile on Linux and be
+    ///     rejected on Windows, and a Linux build would emit filenames that cannot
+    ///     even be checked out there. The generated files are meant to be committed
+    ///     and shared, so validation uses the strictest set (Windows') everywhere.
+    /// </summary>
+    private static readonly char[] InvalidFileNameChars =
+        ['<', '>', ':', '"', '/', '\\', '|', '?', '*', .. Enumerable.Range(0, 32).Select(c => (char)c)];
 
     private readonly Merger merger = new();
 
