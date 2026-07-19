@@ -30,6 +30,12 @@ This extension provides rich language support for Settex files in Visual Studio 
 - Comment toggling (`Ctrl+/`)
 - Code folding
 
+### 🧠 Language Server (requires the .NET 10 runtime)
+- Hover showing evaluated variable values and per-environment overlays
+- Go to definition and find all references for variables and environments (across `include`d files)
+- Live diagnostics from the compiler
+- Context-aware completion
+
 ## Settex Language Features
 
 Settex V2 supports:
@@ -72,31 +78,24 @@ env "Production" {
 ## Requirements
 
 - Visual Studio Code 1.85.0 or higher
+- **.NET 10 runtime** — required by the bundled Settex language server (IntelliSense, diagnostics, hover, go-to-definition). Without it, syntax highlighting and snippets still work; the extension detects the missing runtime and shows an actionable message with a download link. Install from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-* `settex.trace.server`: Traces the communication between VS Code and the language server (future)
-
-## Known Issues
-
-- Language Server Protocol integration (coming in Phase 3)
-- IntelliSense and diagnostics (coming in Phase 4)
+* `settex.trace.server`: Traces the communication between VS Code and the language server.
 
 ## Release Notes
 
-### 0.1.0 (Initial Release)
-
 - ✅ Syntax highlighting for Settex V2
-- ✅ Code snippets
-- ✅ Bracket matching and auto-closing
-- ✅ Comment toggling
+- ✅ Code snippets, bracket matching, comment toggling
+- ✅ Language server: hover, go-to-definition, find references, diagnostics, completion (needs the .NET 10 runtime)
 
 ## For More Information
 
-* [Settex GitHub Repository](https://github.com/yourusername/settex)
-* [Settex Documentation](https://github.com/yourusername/settex/blob/main/README.md)
+* [Settex GitHub Repository](https://github.com/74nu5/Settex)
+* [Settex Documentation](https://settex.74nu5.dev)
 
 ---
 

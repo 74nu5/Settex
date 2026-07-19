@@ -32,11 +32,18 @@
     <p>Compilez-le, et Settex génère trois fichiers :</p>
     <ul>
         <li><code>appsettings.json</code> — les réglages de base</li>
-        <li><code>appsettings.Development.json</code> — la base fusionnée avec l'overlay Development</li>
-        <li><code>appsettings.Production.json</code> — la base fusionnée avec l'overlay Production</li>
+        <li><code>appsettings.Development.json</code> — les surcharges de Development uniquement (superposées à la base par .NET à l'exécution)</li>
+        <li><code>appsettings.Production.json</code> — les surcharges de Production uniquement</li>
     </ul>
 
     <CodeBlock Title="appsettings.Development.json" Lang="json" Code="@GeneratedDev" />
+
+    <div class="callout callout-note">
+        Par défaut, chaque fichier d'environnement ne contient que ses <strong>surcharges</strong> (un delta),
+        superposées à <code>appsettings.json</code> par le layering de configuration .NET. Utilisez
+        <code>--merged</code> pour des fichiers complets et auto-suffisants. Settex avertit aussi lorsqu'une clé
+        est définie dans certains environnements mais oubliée dans d'autres — voir <a href="cli">CLI &amp; MSBuild</a>.
+    </div>
 
     <div class="callout callout-note">
         Un bloc <code>env</code> prend un nom <strong>entre guillemets</strong> et englobe ses surcharges dans
@@ -87,11 +94,18 @@ else
     <p>Compile it, and Settex generates three files:</p>
     <ul>
         <li><code>appsettings.json</code> — the base settings</li>
-        <li><code>appsettings.Development.json</code> — base merged with the Development overlay</li>
-        <li><code>appsettings.Production.json</code> — base merged with the Production overlay</li>
+        <li><code>appsettings.Development.json</code> — Development overrides only (layered on the base by .NET at runtime)</li>
+        <li><code>appsettings.Production.json</code> — Production overrides only</li>
     </ul>
 
     <CodeBlock Title="appsettings.Development.json" Lang="json" Code="@GeneratedDev" />
+
+    <div class="callout callout-note">
+        By default each environment file contains only its <strong>overrides</strong> (a delta), layered on
+        <code>appsettings.json</code> by .NET configuration. Use <code>--merged</code> for full, self-contained
+        files. Settex also warns when a key is set in some environments but forgotten in others — see
+        <a href="cli">CLI &amp; MSBuild</a>.
+    </div>
 
     <div class="callout callout-note">
         An <code>env</code> block takes a <strong>quoted</strong> name and wraps its overrides in an inner
@@ -149,14 +163,11 @@ else
 
     private const string GeneratedDev = """
         {
-          "ApplicationName": "MyApp",
           "Logging": {
             "LogLevel": {
-              "Default": "Debug",
-              "Microsoft": "Warning"
+              "Default": "Debug"
             }
           },
-          "AllowedHosts": ["localhost", "*.example.com"],
           "ConnectionStrings": {
             "DefaultConnection": "Server=localhost;Database=MyDb_Dev"
           }

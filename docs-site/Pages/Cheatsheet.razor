@@ -51,6 +51,6 @@
 
 <div class="callout callout-note">
     @(Fr
-        ? "Pièges : les noms env sont entre guillemets et englobent un bloc settings interne · les chaînes utilisent des guillemets doubles uniquement · ${…} est résolu à la compilation, pas une variable d'env runtime · les conditionnelles du bloc de base ne voient que les valeurs let globales."
-        : "Gotchas: env names are quoted and wrap an inner settings block · strings use double quotes only · ${…} is compile-time, not a runtime env var · base-block conditionals only see global let values.")
+        ? "Pièges : les noms env sont entre guillemets et englobent un bloc settings interne · les chaînes utilisent des guillemets doubles uniquement · ${…} est résolu à la compilation, pas une variable d'env runtime · les conditionnelles du bloc de base ne voient que les valeurs let globales · les fichiers d'env générés sont des deltas (surcharges seules) par défaut — utilisez --merged pour des fichiers complets."
+        : "Gotchas: env names are quoted and wrap an inner settings block · strings use double quotes only · ${…} is compile-time, not a runtime env var · base-block conditionals only see global let values · generated env files are deltas (overrides only) by default — use --merged for full files.")
 </div>

@@ -9,6 +9,8 @@
 - 🎯 **Simple, intuitive syntax** - No complex markup, just clean configuration
 - 🔀 **Environment overlays** - Define base settings once, override per environment
 - 🔄 **Deep merging** - Objects merge intelligently, arrays replace completely
+- 🧭 **Delta output** - Environment files hold only their overrides, layered by .NET at runtime (opt into full merged files with `--merged`)
+- 🚦 **Coverage check** - Warns when a key is set in some environments but forgotten in others
 - 🛠️ **MSBuild integration** - Automatic compilation during build
 - 🖥️ **CLI tool** - Standalone compiler with beautiful diagnostics
 - 📍 **Precise diagnostics** - Line/column error reporting with IDE integration
@@ -51,6 +53,12 @@ settex build appsettings.settex
 settex build config.settex -o ./output
 ```
 
+### Editor Support
+
+Visual Studio and VS Code extensions provide syntax highlighting, snippets, and a language server (hover, go-to-definition, find-references, diagnostics, completion).
+
+> The language server runs on the **.NET 10 runtime**. If it isn't installed, the extensions still give you syntax highlighting and snippets, and show an actionable message with a download link. Install .NET 10 from [dotnet.microsoft.com/download/dotnet/10.0](https://dotnet.microsoft.com/download/dotnet/10.0) to enable IntelliSense.
+
 ## 🚀 Quick Start
 
 Create a file named `appsettings.settex`:
@@ -92,8 +100,10 @@ env "Production" {
 
 Build your project, and Settex will generate:
 - `appsettings.json` - Base settings
-- `appsettings.Development.json` - Base merged with Development overlay
-- `appsettings.Production.json` - Base merged with Production overlay
+- `appsettings.Development.json` - Development overrides only (layered on the base by .NET at runtime)
+- `appsettings.Production.json` - Production overrides only
+
+> By default each environment file is a **delta** — only what differs from the base — which is exactly how .NET configuration layers `appsettings.{Environment}.json` over `appsettings.json`. Pass `--merged` (CLI) or set `SettexMergeEnvironments=true` (MSBuild) if you'd rather generate full, self-contained environment files.
 
 ## 📖 Language Syntax
 
@@ -263,7 +273,7 @@ env "Production" {
 }
 ```
 
-Each `env` block generates a separate `appsettings.{Environment}.json` file with the base settings merged with the overlay.
+Each `env` block generates a separate `appsettings.{Environment}.json` file. By default it contains only that environment's overrides (a delta), which .NET layers over `appsettings.json` at runtime; use `--merged` / `SettexMergeEnvironments` for full merged files. See [Environment output & coverage](#-environment-output--coverage).
 
 ### Merging Behavior
 
@@ -290,7 +300,7 @@ env "Production" {
 }
 ```
 
-Production result:
+Production **effective** configuration (what .NET sees after layering base + overlay):
 ```json
 {
   "Database": {
@@ -300,6 +310,29 @@ Production result:
   "Tags": ["prod"]
 }
 ```
+
+By default the generated `appsettings.Production.json` holds only the delta — `{ "Database": { "Host": "prod-server" }, "Tags": ["prod"] }` — and .NET merges it over the base to produce the effective result above. With `--merged`, the file contains the full effective config directly.
+
+## 🧭 Environment output & coverage
+
+### Delta vs. merged output
+
+Because the whole point of Settex is a single source of truth, the *output* is designed to sit cleanly on top of .NET's native layering:
+
+- **Delta (default):** `appsettings.{Env}.json` contains only the keys that differ from the base. Diffs stay small, base values aren't duplicated into every file, and each key still flows through .NET's per-key layering (environment variables, user-secrets and the command line keep overriding it as usual).
+- **Merged (opt-in):** each environment file contains the full, self-contained effective config. Useful when you want to audit or ship a single file per environment.
+
+Switch with `--merged` (CLI) or `<SettexMergeEnvironments>true</SettexMergeEnvironments>` (MSBuild).
+
+### Coverage check
+
+Settex warns when a key is set for **some** environments but missing from the others **and** from the base — the classic "added a key in dev, forgot prod" drift that motivated the project:
+
+```
+appsettings.settex: warning: Key 'DevOnly.Flag' is set in 'Development' but missing from 'Production', and is not in the base settings. Add it to the base 'settings' block or to the missing environment(s) to keep configuration consistent.
+```
+
+It's **advisory** (a warning, never a build failure) and on by default. Turn it off with `--no-coverage-check` (CLI) or `<SettexCheckCoverage>false</SettexCheckCoverage>` (MSBuild). Under MSBuild it surfaces as a `SETTEX` warning.
 
 ## 🆕 V2 Features
 
@@ -778,6 +811,12 @@ The Settex.Build package automatically discovers `*.settex` files in your projec
   <!-- Change output directory (default: project root) -->
   <SettexOutputDirectory>$(MSBuildProjectDirectory)\config</SettexOutputDirectory>
 
+  <!-- Full merged env files instead of overrides-only (default: false) -->
+  <SettexMergeEnvironments>false</SettexMergeEnvironments>
+
+  <!-- Warn about keys set in some environments but not others (default: true) -->
+  <SettexCheckCoverage>true</SettexCheckCoverage>
+
   <!-- Disable automatic compilation -->
   <EnableSettexCompilation>false</EnableSettexCompilation>
 </PropertyGroup>
@@ -797,6 +836,12 @@ settex build appsettings.settex
 
 # Specify output directory
 settex build config.settex -o ./output
+
+# Write full merged config in each env file (default: overrides only)
+settex build appsettings.settex --merged
+
+# Skip the cross-environment coverage check
+settex build appsettings.settex --no-coverage-check
 
 # Show help
 settex --help
@@ -838,10 +883,10 @@ Compilation stops at the first error in each phase (lexing, parsing, include res
 
 ```
 MyProject/
-├── appsettings.settex          # Your configuration source
-├── appsettings.json            # Generated (base)
-├── appsettings.Development.json # Generated (base + dev)
-├── appsettings.Production.json  # Generated (base + prod)
+├── appsettings.settex           # Your configuration source
+├── appsettings.json             # Generated (base)
+├── appsettings.Development.json # Generated (dev overrides only)
+├── appsettings.Production.json  # Generated (prod overrides only)
 ├── MyProject.csproj
 └── Program.cs
 ```

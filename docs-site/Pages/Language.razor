@@ -64,8 +64,8 @@
 <h2 id="env">@(Fr ? "Overlays d'environnement" : "Environment overlays")</h2>
 <p>
     @(Fr
-        ? "Chaque bloc env prend un nom entre guillemets et contient un bloc settings interne. Il génère un fichier appsettings.{Nom}.json fusionné sur la base."
-        : "Each env block takes a quoted name and contains an inner settings block. It generates a matching appsettings.{Name}.json merged onto the base.")
+        ? "Chaque bloc env prend un nom entre guillemets et contient un bloc settings interne. Il génère un fichier appsettings.{Nom}.json contenant, par défaut, uniquement ses surcharges (un delta) que .NET superpose à la base à l'exécution. Settex avertit si une clé n'est définie que dans certains environnements."
+        : "Each env block takes a quoted name and contains an inner settings block. It generates a matching appsettings.{Name}.json holding only its overrides (a delta) by default, which .NET layers onto the base at runtime. Settex warns when a key is set in only some environments.")
 </p>
 <CodeBlock Code="@Env" />
 
