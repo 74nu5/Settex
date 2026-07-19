@@ -50,29 +50,54 @@ public class Lexer(string source, string? filePath = null)
     /// </summary>
     public Token NextToken()
     {
-        // Skip whitespace (but not newlines in arrays)
-        this.SkipWhitespace();
-
-        if (this.IsAtEnd)
+        // Loops rather than recursing. A line break outside an array produces no
+        // token, and this used to call back into NextToken to fetch the next one —
+        // so a file with a few thousand consecutive blank lines recursed once per
+        // line and overflowed the stack. A StackOverflowException cannot be caught
+        // in .NET, so it bypassed the compiler's error handling entirely and killed
+        // the process, taking the language server down with it.
+        while (true)
         {
-            return this.CreateToken(TokenType.Eof, string.Empty);
+            // Skip whitespace (but not newlines in arrays)
+            this.SkipWhitespace();
+
+            if (this.IsAtEnd)
+            {
+                return this.CreateToken(TokenType.Eof, string.Empty);
+            }
+
+            var startLine = this.line;
+            var startColumn = this.column;
+
+            var ch = this.Current;
+
+            // Newlines (significant only inside arrays)
+            if (ch == '\n' || ch == '\r')
+            {
+                var newline = this.ScanNewline(startLine, startColumn);
+
+                if (newline is not null)
+                {
+                    return newline;
+                }
+
+                continue;
+            }
+
+            return this.ScanToken(ch, startLine, startColumn);
         }
+    }
 
-        var startLine = this.line;
-        var startColumn = this.column;
-
-        var ch = this.Current;
-
+    /// <summary>
+    ///     Scans the token starting at the current position, which is already known to
+    ///     be neither whitespace nor a line break.
+    /// </summary>
+    private Token ScanToken(char ch, int startLine, int startColumn)
+    {
         // Comments
         if (ch == '#' || (ch == '/' && this.Peek() == '/'))
         {
             return this.ScanComment(startLine, startColumn);
-        }
-
-        // Newlines (significant only inside arrays)
-        if (ch == '\n' || ch == '\r')
-        {
-            return this.ScanNewline(startLine, startColumn);
         }
 
         // String literals
@@ -158,7 +183,11 @@ public class Lexer(string source, string? filePath = null)
         return this.CreateToken(TokenType.Comment, text, startLine, startColumn);
     }
 
-    private Token ScanNewline(int startLine, int startColumn)
+    /// <summary>
+    ///     Consumes a line break. Returns the token when it is significant (inside an
+    ///     array), or <c>null</c> when it is not, telling the caller to keep scanning.
+    /// </summary>
+    private Token? ScanNewline(int startLine, int startColumn)
     {
         var start = this.position;
 
@@ -185,8 +214,9 @@ public class Lexer(string source, string? filePath = null)
             return this.CreateToken(TokenType.Newline, text, startLine, startColumn);
         }
 
-        // Otherwise, continue to next token
-        return this.NextToken();
+        // Outside arrays a newline carries no meaning. Return null rather than
+        // recursing into NextToken: the caller loops instead. See NextToken.
+        return null;
     }
 
     private Token ScanString(int startLine, int startColumn)

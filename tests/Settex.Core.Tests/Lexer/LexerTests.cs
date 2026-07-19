@@ -312,4 +312,40 @@ public sealed class LexerTests
         await Assert.That(tokens[10].Type).IsEqualTo(TokenType.RightBrace);
         await Assert.That(tokens[11].Type).IsEqualTo(TokenType.Eof);
     }
+
+    /// <summary>
+    ///     Blank lines outside an array emit no token, and the lexer used to recurse to
+    ///     fetch the next one — one stack frame per line. Around 5 000 of them killed
+    ///     the process outright: a StackOverflowException cannot be caught, so the
+    ///     compiler's error handling never saw it, and the language server (which lexes
+    ///     on every keystroke) died with it. Unusual to write by hand, trivial for a
+    ///     generated or concatenated file. 20 000 lines is far past the old limit.
+    /// </summary>
+    [Test]
+    public async Task Tokenize_ManyConsecutiveBlankLines_DoesNotOverflowTheStack()
+    {
+        var source = "settings {\n    Port = 8080\n}" + new string('\n', 20_000);
+
+        var tokens = new Lexer(source).Tokenize();
+
+        await Assert.That(tokens).Count().IsEqualTo(7);
+        await Assert.That(tokens[0].Type).IsEqualTo(TokenType.Settings);
+        await Assert.That(tokens[^1].Type).IsEqualTo(TokenType.Eof);
+    }
+
+    /// <summary>
+    ///     The same input inside an array, where line breaks are significant: the loop
+    ///     must still emit one Newline token per line rather than swallowing them.
+    /// </summary>
+    [Test]
+    public async Task Tokenize_BlankLinesInsideArray_StillEmitsNewlineTokens()
+    {
+        var source = "settings {\n    Items = [\n\n\n1\n]\n}";
+
+        var tokens = new Lexer(source).Tokenize();
+
+        // Three blank lines after '[' plus the one after '1'. The break following ']'
+        // is already outside the array, so it emits nothing.
+        await Assert.That(tokens.Count(t => t.Type == TokenType.Newline)).IsEqualTo(4);
+    }
 }
