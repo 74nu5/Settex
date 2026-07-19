@@ -39,6 +39,7 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
 
 
     public override Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
+        => this.GuardedAsync("didOpen", () =>
     {
         var uri = request.TextDocument.Uri.ToString();
         var text = request.TextDocument.Text;
@@ -51,11 +52,10 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
         {
             this.PublishDiagnostics(affected.Uri, affected);
         }
-
-        return Unit.Task;
-    }
+    });
 
     public override Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
+        => this.GuardedAsync("didChange", () =>
     {
         var uri = request.TextDocument.Uri.ToString();
 
@@ -73,11 +73,10 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
                 this.PublishDiagnostics(affected.Uri, affected);
             }
         }
-
-        return Unit.Task;
-    }
+    });
 
     public override Task<Unit> Handle(DidCloseTextDocumentParams request, CancellationToken cancellationToken)
+        => this.GuardedAsync("didClose", () =>
     {
         var uri = request.TextDocument.Uri.ToString();
 
@@ -95,13 +94,32 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
             Uri = request.TextDocument.Uri,
             Diagnostics = new Container<Diagnostic>()
         });
-
-        return Unit.Task;
-    }
+    });
 
     public override Task<Unit> Handle(DidSaveTextDocumentParams request, CancellationToken cancellationToken)
+        => this.GuardedAsync("didSave", () => this.logger.LogTrace("Saved: {Uri}", request.TextDocument.Uri));
+
+    /// <summary>
+    /// Runs a notification's body, degrading to a logged error instead of faulting the
+    /// notification. Parsing a URI or publishing diagnostics can throw, and a faulted
+    /// didChange leaves the client without a reply and the document unanalysed — the
+    /// other handlers were guarded for exactly this reason; these four were missed.
+    /// </summary>
+    private Task<Unit> GuardedAsync(string operation, Action body)
     {
-        this.logger.LogTrace("Saved: {Uri}", request.TextDocument.Uri);
+        try
+        {
+            body();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "{Operation} failed", operation);
+        }
+
         return Unit.Task;
     }
 

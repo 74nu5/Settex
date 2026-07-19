@@ -489,7 +489,15 @@ public class SettexDocument
             Settex.Compilation.DiagnosticSeverity.Warning => DiagnosticSeverity.Warning,
             _ => DiagnosticSeverity.Information,
         },
-        Code = diagnostic.Severity == Settex.Compilation.DiagnosticSeverity.Warning ? "STX501" : "STX401",
+        Code = diagnostic.Severity switch
+        {
+            Settex.Compilation.DiagnosticSeverity.Error => "STX401",
+            Settex.Compilation.DiagnosticSeverity.Warning => "STX501",
+
+            // Anything informational is not an error, and labelling it with the error
+            // code made it look like one in the Problems panel.
+            _ => "STX601",
+        },
         Source = "settex",
         Message = diagnostic.Message,
     };
@@ -511,6 +519,16 @@ public class SettexDocument
         var startColumn = Math.Max(0, location.Column - 1);
         var endLine = Math.Max(startLine, location.EffectiveEndLine - 1);
         var endColumn = Math.Max(0, location.EffectiveEndColumn - 1);
+
+        // On a single line the end must not precede the start. The clamp above only
+        // guards against a negative column, so a location whose end column came out
+        // below its start produced an inverted range — which LSP does not define and
+        // clients render arbitrarily. No node produces one today; this keeps it that
+        // way rather than relying on that staying true.
+        if (endLine == startLine)
+        {
+            endColumn = Math.Max(startColumn, endColumn);
+        }
 
         return new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
             new Position(startLine, startColumn),

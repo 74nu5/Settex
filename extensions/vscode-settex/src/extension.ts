@@ -50,7 +50,18 @@ async function acquireDotnetRuntime(): Promise<string | undefined> {
             { version: REQUIRED_RUNTIME_VERSION, requestingExtensionId: EXTENSION_ID }
         );
 
-        return result?.dotnetPath;
+        const dotnetPath = result?.dotnetPath;
+
+        // Verify the path before adopting it. A stale entry — a runtime the install
+        // tool once provisioned and that has since been removed — would otherwise go
+        // straight into ServerOptions.command and surface as an opaque ENOENT, with
+        // none of the actionable messaging the PATH branch below provides. Falling
+        // through to that branch is strictly better.
+        if (!dotnetPath || !fs.existsSync(dotnetPath)) {
+            return undefined;
+        }
+
+        return dotnetPath;
     } catch (err) {
         // The install tool is unavailable or the acquisition failed; the caller
         // falls back to whatever dotnet is on PATH.

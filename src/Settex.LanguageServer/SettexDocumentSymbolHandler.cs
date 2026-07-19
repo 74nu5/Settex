@@ -52,6 +52,10 @@ public class SettexDocumentSymbolHandler : DocumentSymbolHandlerBase
         DocumentSymbolParams request,
         CancellationToken cancellationToken)
     {
+        // Makes the OperationCanceledException arm of the caller's guard real
+        // instead of dead code: a request the client already withdrew does no work.
+        cancellationToken.ThrowIfCancellationRequested();
+
         var uri = request.TextDocument.Uri.ToString();
         var document = this.workspace.GetDocument(uri);
 
