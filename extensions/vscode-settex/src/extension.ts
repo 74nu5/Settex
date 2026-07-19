@@ -180,11 +180,14 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     };
 
+    // Registered so VS Code disposes it with the extension; it was previously created
+    // and never tracked.
+    const fileEvents = vscode.workspace.createFileSystemWatcher('**/*.settex');
+    context.subscriptions.push(fileEvents);
+
     const clientOptions: LanguageClientOptions = {
         documentSelector: [{ scheme: 'file', language: 'settex' }],
-        synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.settex')
-        }
+        synchronize: { fileEvents }
     };
 
     client = new LanguageClient(
@@ -194,7 +197,20 @@ export async function activate(context: vscode.ExtensionContext) {
         clientOptions
     );
 
-    client.start();
+    context.subscriptions.push(client);
+
+    // Awaited rather than left floating: a server that fails to start surfaced as an
+    // unhandled rejection in the extension host log, where nobody looks, instead of as
+    // a message telling the user that IntelliSense is unavailable and why.
+    try {
+        await client.start();
+    } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(
+            `Settex IntelliSense could not start: ${reason}. ` +
+            'Syntax highlighting and snippets still work.'
+        );
+    }
 }
 
 export function deactivate() {

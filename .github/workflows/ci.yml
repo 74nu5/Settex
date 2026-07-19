@@ -16,10 +16,12 @@ on:
   pull_request:
     branches: [main]
 
-# A new push to a branch makes the previous run obsolete.
+# A new push to a branch makes the previous run obsolete — but only on a branch.
+# On main each push is a distinct merged commit whose result is worth keeping, and
+# cancelling it would leave that commit with no verdict at all.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 permissions:
   contents: read
