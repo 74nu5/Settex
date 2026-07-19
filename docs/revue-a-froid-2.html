@@ -92,19 +92,19 @@
 
   <div class="score-band">
     <div class="score"><div class="big">7.9<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">287</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">292</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
     <div class="t">Pourquoi la note remonte (5,8 → 7,9)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>287 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>292 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : le LSP lit les includes depuis le disque en ignorant les buffers non sauvegardés (pas de watcher, pas de cache de reparse), les itérateurs de <code>for</code> ne sont pas modélisés comme variables de scope, il n'existe pas d'échappement pour un <code>${…}</code> littéral, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : les itérateurs de <code>for</code> ne sont pas modélisés comme variables de scope, il n'existe pas d'échappement pour un <code>${…}</code> littéral, les handlers LSP n'ont pas de try/catch défensif, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
   </div>
 
   <div class="callout">
@@ -211,7 +211,7 @@
     <li><strong>Couverture — conflit objet/feuille</strong> : <code class="sx">Shape = 1</code> (Dev) vs <code class="sx">Shape { Inner = 2 }</code> (Prod) produit deux avertissements contradictoires (« Shape absent de Prod », « Shape.Inner absent de Dev ») sans jamais nommer le vrai problème (un conflit de type) <span class="tag">reproduit</span>.</li>
     <li><strong>Scanner d'accolades d'interpolation</strong> ignore les chaînes internes : <code class="sx">"${ y == \"}\" }"</code> s'arrête sur le <code>}</code> dans la chaîne interne <span class="tag">raisonné</span>.</li>
     <li><strong>Dédup/cycle d'includes</strong> comparent des chemins <code>GetFullPath</code> : liens symboliques/durs et noms courts 8.3 peuvent les contourner (borné par <code>MaxIncludeDepth</code>, donc pas de blocage) <span class="tag">raisonné</span>.</li>
-    <li><strong>LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés ; pas de re-parse quand un fichier inclus change <span class="tag">raisonné</span>.</li>
+    <li><strong>✅ Corrigé — LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés, sans re-parse quand un fichier inclus changeait. L'<code>IncludeResolver</code> accepte désormais un fournisseur de contenu (les buffers ouverts gagnent sur le disque) et expose les fichiers résolus ; le workspace suit ces dépendances et <strong>ré-analyse les documents dépendants</strong> à l'ouverture, la modification et la fermeture d'un fichier inclus. Vérifié : buffer non sauvegardé pris en compte, dépendants rafraîchis, retour au disque à la fermeture, documents non concernés épargnés.</li>
     <li><strong>LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> → go-to-def sur l'itérateur saute vers une variable homonyme externe <span class="tag">raisonné</span>.</li>
     <li><strong>LSP : handlers sans try/catch</strong> <span class="tag">raisonné</span>. Le risque de position négative (<code>Column-1</code>) est en revanche <strong>fermé ✅</strong> : <code>LocationToRange</code> borne désormais les coordonnées à zéro.</li>
     <li><strong>Highlighter des docs ignore les commentaires <code>#</code></strong> (Settex en supporte deux styles) — latent, aucun exemple actuel ne l'utilise <span class="tag">reproduit</span>.</li>
@@ -222,7 +222,7 @@
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">deltas, couverture, piège des tableaux détecté, types base/overlay validés</span><div class="bar"><i style="width:80%"></i></div></div>
-    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges multi-lignes &amp; portée corrects ; reste cache de reparse &amp; buffers non sauvegardés</span><div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges, portée et includes sur buffers ouverts corrects</span><div class="bar"><i style="width:80%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Site de documentation</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">coloration, i18n, SEO de base ; i18n dupliqué &amp; pas de pré-rendu</span><div class="bar"><i style="width:75%"></i></div></div>

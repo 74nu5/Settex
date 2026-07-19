@@ -34,6 +34,32 @@ public class IncludeResolver
     // The chain of files currently being resolved, used to detect cycles.
     private readonly Stack<string> includeStack = new();
 
+    // Optional source of file contents, used by the language server to resolve
+    // includes against open (possibly unsaved) editor buffers instead of disk.
+    private readonly Func<string, string?>? contentProvider;
+
+    /// <summary>
+    ///     Creates a resolver that reads included files from disk.
+    /// </summary>
+    public IncludeResolver()
+        : this(null)
+    {
+    }
+
+    /// <summary>
+    ///     Creates a resolver that first asks <paramref name="contentProvider" /> for a
+    ///     file's content (returning <c>null</c> to fall back to disk). This lets an
+    ///     editor resolve includes against unsaved buffers.
+    /// </summary>
+    public IncludeResolver(Func<string, string?>? contentProvider)
+        => this.contentProvider = contentProvider;
+
+    /// <summary>
+    ///     Every file touched during resolution: the root plus all transitively
+    ///     included files. Lets a host track which documents depend on which files.
+    /// </summary>
+    public IReadOnlyCollection<string> ResolvedFiles => this.included;
+
     /// <summary>
     ///     Resolves an include path relative to the current file.
     /// </summary>
@@ -55,14 +81,18 @@ public class IncludeResolver
     /// <exception cref="IncludeException">If file cannot be read or parsed</exception>
     public FileNode LoadAndParseFile(string filePath)
     {
-        if (!File.Exists(filePath))
+        // An open editor buffer wins over the on-disk copy, so analysis reflects
+        // unsaved edits in included files.
+        var providedSource = this.contentProvider?.Invoke(filePath);
+
+        if (providedSource is null && !File.Exists(filePath))
         {
             throw new IncludeException($"Include file not found: {filePath}", null);
         }
 
         try
         {
-            var source = File.ReadAllText(filePath);
+            var source = providedSource ?? File.ReadAllText(filePath);
             var lexer = new Lexer(source, filePath);
             var tokens = lexer.Tokenize();
             var parser = new Parser(tokens, filePath);

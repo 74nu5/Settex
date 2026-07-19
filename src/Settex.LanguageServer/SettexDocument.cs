@@ -21,12 +21,19 @@ namespace Settex.LanguageServer;
 public class SettexDocument
 {
     private readonly string uri;
+    private readonly Func<string, string?>? includeContentProvider;
     private volatile Snapshot current;
 
-    public SettexDocument(string uri, string text)
+    /// <summary>
+    /// Creates a document. <paramref name="includeContentProvider"/> lets the host
+    /// resolve <c>include</c>s against open (possibly unsaved) buffers instead of the
+    /// on-disk copy; returning <c>null</c> falls back to disk.
+    /// </summary>
+    public SettexDocument(string uri, string text, Func<string, string?>? includeContentProvider = null)
     {
         this.uri = uri;
-        this.current = Parse(uri, text);
+        this.includeContentProvider = includeContentProvider;
+        this.current = Parse(uri, text, includeContentProvider);
     }
 
     public string Uri => this.uri;
@@ -34,6 +41,15 @@ public class SettexDocument
     public IReadOnlyList<Token> Tokens => this.current.Tokens;
     public FileNode? Ast => this.current.Ast;
     public IReadOnlyList<Diagnostic> Diagnostics => this.current.Diagnostics;
+
+    /// <summary>The document's resolved filesystem path, or null when unsaved.</summary>
+    public string? FilePath => this.current.FilePath;
+
+    /// <summary>
+    /// Every file this document was analysed from: itself plus all transitively
+    /// included files. Used to re-analyse the document when one of them changes.
+    /// </summary>
+    public IReadOnlyCollection<string> Includes => this.current.Includes;
 
     /// <summary>
     /// The current immutable snapshot. Capture this once when a handler needs a
@@ -49,29 +65,41 @@ public class SettexDocument
     /// </summary>
     public void Update(string newText)
     {
-        this.current = Parse(this.uri, newText);
+        this.current = Parse(this.uri, newText, this.includeContentProvider);
+    }
+
+    /// <summary>
+    /// Re-analyses the document with its current text. Used when an included file
+    /// changed, so the document picks up the new content.
+    /// </summary>
+    public void Refresh()
+    {
+        this.current = Parse(this.uri, this.current.Text, this.includeContentProvider);
     }
 
     /// <summary>
     /// Snapshot immuable de l'état analysé d'un document. <see cref="FilePath"/> est
     /// le chemin FS résolu du document (null s'il n'est pas enregistré) — il permet
     /// de distinguer les nœuds propres au fichier de ceux issus d'un <c>include</c>.
+    /// <see cref="Includes"/> liste les fichiers dont l'analyse dépend.
     /// </summary>
     internal sealed record Snapshot(
         string Text,
         IReadOnlyList<Token> Tokens,
         FileNode? Ast,
         IReadOnlyList<Diagnostic> Diagnostics,
-        string? FilePath);
+        string? FilePath,
+        IReadOnlyCollection<string> Includes);
 
     /// <summary>
     /// Analyse complète du document (Lexer + Parser + résolution des includes)
     /// et production d'un snapshot immuable.
     /// </summary>
-    private static Snapshot Parse(string uri, string text)
+    private static Snapshot Parse(string uri, string text, Func<string, string?>? includeContentProvider)
     {
         var diagnostics = new List<Diagnostic>();
         IReadOnlyList<Token> tokens = Array.Empty<Token>();
+        IReadOnlyCollection<string> includes = Array.Empty<string>();
         FileNode? ast = null;
 
         // Resolve the real filesystem path up front so every token/AST node of the
@@ -93,18 +121,23 @@ public class SettexDocument
             // Phase 2.5: Resolve includes (if file is saved to disk)
             if (filePath != null)
             {
+                var includeResolver = new IncludeResolver(includeContentProvider);
+
                 try
                 {
-                    var includeResolver = new IncludeResolver();
                     var resolvedStatements = includeResolver.ResolveIncludes(parsedAst, filePath);
 
                     // Rebuild AST with resolved includes
                     ast = new FileNode(resolvedStatements, parsedAst.Location);
+                    includes = includeResolver.ResolvedFiles.ToList();
                 }
                 catch (IncludeException ex)
                 {
-                    // Include resolution failed, use original AST and report error
+                    // Include resolution failed, use original AST and report error.
+                    // Keep whatever was resolved so a later fix to one of those files
+                    // still triggers a re-analysis of this document.
                     ast = parsedAst;
+                    includes = includeResolver.ResolvedFiles.ToList();
                     diagnostics.Add(new Diagnostic
                     {
                         Range = ex.Location != null ? LocationToRange(ex.Location) : new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(new Position(0, 0), new Position(0, 0)),
@@ -191,7 +224,7 @@ public class SettexDocument
             });
         }
 
-        return new Snapshot(text, tokens, ast, diagnostics, filePath);
+        return new Snapshot(text, tokens, ast, diagnostics, filePath, includes);
     }
 
     /// <summary>
@@ -206,14 +239,33 @@ public class SettexDocument
             return true;
         }
 
+        return SamePath(location.FilePath, documentFilePath);
+    }
+
+    /// <summary>
+    /// Compares two filesystem paths using the host's case semantics
+    /// (case-insensitive on Windows), after normalising them.
+    /// </summary>
+    public static bool SamePath(string? left, string? right)
+    {
+        if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right))
+        {
+            return false;
+        }
+
         var comparison = OperatingSystem.IsWindows()
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
 
-        return string.Equals(
-            Path.GetFullPath(location.FilePath),
-            Path.GetFullPath(documentFilePath),
-            comparison);
+        try
+        {
+            return string.Equals(Path.GetFullPath(left), Path.GetFullPath(right), comparison);
+        }
+        catch (Exception)
+        {
+            // Malformed path: fall back to a plain comparison rather than throwing.
+            return string.Equals(left, right, comparison);
+        }
     }
 
     /// <summary>

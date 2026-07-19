@@ -45,8 +45,12 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
 
         this.logger.LogTrace("Opened: {Uri}", uri);
 
-        var document = this.workspace.DidOpen(uri, text);
-        this.PublishDiagnostics(uri, document);
+        // Opening a file that other documents include makes their analysis switch
+        // to this buffer, so they are refreshed and re-published too.
+        foreach (var affected in this.workspace.DidOpen(uri, text))
+        {
+            this.PublishDiagnostics(affected.Uri, affected);
+        }
 
         return Unit.Task;
     }
@@ -61,11 +65,12 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
         if (request.ContentChanges.Any())
         {
             var newText = request.ContentChanges.First().Text;
-            var document = this.workspace.DidChange(uri, newText);
 
-            if (document != null)
+            // Editing an included file re-analyses the documents that include it,
+            // so their diagnostics stay in sync without waiting for a save.
+            foreach (var affected in this.workspace.DidChange(uri, newText))
             {
-                this.PublishDiagnostics(uri, document);
+                this.PublishDiagnostics(affected.Uri, affected);
             }
         }
 
@@ -78,7 +83,11 @@ public class SettexTextDocumentSyncHandler : TextDocumentSyncHandlerBase
 
         this.logger.LogTrace("Closed: {Uri}", uri);
 
-        this.workspace.DidClose(uri);
+        // Documents that included this one fall back to the on-disk copy.
+        foreach (var affected in this.workspace.DidClose(uri))
+        {
+            this.PublishDiagnostics(affected.Uri, affected);
+        }
 
         // Efface les diagnostics
         this.languageServer.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams
