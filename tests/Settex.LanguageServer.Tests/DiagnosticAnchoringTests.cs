@@ -89,8 +89,16 @@ public sealed class DiagnosticAnchoringTests
         await Assert.That(warning.Range.Start.Line).IsEqualTo(5);
     }
 
+    /// <summary>
+    /// This originally asserted the opposite: that an includer stays quiet because the
+    /// file owning the key reports it instead. That reasoning had a hole — a fragment
+    /// with no <c>settings</c> block never runs the analyzers, so splitting a file into
+    /// an include deleted the warning from the editor entirely. A warning duplicated
+    /// across includer and include is noise; a missing one is a defect, and drift is
+    /// the thing this tool exists to catch.
+    /// </summary>
     [Test]
-    public async Task IncludedDrift_IsReportedOnTheFileThatOwnsIt_NotOnEveryIncluderAsync()
+    public async Task IncludedDrift_IsStillReportedOnTheIncluderAsync()
     {
         using var temp = new TempDirectory();
 
@@ -119,11 +127,42 @@ public sealed class DiagnosticAnchoringTests
         var main = new SettexDocument(DocumentUri.FromFileSystemPath(mainPath).ToString(), File.ReadAllText(mainPath));
 
         // The file that defines the key reports it, anchored on the assignment.
-        await Assert.That(lib.Diagnostics.Any(d => d.Message.Contains("OnlyDev"))).IsTrue();
+        var inLib = lib.Diagnostics.Single(d => d.Message.Contains("OnlyDev"));
 
-        // The includer does not: it cannot act on a key it does not define, and the
-        // warning would land at 0:0 with nothing to point at.
-        await Assert.That(main.Diagnostics.Any(d => d.Message.Contains("OnlyDev"))).IsFalse();
+        await Assert.That(inLib.Range.Start.Line).IsGreaterThan(0);
+
+        // And so does the includer, at the file start for want of a local assignment.
+        // Reporting it twice costs a duplicate; not reporting it lost it altogether.
+        await Assert.That(main.Diagnostics.Any(d => d.Message.Contains("OnlyDev"))).IsTrue();
+    }
+
+    [Test]
+    public async Task DriftInASettingsLessFragment_IsReportedByTheRootAsync()
+    {
+        // The hole the change closes. The fragment holds only env blocks, so it never
+        // runs the analyzers; the root used to drop the warning for want of a local
+        // anchor. Between them, splitting a file into an include deleted it.
+        using var temp = new TempDirectory();
+
+        temp.Write(
+            "frag.settex",
+            """
+            env "Dev" {
+                settings {
+                    Feature.NewCheckout = true
+                }
+            }
+            env "Prod" {
+                settings {
+                    App = "Z"
+                }
+            }
+            """);
+
+        var rootPath = temp.Write("root.settex", "include \"./frag.settex\"\nsettings {\n    App = \"X\"\n}");
+        var root = new SettexDocument(DocumentUri.FromFileSystemPath(rootPath).ToString(), File.ReadAllText(rootPath));
+
+        await Assert.That(root.Diagnostics.Any(d => d.Message.Contains("Feature.NewCheckout"))).IsTrue();
     }
 
     private sealed class TempDirectory : IDisposable
