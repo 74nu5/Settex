@@ -51,6 +51,61 @@ public sealed class SettexDocumentTests
     }
 
     [Test]
+    public async Task Outline_ExcludesIncludedSymbols_ButKeepsOwnAsync()
+    {
+        // The document outline must list only symbols physically in this file:
+        // inlined include content (with the included file's line numbers) must be
+        // filtered out, while the file's own symbols are kept.
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            var commonPath = Path.Combine(tempDir, "common.settex");
+            var mainPath = Path.Combine(tempDir, "main.settex");
+
+            await File.WriteAllTextAsync(commonPath, "let shared = 5");
+            await File.WriteAllTextAsync(
+                mainPath,
+                "include \"./common.settex\"\nlet localVar = 1\nsettings {\n    Port = shared\n}");
+
+            var mainUri = DocumentUri.FromFileSystemPath(mainPath);
+            var document = new SettexDocument(mainUri.ToString(), await File.ReadAllTextAsync(mainPath));
+
+            var own = document.Ast!.Statements
+                .Where(s => SettexDocument.IsFromSameFile(s.Location, mainPath))
+                .ToList();
+
+            var ownLetNames = own.OfType<LetNode>().Select(l => l.Name).ToList();
+
+            await Assert.That(ownLetNames.Contains("localVar")).IsTrue();
+            await Assert.That(ownLetNames.Contains("shared")).IsFalse();
+            await Assert.That(own.OfType<SettingsBlockNode>().Any()).IsTrue();
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Test]
+    public async Task IsFromSameFile_NullOrEmptyFilePath_ReturnsTrueAsync()
+    {
+        var noPath = new SourceLocation { Line = 1, Column = 1, Length = 1 };
+        await Assert.That(SettexDocument.IsFromSameFile(noPath, @"C:\proj\main.settex")).IsTrue();
+
+        var withPath = new SourceLocation { Line = 1, Column = 1, Length = 1, FilePath = @"C:\proj\main.settex" };
+        await Assert.That(SettexDocument.IsFromSameFile(withPath, null)).IsTrue();
+    }
+
+    [Test]
+    public async Task IsFromSameFile_DifferentFile_ReturnsFalseAsync()
+    {
+        var included = new SourceLocation { Line = 1, Column = 1, Length = 1, FilePath = @"C:\proj\common.settex" };
+        await Assert.That(SettexDocument.IsFromSameFile(included, @"C:\proj\main.settex")).IsFalse();
+    }
+
+    [Test]
     public async Task ToLspLocation_WithoutFilePath_FallsBackToCurrentUriAsync()
     {
         // An unsaved document produces locations without a FilePath; those must

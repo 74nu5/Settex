@@ -47,6 +47,14 @@ public class SettexDocumentSymbolHandler : DocumentSymbolHandlerBase
 
         foreach (var statement in snapshot.Ast.Statements)
         {
+            // Les includes sont inlinés dans l'AST : ne garder que les symboles
+            // propres à ce fichier, sinon l'outline afficherait le contenu des
+            // fichiers inclus avec leurs numéros de ligne (ranges faux).
+            if (!SettexDocument.IsFromSameFile(statement.Location, snapshot.FilePath))
+            {
+                continue;
+            }
+
             var symbol = CreateSymbol(statement);
             if (symbol != null)
             {
