@@ -13,14 +13,22 @@
     <Product>Settex</Product>
     <Copyright>Copyright © 2026 Settex Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/yourusername/settex</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/yourusername/settex</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/74nu5/Settex</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/74nu5/Settex</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Description>Settex - A declarative configuration language for .NET appsettings</Description>
     
-    <!-- Version -->
+    <!-- README shipped inside every package, so the NuGet page is not empty. -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- One version for all packages. Settex.Cli used to pin its own 1.0.0 while
+         everything else was 0.1.0-alpha, so the three shipped as if unrelated. -->
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
 </Project>

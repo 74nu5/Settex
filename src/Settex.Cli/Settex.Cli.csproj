@@ -10,7 +10,6 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>settex</ToolCommandName>
     <PackageId>Settex.Cli</PackageId>
-    <Version>1.0.0</Version>
     <Authors>Settex Contributors</Authors>
     <Description>Command-line tool for compiling Settex configuration files to JSON</Description>
     <PackageProjectUrl>https://github.com/settex/settex</PackageProjectUrl>

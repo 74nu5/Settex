@@ -15,7 +15,15 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     
     <!-- Suppress NU5128 warning about missing dependencies in nuspec -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <!-- NU5100 says a task assembly outside lib/ will not become a compile reference.
+         That is the point: consumers must not compile against it. NU5128 is the
+         matching complaint about an empty lib/ folder. -->
+    <NoWarn>$(NoWarn);NU5128;NU5100</NoWarn>
+
+    <!-- A task assembly belongs in tasks/, never in lib/: anything in lib/ becomes a
+         compile-time reference for every consuming project, which is exactly what
+         NU5100 warns about. The targets file loads it from tasks/ accordingly. -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackSettexTaskAssemblies</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,19 +42,15 @@
     <None Include="build\**\*" Pack="true" PackagePath="build\" />
   </ItemGroup>
 
-  <!-- Copy task assembly and dependencies to package lib folder -->
-  <Target Name="PackTaskDependencies" AfterTargets="Build">
+  <!-- Runs at pack time, when $(OutputPath) actually resolves. The previous version
+       used a plain ItemGroup, whose $(OutputPath) evaluated too early and landed the
+       assemblies under contentFiles/ instead of where they were declared to go. -->
+  <Target Name="PackSettexTaskAssemblies">
     <ItemGroup>
-      <_PackageFiles Include="$(OutputPath)*.dll" />
-      <_PackageFiles Include="$(OutputPath)*.pdb" />
+      <TfmSpecificPackageFile Include="$(OutputPath)Settex.Build.dll;$(OutputPath)Settex.Core.dll">
+        <PackagePath>tasks/netstandard2.0/</PackagePath>
+      </TfmSpecificPackageFile>
     </ItemGroup>
-    <Copy SourceFiles="@(_PackageFiles)" DestinationFolder="$(OutputPath)..\buildTransitive\" />
   </Target>
-
-  <ItemGroup>
-    <!-- Pack the task assembly and dependencies -->
-    <None Include="$(OutputPath)*.dll" Pack="true" PackagePath="lib\netstandard2.0\" Visible="false" />
-    <None Include="$(OutputPath)buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\" Visible="false" />
-  </ItemGroup>
 
 </Project>
