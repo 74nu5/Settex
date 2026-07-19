@@ -78,6 +78,20 @@ public class SettexWorkspace
     }
 
     /// <summary>
+    /// Ré-analyse les documents ouverts qui dépendent du fichier donné, sans passer par
+    /// un changement de buffer. Utilisé quand un <c>.settex</c> change <strong>sur le
+    /// disque</strong> (git checkout, autre outil) : le document éventuellement ouvert
+    /// sur ce fichier est laissé de côté, son buffer faisant autorité.
+    /// </summary>
+    public IReadOnlyList<SettexDocument> RefreshDependentsOf(string filePath)
+    {
+        var openUri = this.documents.Values
+            .FirstOrDefault(document => SettexDocument.SamePath(document.FilePath, filePath))?.Uri;
+
+        return this.RefreshDependents(filePath, openUri ?? string.Empty);
+    }
+
+    /// <summary>
     /// Contenu d'un fichier s'il est ouvert dans l'éditeur, sinon <c>null</c> pour
     /// que le résolveur retombe sur le disque.
     /// </summary>

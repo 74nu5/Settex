@@ -30,6 +30,7 @@ internal static class Program
                 .WithHandler<SettexDefinitionHandler>()
                 .WithHandler<SettexReferencesHandler>()
                 .WithHandler<SettexDocumentSymbolHandler>()
+                .WithHandler<SettexWatchedFilesHandler>()
         ).ConfigureAwait(false);
 
         await server.WaitForExit.ConfigureAwait(false);
