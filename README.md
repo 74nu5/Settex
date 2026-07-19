@@ -182,7 +182,7 @@ Generates:
 
 ### Arrays
 
-Define arrays with comma-separated values (commas are optional; a newline also separates items):
+Define arrays with comma-separated values. A newline separates items too, so commas may be omitted **across lines** — but two items on the same line still need one:
 
 ```settex
 settings {

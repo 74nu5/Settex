@@ -347,6 +347,20 @@ public class SettexCompletionHandler : CompletionHandlerBase
         var lines = textBeforeCursor.Split('\n');
         var lastLine = lines[^1].TrimStart();
 
+        // Drop the identifier being typed, if any, before looking for the dot. The
+        // editor re-requests completion on every keystroke, so requiring the line to end
+        // with a dot meant the property list appeared after "Server." and vanished the
+        // moment the user typed "P" — exactly when it becomes useful. What follows the
+        // dot is handled separately, by ExtractPartialWord, which filters the list.
+        var end = lastLine.Length;
+
+        while (end > 0 && (char.IsLetterOrDigit(lastLine[end - 1]) || lastLine[end - 1] == '_'))
+        {
+            end--;
+        }
+
+        lastLine = lastLine[..end];
+
         // Pattern: Word1.Word2.Word3. (se termine par un point)
         if (!lastLine.EndsWith('.'))
         {
