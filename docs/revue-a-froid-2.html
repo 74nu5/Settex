@@ -91,15 +91,15 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">7.7<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">274</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">7.8<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">284</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
-    <div class="t">Pourquoi la note remonte (5,8 → 7,2)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. 262 tests (contre 228), 0 avertissement. Le socle est désormais bon.
+    <div class="t">Pourquoi la note remonte (5,8 → 7,8)</div>
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>284 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
@@ -181,16 +181,16 @@
     <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs · JsonWriter.cs — valider la compatibilité base/overlay indépendamment du mode</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">Ranges de symboles mono-ligne → containment LSP violée <span class="tag">raisonné</span></div>
-    <code>LocationToRange</code> reste mono-ligne (<code>SourceLocation</code> sans EndLine/EndColumn). <code>DocumentSymbol</code> l'utilise pour le <code>Range</code> des blocs <code>settings</code>/<code>env</code>/imbriqués : un bloc lignes 2-40 a un range = ligne 2, alors que ses enfants sont lignes 3-39, donc <strong>hors</strong> du parent. Le LSP exige l'inclusion des ranges enfants → breadcrumbs / sticky-scroll / outline cassés ou mal imbriqués selon le client.
-    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (LocationToRange) — nécessite EndLine/EndColumn dans SourceLocation (change Core)</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — ranges de symboles multi-lignes, containment LSP respectée</div>
+    <code>LocationToRange</code> était mono-ligne (<code>SourceLocation</code> sans EndLine/EndColumn) : un bloc lignes 2-40 avait un range = ligne 2, ses enfants lignes 3-39 tombaient <strong>hors</strong> du parent → breadcrumbs / outline cassés. <strong>Corrigé</strong> : <code>SourceLocation</code> porte désormais <code>EndLine</code>/<code>EndColumn</code> (nullables, avec accesseurs <em>effectifs</em> rétrocompatibles), le parser <strong>spanne</strong> tous les nœuds à blocs jusqu'à leur accolade/crochet fermant (settings, env, bloc imbriqué, <code>for</code>, objet taggé, tableau, fichier), et <code>LocationToRange</code> produit un range multi-ligne. Les positions sont aussi bornées à zéro (ferme au passage le risque de coordonnée négative).
+    <div class="fp">src/Settex.Core/Diagnostics/SourceLocation.cs · Parser.cs (SpanTo) · SettexDocument.cs (LocationToRange)</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">L'étendue de scope sous-couvre les lignes de fin / accolade <span class="tag">raisonné</span> <span class="tag">issu du dernier cycle</span></div>
-    Le nouveau calcul d'étendue ne pousse <code>EndLine</code> que par la ligne de <strong>début</strong> des nœuds traversés. Toute position entre la dernière ligne de contenu et le <code>}</code> fermant (lignes vides, accolade) retombe sur le scope <strong>parent</strong> ; un <code class="sx">env { settings {} }</code> vide ne couvre que sa ligne de déclaration. Impact borné (les identifiants sont sur des lignes couvertes, donc def/hover marchent en général) — mais c'est le défaut miroir de l'ancienne heuristique <code>+1000</code>.
-    <div class="fp">src/Settex.LanguageServer/ScopeInfo.cs · ScopeResolver.cs — étendre jusqu'à la ligne de l'accolade fermante</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — l'étendue de scope couvre tout le corps, jusqu'à l'accolade fermante</div>
+    L'étendue n'était poussée que par la ligne de <strong>début</strong> des nœuds traversés : toute position entre la dernière ligne de contenu et le <code>}</code> fermant retombait sur le scope <strong>parent</strong>, et un <code class="sx">env { settings {} }</code> vide ne couvrait que sa ligne de déclaration. <strong>Corrigé</strong> par le même changement Core : <code>ScopeInfo</code> initialise sa fin depuis la <strong>vraie fin de bloc</strong> de l'AST. Vérifié : ligne vide et accolade fermante d'un <code>env</code> résolvent bien vers l'env, un corps d'env vide aussi, et le contenu <em>après</em> l'env retombe correctement sur le global.
+    <div class="fp">src/Settex.LanguageServer/ScopeInfo.cs (EffectiveEndLine) — le défaut miroir de l'ancienne heuristique <code>+1000</code> est fermé</div>
   </div>
 
   <div class="callout warn">
@@ -213,7 +213,7 @@
     <li><strong>Dédup/cycle d'includes</strong> comparent des chemins <code>GetFullPath</code> : liens symboliques/durs et noms courts 8.3 peuvent les contourner (borné par <code>MaxIncludeDepth</code>, donc pas de blocage) <span class="tag">raisonné</span>.</li>
     <li><strong>LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés ; pas de re-parse quand un fichier inclus change <span class="tag">raisonné</span>.</li>
     <li><strong>LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> → go-to-def sur l'itérateur saute vers une variable homonyme externe <span class="tag">raisonné</span>.</li>
-    <li><strong>LSP : handlers sans try/catch</strong> ; <code>LocationToRange</code> calcule <code>Column-1</code> → une colonne 0 produirait une position négative <span class="tag">raisonné</span>.</li>
+    <li><strong>LSP : handlers sans try/catch</strong> <span class="tag">raisonné</span>. Le risque de position négative (<code>Column-1</code>) est en revanche <strong>fermé ✅</strong> : <code>LocationToRange</code> borne désormais les coordonnées à zéro.</li>
     <li><strong>Highlighter des docs ignore les commentaires <code>#</code></strong> (Settex en supporte deux styles) — latent, aucun exemple actuel ne l'utilise <span class="tag">reproduit</span>.</li>
   </ul>
 
@@ -222,7 +222,7 @@
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture + détection du piège des tableaux ; reste validation delta</span><div class="bar"><i style="width:75%"></i></div></div>
-    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">diagnostics sémantiques &amp; couverture désormais en éditeur ; reste ranges mono-ligne &amp; scope</span><div class="bar"><i style="width:70%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges multi-lignes &amp; portée corrects ; reste cache de reparse &amp; buffers non sauvegardés</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Site de documentation</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">coloration, i18n, SEO de base ; i18n dupliqué &amp; pas de pré-rendu</span><div class="bar"><i style="width:75%"></i></div></div>
@@ -241,7 +241,7 @@
       <tr><td>1</td><td><s>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> — <strong>fait ✅</strong>. Reste : valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</s> — <strong>fait ✅</strong> (<code>ArrayLayeringAnalyzer</code> + doc README/site)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>4</td><td>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>4</td><td><s>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</s> — <strong>fait ✅</strong> (un seul changement Core ferme les deux findings)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Publication marketplace (VS + VS Code) ; dépendance SDK .NET 10 <em>preview</em> à retirer à la sortie stable</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
