@@ -400,6 +400,18 @@ public class Evaluator
         // leak into — and overwrite — the parent/global scope).
         var childScope = scope.CreateChild();
         var childObject = this.EvaluateBlock(nestedBlock.Block, childScope, baseNestedObject);
+
+        // A block whose assignments were all skipped — every condition false — evaluates
+        // to an empty object. Writing it would be untruthful: .NET flattens JSON into
+        // key/value pairs, and an empty object yields none, so it contributes nothing at
+        // runtime. It was not harmless either: it made the overlay look like an object
+        // and collide with a primitive of the same name in the base, failing the build
+        // over a configuration that overrides nothing at all.
+        if (childObject.Count == 0)
+        {
+            return;
+        }
+
         target[nestedBlock.Name] = childObject;
     }
 

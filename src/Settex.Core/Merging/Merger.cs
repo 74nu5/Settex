@@ -51,6 +51,13 @@ public sealed class Merger
     /// </summary>
     private JsonNode? MergeValues(JsonNode? baseValue, JsonNode? overlayValue, string key)
     {
+        // A null base commits to no type: whatever the overlay supplies wins.
+        // See AreCompatible, which must stay in step with this.
+        if (baseValue is null)
+        {
+            return this.DeepClone(overlayValue);
+        }
+
         // If both are objects, merge recursively
         if (baseValue is JsonObject baseObj && overlayValue is JsonObject overlayObj)
         {
@@ -79,9 +86,22 @@ public sealed class Merger
     ///     (deep merge), both arrays (replace) or both primitives (replace). Anything
     ///     else is a type conflict. Shared with the compile-time validation so the
     ///     rules cannot drift from the merge itself.
+    ///     <para>
+    ///     A <c>null</c> <em>base</em> is compatible with anything. Null is the one
+    ///     value that commits to no type — it declares that a key exists and is
+    ///     deliberately unset — so "declare it in the base, fill it in per environment"
+    ///     is a legitimate pattern rather than a conflict.
+    ///     </para>
+    ///     <para>
+    ///     The reverse is <strong>not</strong> symmetric: a <c>null</c> overlay over a
+    ///     structured base stays a conflict. It reads as "unset this here", and .NET
+    ///     cannot do that — the base's keys survive the null and the intent fails
+    ///     silently, which is exactly the kind of surprise this check exists to catch.
+    ///     </para>
     /// </summary>
     public static bool AreCompatible(JsonNode? baseValue, JsonNode? overlayValue)
-        => (baseValue is JsonObject && overlayValue is JsonObject)
+        => baseValue is null
+           || (baseValue is JsonObject && overlayValue is JsonObject)
            || (baseValue is JsonArray && overlayValue is JsonArray)
            || (IsPrimitive(baseValue) && IsPrimitive(overlayValue));
 

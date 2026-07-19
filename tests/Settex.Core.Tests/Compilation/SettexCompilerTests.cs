@@ -1006,4 +1006,104 @@ settings {
             this.CleanupDirectory(tempDir);
         }
     }
+    [Test]
+    public async Task Compile_OverlayBlockWhoseAssignmentsAreAllSkipped_IsNotAConflict()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Every assignment in the block is conditioned out, so the block overrides
+            // nothing. It used to materialise an empty object, which then read as
+            // "object over a primitive" and failed the build over a no-op.
+            const string source = """
+                settings { Foo = "bar" }
+                env "Dev" { settings { Foo { X = 1 if false } } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            // Nothing is overridden, so the base value must survive.
+            var merged = new SettexCompiler().Compile(
+                sourceFile,
+                Path.Combine(tempDir, "merged"),
+                new CompilerOptions { MergeEnvironments = true });
+
+            await Assert.That(merged.Success).IsTrue();
+
+            var dev = await File.ReadAllTextAsync(Path.Combine(tempDir, "merged", "appsettings.Dev.json"));
+
+            await Assert.That(dev).Contains("bar");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_NullInBaseFilledInByEnvironment_IsAllowed()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Declaring a key as null in the base makes it visible as "required, unset"
+            // without inventing a default that would apply silently. Null commits to no
+            // type, so an environment supplying an object is not a conflict.
+            const string source = """
+                settings { Conn = null }
+                env "Dev" { settings { Conn { Host = "localhost" } } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsTrue();
+
+            var dev = await File.ReadAllTextAsync(Path.Combine(outputDir, "appsettings.Dev.json"));
+
+            await Assert.That(dev).Contains("localhost");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
+    public async Task Compile_EnvironmentNullingOutABaseObject_IsStillRejected()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // The deliberate asymmetry. This reads as "unset Server here", and .NET
+            // cannot do it: the base's Server:Port survives the null, so the intent
+            // fails silently at runtime. That is precisely what this check is for.
+            const string source = """
+                settings { Server { Port = 1 } }
+                env "Dev" { settings { Server = null } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsFalse();
+            await Assert.That(result.Errors.Any(e => e.Message.Contains("Type mismatch"))).IsTrue();
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
 }
