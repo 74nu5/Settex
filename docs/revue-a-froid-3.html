@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — Quatrième revue (à froid, état final)</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  }
+  :root[data-theme="dark"]{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  :root[data-theme="light"]{ --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:60px 24px 36px;border-bottom:1px solid var(--border);
+    background:radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:940px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.12rem;color:var(--muted);margin:0 0 22px;max-width:700px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.55rem;margin:52px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.05rem;margin-right:10px}
+  h3{font-size:1.12rem;margin:26px 0 6px}
+  p{margin:12px 0}.lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.5;margin:12px 0}
+  pre code{background:none;padding:0;font-size:1em}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}.grid.cols-3{grid-template-columns:1fr 1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  .b-info{background:color-mix(in srgb,var(--info) 18%,transparent);color:var(--info)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  ul.tight{margin:12px 0;padding-left:22px}ul.tight li{margin:5px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}.callout.warn{border-left-color:var(--warn)}.callout.ok{border-left-color:var(--ok)}.callout.info{border-left-color:var(--info)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .tag{font-family:var(--mono);font-size:.7rem;padding:.1em .5em;border-radius:5px;background:var(--surface-2);color:var(--muted);margin-left:6px}
+  .finding{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--bad);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:18px 0}
+  .finding.med{border-left-color:var(--warn)}
+  .finding.low{border-left-color:var(--muted)}
+  .finding h3{margin:0 0 4px;font-size:1.05rem}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .verdict{font-size:1.12rem;font-weight:600}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Quatrième revue · à froid</p>
+    <h1>Settex — état final</h1>
+    <p class="subtitle">Relecture indépendante après la série de correctifs. Deux relecteurs adverses (cœur compilateur, LSP&nbsp;+&nbsp;extensions) plus une passe d'usage bout-en-bout, tous exécutés sans connaissance des intentions.</p>
+    <div class="meta">
+      <span><b>Date</b> 19 juillet 2026</span>
+      <span><b>Révision</b> 884f705</span>
+      <span><b>Stack</b> .NET 10 (LTS) · C#</span>
+      <span><b>Tests</b> 305 · 0 échec</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<h2><span class="num">01</span>Verdict</h2>
+
+<div class="score-band">
+  <div class="score"><div class="big">7,4<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-warn">−0,6</span></div></div>
+  <div class="score"><div class="big">305</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">5</div><div class="lbl">défauts élevés <span class="badge b-bad">nouveau</span></div></div>
+  <div class="score"><div class="big">0</div><div class="lbl">avertissement de build</div></div>
+</div>
+
+<p class="lead">La troisième revue concluait « 0 défaut élevé restant ». Cette relecture en trouve cinq. Ce n'est pas un retour en arrière du produit&nbsp;: les fonctionnalités livrées entre-temps — sortie delta, lint de couverture, diagnostics sémantiques dans l'éditeur, navigation inter-fichiers — fonctionnent et répondent au besoin d'origine. Le problème est ailleurs.</p>
+
+<div class="callout bad">
+  <div class="t">Le fait marquant de cette revue</div>
+  <p style="margin:0"><strong>Trois des cinq défauts élevés sont des régressions introduites par la campagne de correctifs elle-même</strong>, et aucune n'a été détectée&nbsp;: les 305 tests sont restés verts du début à la fin. La cause commune est structurelle — il n'existe <strong>aucune intégration continue de build ou de test</strong>. Chaque correctif a été validé localement, à la main, par la personne qui l'écrivait.</p>
+</div>
+
+<p>Autrement dit&nbsp;: la qualité du code livré est réelle, mais le <em>filet</em> qui devrait la préserver n'existe pas. C'est le vrai sujet de cette revue, et c'est ce qui justifie la note en baisse malgré des fonctionnalités en hausse.</p>
+
+<h2><span class="num">02</span>Vérité terrain</h2>
+
+<p>Mesuré, pas déclaré&nbsp;:</p>
+
+<table>
+<thead><tr><th>Contrôle</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>SDK résolu dans le dépôt</td><td><code>10.0.302</code> (GA) — hors dépôt&nbsp;: <code>10.0.400-preview</code>, le pin agit <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Build solution (Release)</td><td>0 avertissement, 0 erreur <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Tests</td><td>305 / 305 — Core 243 · LSP 44 · CLI 7 · Build 4 · VS 7 <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Site de documentation</td><td>build propre <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Codes retour CLI</td><td>erreur → 1 · succès avec avertissement → 0 · fichier absent → 1 <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Scénario métier fondateur</td><td>delta + avertissement de dérive, de bout en bout <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Volumétrie</td><td>Core 4 033 lignes / 49 fichiers · LSP 3 526 / 12</td></tr>
+<tr><td>Intégration continue build/test</td><td><strong>inexistante</strong> <span class="badge b-bad">✗</span></td></tr>
+<tr><td>Outillage de couverture de code</td><td><strong>inexistant</strong> <span class="badge b-bad">✗</span></td></tr>
+</tbody>
+</table>
+
+<p>Le scénario qui a motivé le projet a été rejoué intégralement&nbsp;: une clé <code>Feature.NewCheckout</code> posée en Development et oubliée en Production produit bien un avertissement nommant la clé, les deux environnements et l'action corrective, et les trois fichiers sont générés en delta. <strong>La promesse centrale du produit tient.</strong></p>
+
+<h2><span class="num">03</span>Défauts élevés</h2>
+
+<div class="finding">
+  <h3>H1 — Aucune intégration continue de build ou de test <span class="tag">structurel</span></h3>
+  <p><code>.github/workflows/</code> ne contient qu'un déploiement du site de documentation, <strong>filtré sur <code>docs-site/**</code></strong>. Les 305 tests ne s'exécutent sur aucun push ni aucune pull request.</p>
+  <p>Conséquence concrète&nbsp;: la quinzaine de PR de la campagne de correctifs a été fusionnée sans la moindre vérification automatique. Un contributeur peut casser le compilateur sans qu'aucun signal ne se déclenche. Les trois régressions ci-dessous en sont la démonstration directe.</p>
+</div>
+
+<div class="finding">
+  <h3>H2 — Le LSP confond les positions entre fichiers inclus et fichier courant <span class="tag">reproduit</span></h3>
+  <p class="fp">ScopeResolver.cs:17 · ScopeInfo.cs:105 · SettexHoverHandler.cs:610</p>
+  <p>L'AST manipulé par le serveur est <em>aplati</em>&nbsp;: les instructions des fichiers inclus y sont fusionnées avec celles du fichier courant. Or ni <code>IsPositionInLocation</code> ni <code>ScopeInfo.ContainsPosition</code> ne comparent le chemin du fichier — ils raisonnent uniquement en ligne et colonne. Les lignes 5 à 10 d'un fichier inclus se superposent donc aux lignes 5 à 10 du fichier ouvert.</p>
+  <p>Reproduit&nbsp;: avec un <code>let host = "MAIN-HOST"</code> local et un <code>env "Dev" { let host = "DEV-HOST" }</code> dans le fichier inclus, survoler <code>host</code> annonce <code>Scope: Env "Dev"</code> et la valeur <code>"DEV-HOST"</code>. Le «&nbsp;aller à la définition&nbsp;» saute dans le fichier inclus. Les deux réponses sont fausses. Le survol d'une affectation est touché de la même façon, et <code>SettexReferencesHandler</code> hérite du défaut.</p>
+  <p><strong>Aggravé par un correctif de la campagne</strong>&nbsp;: donner aux scopes leur étendue réelle issue de l'AST rend la superposition plus fiable, donc plus nuisible. À noter que <code>SettexDocumentSymbolHandler</code> fait déjà le bon test via <code>IsFromSameFile</code> — l'asymétrie confirme l'oubli.</p>
+</div>
+
+<div class="finding">
+  <h3>H3 — Tout fragment d'include affiche une erreur permanente dans l'éditeur <span class="tag">régression</span> <span class="tag">reproduit</span></h3>
+  <p class="fp">SettexDocument.cs:161 → Evaluator.cs:185</p>
+  <p>Le serveur exécute désormais l'évaluateur sur chaque tampon ouvert, et <code>ValidateStructure</code> exige au moins un bloc <code>settings</code>. Un fragment destiné à être inclus n'en a pas, par construction.</p>
+  <p>Le dépôt <strong>livre exactement un tel fichier</strong>&nbsp;: <code>samples/common.settex</code> déclenche <code>STX401 — File must contain at least one 'settings' block</code>. Le README présente ce motif comme la façon normale de construire une configuration modulaire. Un nouveau fichier vide et tout tampon non enregistré dont le bloc <code>settings</code> vient d'un include sont touchés aussi.</p>
+  <p>La cause de fond&nbsp;: le CLI ne compile qu'un fichier racine, le LSP traite <em>chaque tampon comme une racine</em>. L'hypothèse est fausse.</p>
+</div>
+
+<div class="finding">
+  <h3>H4 — L'analyseur de superposition de tableaux rate les deux fuites qui comptent <span class="tag">reproduit</span></h3>
+  <p class="fp">ArrayLayeringAnalyzer.cs:38 et :59</p>
+  <p>L'analyseur a été écrit pour couvrir le piège d'indexation des tableaux de .NET. Vérification faite contre un vrai <code>ConfigurationBuilder</code>, il laisse passer les deux cas les plus fréquents.</p>
+  <p><strong>(a) Tableaux d'objets à longueur égale.</strong> La règle ne se déclenche que si l'overlay est <em>plus court</em>. Or&nbsp;:</p>
+<pre><code>base : "Svcs": [ { "Name": "a", "Port": 1 } ]
+Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
+  <p>Longueurs identiques, donc silence — mais .NET fusionne l'index 0 champ par champ et <code>Port = 1</code> fuit de la base vers Dev. L'heuristique par comptage d'éléments est structurellement aveugle à cette classe.</p>
+  <p><strong>(b) Comparaison sensible à la casse.</strong> <code>Cased</code> et <code>cased</code> sont deux clés distinctes pour l'analyseur, une seule à l'exécution. Le point est <em>systémique</em>&nbsp;: <code>CoverageAnalyzer</code> et <code>ValidateOverlayAgainstBase</code> comparent également en <code>Ordinal</code> alors que la configuration .NET est <code>OrdinalIgnoreCase</code>. Ainsi <code>Foo = 1</code> en base avec <code>foo { Bar = 2 }</code> en Dev passe sans erreur, alors que primitif-contre-objet est précisément le conflit que la nouvelle validation doit détecter — et l'avertissement de couverture émis est trompeur, annonçant une clé absente là où le vrai problème est une divergence de casse.</p>
+</div>
+
+<div class="finding">
+  <h3>H5 — Débordement de pile non rattrapable dans le lexer <span class="tag">reproduit</span></h3>
+  <p class="fp">Lexer.cs:189 — <code>return this.NextToken();</code></p>
+  <p>Hors crochets, <code>ScanNewline</code> se rappelle dans <code>NextToken</code> au lieu de boucler. Environ 6 000 lignes vides tuent le processus&nbsp;:</p>
+<pre><code>Stack overflow.
+   at Settex.Core.Lexer.Lexer.SkipWhitespace()
+   at Settex.Core.Lexer.Lexer.NextToken()
+   at Settex.Core.Lexer.Lexer.ScanNewline(Int32, Int32)
+   ...   → exit 127, aucun diagnostic</code></pre>
+  <p>Un <code>StackOverflowException</code> n'étant pas rattrapable en .NET, le <code>catch</code> global du compilateur est contourné. Le lexer tournant à chaque frappe, le serveur de langage meurt aussi. Le déclencheur est improbable à la main, trivial pour un <code>.settex</code> généré ou concaténé.</p>
+</div>
+
+<h2><span class="num">04</span>Défauts moyens</h2>
+
+<h3>Régressions de la campagne</h3>
+<div class="finding med">
+  <h3>M1 — La validation base/overlay rejette des overlays qui ne changent rien <span class="tag">reproduit</span></h3>
+  <p class="fp">Evaluator.cs:127 · :367</p>
+  <p><code>EvaluateNestedBlock</code> matérialise un objet vide même quand toutes ses affectations sont écartées. <code>settings { Foo = "bar" }</code> avec <code>env "Dev" { settings { Foo { X = 1 if false } } }</code> échoue en <code>Type mismatch … base is primitive, overlay is object</code>, alors que l'overlay émis pour <code>Foo</code> est <code>{}</code>. Échec de compilation dur sur une configuration sémantiquement neutre.</p>
+</div>
+<div class="finding med">
+  <h3>M2 — <code>null</code> en base plus objet en overlay devient une erreur dure <span class="tag">reproduit</span></h3>
+  <p><code>AreCompatible</code> classe <code>null</code> parmi les primitifs. Déclarer une clé à <code>null</code> en base pour la rendre visible, puis la remplir par environnement — la façon idiomatique de signaler une valeur obligatoire — est désormais refusé. <code>null</code> est pourtant le seul primitif qui n'engage aucun type. Décision de conception à trancher.</p>
+</div>
+<div class="finding med">
+  <h3>M3 — Les étendues d'affectation sont tronquées dès que la valeur est un opérateur <span class="tag">reproduit</span></h3>
+  <p class="fp">Parser.cs:535</p>
+  <p><code>BinaryOpNode</code> porte la position de l'<em>opérateur</em>, <code>MemberAccessNode</code> celle de son <em>premier</em> segment. Pour <code>B = 1 + 2</code>, l'affectation s'arrête colonne 10 alors que le littéral <code>2</code> vit colonne 11-12. Survoler le <code>2</code> ne déclenche donc pas l'overlay — ce que le correctif d'étendue visait précisément à corriger. Casse aussi l'inclusion parent/enfant des plages LSP.</p>
+</div>
+<div class="finding med">
+  <h3>M4 — Un <code>let</code> de bloc <code>env</code> se retrouve hors de l'étendue de son parent <span class="tag">reproduit</span></h3>
+  <p class="fp">Parser.cs:405</p>
+  <p>Les <code>let</code> d'un <code>env</code> sont réinjectés dans la liste du bloc <code>settings</code>, qui conserve sa propre position&nbsp;: on obtient un enfant démarrant <em>avant</em> son parent. Tout consommateur supposant l'inclusion échoue ou produit une plage LSP invalide.</p>
+</div>
+<div class="finding med">
+  <h3>M5 — L'itérateur <code>for</code> corrompt l'évaluation des autres variables du scope</h3>
+  <p class="fp">ScopeResolver.cs:222 · SettexHoverHandler.cs:320</p>
+  <p>L'itérateur est enregistré comme un <code>LetNode</code> synthétique dont la valeur est la <em>collection</em>. Le masquage et la navigation fonctionnent, mais <code>BuildEvaluationScope</code> lie alors le nom à la collection entière&nbsp;: toute autre variable du corps qui référence l'itérateur (<code>let inner = svc.Name</code>) est évaluée contre un tableau et affichée comme une valeur sûre et fausse.</p>
+</div>
+
+<h3>Cohérence et robustesse</h3>
+<div class="finding med">
+  <h3>M6 — La CI contredit l'épinglage GA tout juste posé <span class="tag">latent</span></h3>
+  <p class="fp">.github/workflows/azure-static-web-apps.yml:39</p>
+  <p>Le workflow demande explicitement <code>dotnet-quality: 'preview'</code>, et son en-tête justifie encore «&nbsp;it targets a preview .NET SDK&nbsp;». Or <code>global.json</code> porte désormais <code>allowPrerelease: false</code>&nbsp;: un runner ne disposant que d'un SDK 10.0 preview ne satisfait plus le pin — mécanisme déjà observé localement. Le filtre de chemins ayant exclu le commit <code>global.json</code>, rien n'a cassé à la fusion&nbsp;: la rupture se déclenchera au prochain changement dans <code>docs-site/</code>.</p>
+</div>
+<div class="finding med">
+  <h3>M7 — <code>Refresh()</code> est un lire-modifier-écrire qui annule une écriture concurrente <span class="tag">reproduit</span></h3>
+  <p class="fp">SettexDocument.cs:75</p>
+  <p>Deux écrivains coexistent désormais sur <code>current</code>&nbsp;: <code>Update</code> (frappe de l'utilisateur) et <code>Refresh</code> (déclenché par le changement d'un autre document). L'invariant de thread-safety documenté — un unique remplacement atomique — ne tient plus. Sous 300 mises à jour concurrentes, le tampon serveur recule silencieusement.</p>
+</div>
+<div class="finding med">
+  <h3>M8 — Un include introuvable n'est jamais retracé, l'erreur ne se lève donc jamais <span class="tag">reproduit</span></h3>
+  <p>Le suivi conserve <code>ResolvedFiles</code>, mais le seul fichier qui compte — celui qui n'a <em>pas</em> été trouvé — n'y figure pas par définition. Créer le fichier manquant ne rafraîchit pas le dépendant&nbsp;: le <code>STX301</code> persiste jusqu'à ce que l'utilisateur modifie le fichier fautif.</p>
+</div>
+<div class="finding med">
+  <h3>M9 — Aucun gestionnaire <code>didChangeWatchedFiles</code></h3>
+  <p>L'extension enregistre bien un observateur de fichiers, mais aucun gestionnaire C# ne reçoit la notification. Un <code>git checkout</code> ou une modification hors éditeur d'un fichier inclus laisse les dépendants sur une analyse périmée indéfiniment. La résolution sur tampons ouverts ne couvre que le cas intra-éditeur.</p>
+</div>
+<div class="finding med">
+  <h3>M10 — Les avertissements de couverture n'ont aucune position et sont dupliqués <span class="tag">reproduit</span></h3>
+  <p class="fp">CoverageAnalyzer.cs:81</p>
+  <p>Les analyseurs travaillent sur le modèle évalué, qui a perdu les positions source&nbsp;: les diagnostics sont émis sans <code>SourceLocation</code>. En CLI la colonne Location est nue&nbsp;; dans l'éditeur, les 11 avertissements de <code>complete-v2-features.settex</code> s'empilent tous sur le premier caractère. Et comme le modèle vient de l'AST aplati, les mêmes avertissements sont republiés sur <em>chaque</em> fichier incluant le fragment fautif. C'est la fonctionnalité phare du produit qui est la moins bien localisée.</p>
+</div>
+<div class="finding med">
+  <h3>M11 — Les déploiements de prévisualisation de PR échouent systématiquement</h3>
+  <p>«&nbsp;This Static Web App already has the maximum number of staging environments&nbsp;». Chaque PR affiche un rouge sans rapport avec le code — le bruit qui apprend à ignorer les alertes.</p>
+</div>
+
+<h2><span class="num">05</span>Défauts mineurs</h2>
+<ul class="tight">
+  <li><strong>Reliquats de debug commités à la racine</strong>&nbsp;: <code>debug_for.settex</code> et trois <code>appsettings*.json</code>, tracés depuis d'anciens commits. Les appsettings contiennent du contenu <em>fusionné</em>, qui contredit visuellement le mode delta actuel. Rien dans <code>.gitignore</code> ne les couvre.</li>
+  <li><strong>L'échappement <code>$${</code> n'est documenté nulle part</strong> — zéro occurrence dans le README comme dans le site. Fonctionnalité livrée, invisible.</li>
+  <li><strong>Changement de sens silencieux</strong>&nbsp;: il n'existe plus d'échappement produisant un <code>$</code> littéral suivi d'une interpolation. <code>"cost: $${price}"</code> est passé de <code>cost: 42</code> au littéral <code>cost: ${price}</code> sans avertir. Le contournement <code>"$" + "${price}"</code> fonctionne, mais mérite une note de version.</li>
+  <li><strong>Ordre des environnements non déterministe</strong> dans les deux analyseurs&nbsp;: itération d'un <code>Dictionary</code>, y compris pour les listes citées dans le texte des messages.</li>
+  <li><strong>Étendues absentes sur <code>LetNode</code> et <code>IncludeNode</code></strong> — limitées au mot-clé, incohérent avec le traitement des affectations.</li>
+  <li><strong><code>LocationToRange</code> peut produire une plage inversée</strong> — <code>endColumn</code> n'est borné qu'à zéro, jamais à <code>startColumn</code>. Latent&nbsp;: aucune occurrence sur un AST réel aujourd'hui.</li>
+  <li><strong>Décalage d'une colonne</strong> sur la fin exclusive dans <code>IsPositionInLocation</code>, et sur la position d'erreur de <code>\$</code> dans le lexer.</li>
+  <li><strong>Deux gestionnaires non protégés</strong> malgré l'annonce «&nbsp;les cinq&nbsp;»&nbsp;: les quatre surcharges de synchronisation de document et une surcharge de complétion.</li>
+  <li><strong><code>cancellationToken</code> ignoré partout</strong>&nbsp;: les cinq corps sont synchrones, donc la branche <code>OperationCanceledException</code> est du code mort — alors qu'un survol lance un évaluateur complet.</li>
+  <li><strong>Sévérité <code>Information</code> étiquetée <code>STX401</code></strong> (le code d'erreur), le ternaire ne traitant que le cas <code>Warning</code>.</li>
+  <li><strong><code>result?.dotnetPath</code> accepté sans vérifier son existence</strong> dans l'extension&nbsp;: un chemin périmé part directement en commande, avec un ENOENT opaque au lieu du message actionnable prévu.</li>
+  <li><strong>Survol incohérent sur l'en-tête d'un bloc</strong>&nbsp;: <code>Server</code> dans <code>Server { … }</code> ne renvoie rien, alors que <code>Server.Port = …</code> renvoie l'overlay complet.</li>
+</ul>
+
+<h2><span class="num">06</span>Ce qui a été vérifié solide</h2>
+
+<p>Une revue n'a de valeur que si elle dit aussi ce qui tient. Ces points ont été activement attaqués et n'ont rien donné&nbsp;:</p>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Cohérence fusion / validation</h3>
+    <p>Toutes les combinaisons objet / tableau / valeur / <code>null</code> ont été parcourues des deux côtés&nbsp;: <code>AreCompatible</code> est exactement la disjonction des branches acceptantes de <code>MergeValues</code>. Aucune divergence — la fusion non gardée du mode fusionné est réellement inatteignable par conflit.</p>
+  </div>
+  <div class="card">
+    <h3>Échappement <code>$${</code></h3>
+    <p>Quinze variantes sondées&nbsp;: escapes multiples, en fin de chaîne, collés à une interpolation réelle, imbriqués, non terminés. Aucun plantage, aucun décalage, aucune erreur mal positionnée. La garde est démontrée saine.</p>
+  </div>
+  <div class="card">
+    <h3>Décisions de couverture</h3>
+    <p>Les deux règles arbitrées tiennent de bout en bout&nbsp;: une clé présente dans tous les environnements reste silencieuse, et l'ajout d'un nouvel environnement déclenche bien l'avertissement.</p>
+  </div>
+  <div class="card">
+    <h3>Étendues des blocs</h3>
+    <p><code>settings</code>, <code>env</code>, blocs imbriqués, <code>for</code>, objets tagués, tableaux vides, imbriqués et multi-lignes, valeur suivie d'une condition&nbsp;: aucune étendue inversée.</p>
+  </div>
+  <div class="card">
+    <h3>Includes cycliques</h3>
+    <p>Pas de boucle de rafraîchissement infinie&nbsp;: A↔B et l'auto-inclusion terminent proprement sur <code>STX301 Circular include detected</code>. L'énumération concurrente est sûre.</p>
+  </div>
+  <div class="card">
+    <h3>Performance</h3>
+    <p>Non-sujet à l'échelle réaliste&nbsp;: 30 dépendants sur un include partagé coûtent 0,8&nbsp;ms par frappe&nbsp;; le plus gros échantillon du dépôt, 0,5&nbsp;ms.</p>
+  </div>
+</div>
+
+<h2><span class="num">07</span>Priorités</h2>
+
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Pourquoi maintenant</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Mettre en place une CI build + test</strong></td><td>Prérequis de tout le reste. Sans elle, chaque correctif ci-dessous peut en réintroduire un autre sans bruit.</td></tr>
+<tr><td>2</td><td>Retirer <code>dotnet-quality: 'preview'</code> du workflow</td><td>Rupture latente déjà armée&nbsp;; correctif d'une ligne.</td></tr>
+<tr><td>3</td><td>Comparer le fichier, pas seulement ligne/colonne, dans le LSP</td><td>Survol, définition et références donnent des réponses fausses dès qu'un include est présent — soit le cas d'usage recommandé.</td></tr>
+<tr><td>4</td><td>Ne pas exiger de bloc <code>settings</code> côté serveur</td><td>Erreur rouge permanente sur un fichier livré en exemple.</td></tr>
+<tr><td>5</td><td>Boucler <code>ScanNewline</code> au lieu de récurser</td><td>Mort du processus, non rattrapable&nbsp;; correctif trivial.</td></tr>
+<tr><td>6</td><td>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</td><td>Aligne les trois analyseurs sur la sémantique réelle de la configuration .NET.</td></tr>
+<tr><td>7</td><td>Étendre l'analyse de superposition aux tableaux d'objets</td><td>La classe de fuite la plus courante échappe aujourd'hui à l'outil censé la couvrir.</td></tr>
+<tr><td>8</td><td>Porter les positions source jusqu'aux analyseurs</td><td>Rend exploitable l'avertissement qui justifie le produit.</td></tr>
+<tr><td>9</td><td>Nettoyer la racine du dépôt et documenter <code>$${</code></td><td>Hygiène et cohérence documentaire.</td></tr>
+<tr><td>10</td><td>Publication marketplace (VS + VS Code)</td><td>Seul reliquat de la revue précédente.</td></tr>
+</tbody>
+</table>
+
+<h2><span class="num">08</span>Conclusion</h2>
+
+<p class="verdict">Le produit fait ce qu'il promet&nbsp;; le processus qui devrait le garantir n'existe pas encore.</p>
+
+<p>Settex résout le problème qui l'a fait naître, et le résout bien&nbsp;: une source unique, un lint qui détecte la dérive entre environnements, une sortie en delta qui respecte le mécanisme <code>appsettings</code> de .NET plutôt que de le remplacer. Rien dans cette revue ne remet cela en cause.</p>
+
+<p>Ce qu'elle établit, en revanche, c'est que la campagne de correctifs a atteint la limite de ce qu'une vérification manuelle peut tenir. Trois régressions élevées sont passées entre les mailles de 305 tests verts, dans le composant le moins couvert — le serveur de langage, où les défauts sont invisibles depuis une ligne de commande. La première priorité n'est donc aucun des défauts de cette liste&nbsp;: c'est le filet qui les aurait attrapés.</p>
+
+<footer>
+  <p>Quatrième revue à froid — 19 juillet 2026, révision <code>884f705</code>. Deux relecteurs indépendants (cœur compilateur&nbsp;; serveur de langage et extensions) plus une passe d'usage bout-en-bout. Les constats marqués «&nbsp;reproduit&nbsp;» l'ont été sur du code exécuté, la plupart contre un vrai <code>ConfigurationBuilder</code> ou un serveur de langage instrumenté.</p>
+  <p>Revues précédentes&nbsp;: <a href="etat-des-lieux.html">état des lieux</a> · <a href="revue-technique.html">revue technique</a> · <a href="revue-a-froid-2.html">troisième revue</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>
