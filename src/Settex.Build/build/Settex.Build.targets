@@ -7,7 +7,7 @@
 
   <PropertyGroup>
     <!--  Determine the assembly path based on whether we're using a package or project reference -->
-    <_SettexTaskDll_Package>$(MSBuildThisFileDirectory)..\lib\netstandard2.0\Settex.Build.dll</_SettexTaskDll_Package>
+    <_SettexTaskDll_Package>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Settex.Build.dll</_SettexTaskDll_Package>
     <_SettexTaskDll_ProjectDebug>$(MSBuildThisFileDirectory)..\bin\Debug\netstandard2.0\Settex.Build.dll</_SettexTaskDll_ProjectDebug>
     <_SettexTaskDll_ProjectRelease>$(MSBuildThisFileDirectory)..\bin\Release\netstandard2.0\Settex.Build.dll</_SettexTaskDll_ProjectRelease>
     
