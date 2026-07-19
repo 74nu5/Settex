@@ -84,7 +84,7 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
         
         // Trouver le scope actif à la position du curseur
-        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position, snapshot.FilePath);
         
         if (activeScope == null)
         {
@@ -205,16 +205,20 @@ public class SettexReferencesHandler : ReferencesHandlerBase
 
     /// <summary>
     /// Trouve le scope qui contient une position donnée (basé sur SourceLocation).
+    /// La recherche est restreinte aux scopes du <strong>fichier de la référence</strong> :
+    /// les références sont collectées sur l'AST aplati et peuvent donc provenir d'un
+    /// fichier inclus, auquel cas ce sont ses scopes à lui qui font autorité, pas ceux
+    /// qui occupent les mêmes lignes ailleurs.
     /// </summary>
     private static ScopeInfo? FindScopeAtLocation(ScopeInfo rootScope, Core.Diagnostics.SourceLocation location)
     {
-        return FindScopeAtRecursive(rootScope, location.Line, location.Column);
+        return FindScopeAtRecursive(rootScope, location.Line, location.Column, location.FilePath);
     }
 
     /// <summary>
     /// Recherche récursive du scope à une position donnée.
     /// </summary>
-    private static ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column)
+    private static ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column, string? filePath)
     {
         // Vérifier si la position est dans ce scope
         if (!scope.ContainsPosition(line, column))
@@ -226,7 +230,15 @@ public class SettexReferencesHandler : ReferencesHandlerBase
         for (var i = scope.Children.Count - 1; i >= 0; i--)
         {
             var child = scope.Children[i];
-            var childResult = FindScopeAtRecursive(child, line, column);
+
+            // Ne pas descendre dans un scope d'un autre fichier : ses lignes se
+            // superposeraient à celles de la référence. Voir ScopeResolver.
+            if (!SettexDocument.IsFromSameFile(child.Location, filePath))
+            {
+                continue;
+            }
+
+            var childResult = FindScopeAtRecursive(child, line, column, filePath);
             if (childResult != null)
             {
                 return childResult;

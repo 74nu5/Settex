@@ -96,7 +96,7 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             // PREMIÈRE PRIORITÉ : Vérifier si le curseur est sur un path d'assignation (overlay tracking)
             // MAIS seulement si le mot sous le curseur correspond au path !
-            var assignmentInfo = FindAssignmentAtPosition(snapshot.Ast, request.Position);
+            var assignmentInfo = FindAssignmentAtPosition(snapshot.Ast, request.Position, snapshot.FilePath);
             if (assignmentInfo != null)
             {
                 // Le chemin complet inclut les blocs imbriqués traversés, donc
@@ -169,7 +169,7 @@ public class SettexHoverHandler : HoverHandlerBase
             var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
 
             // Trouver le scope actif à la position du curseur
-            var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+            var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position, snapshot.FilePath);
 
             if (activeScope != null)
             {
@@ -532,7 +532,8 @@ public class SettexHoverHandler : HoverHandlerBase
     /// </summary>
     private static (Core.Parser.Ast.AssignmentNode Assignment, List<string> Path, string? EnvName)? FindAssignmentAtPosition(
         Core.Parser.Ast.FileNode ast,
-        Position position)
+        Position position,
+        string? documentFilePath = null)
     {
         // Convertir position LSP (0-based) en position Settex (1-based)
         var line = position.Line + 1;
@@ -541,6 +542,15 @@ public class SettexHoverHandler : HoverHandlerBase
         // Chercher dans les statements de base
         foreach (var stmt in ast.Statements)
         {
+            // L'AST est aplati par la résolution des includes, et les statements inclus
+            // sont insérés avant ceux du document : sans ce filtre, une assignation d'un
+            // fichier inclus située aux mêmes ligne/colonne gagnerait la course et
+            // l'overlay afficherait la valeur d'une autre clé.
+            if (!SettexDocument.IsFromSameFile(stmt.Location, documentFilePath))
+            {
+                continue;
+            }
+
             if (stmt is Core.Parser.Ast.SettingsBlockNode settings)
             {
                 var found = FindAssignmentInStatements(settings.Block.Statements, new List<string>(), line, column);
