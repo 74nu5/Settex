@@ -61,15 +61,44 @@ public class SourceLocationSpanTests
     [Test]
     public async Task TokenBasedNode_FallsBackToItsOwnLineAsync()
     {
-        // A `let` is located on its keyword token: no end span, so the effective end
-        // derives from Line and Column + Length.
-        var ast = Parse("let a = 1\n\nsettings { A = a }");
+        // Expression nodes are still located on a single token, with no end span, so
+        // the effective end derives from Line and Column + Length. (A `let` used to be
+        // the example here; it carries a real span now, like assignments.)
+        var ast = Parse("settings {\n    A = someVariable\n}");
+        var value = ast.Statements
+            .OfType<SettingsBlockNode>()
+            .Single()
+            .Block.Statements
+            .OfType<AssignmentNode>()
+            .Single()
+            .Value;
+
+        await Assert.That(value.Location.EndLine).IsNull();
+        await Assert.That(value.Location.EffectiveEndLine).IsEqualTo(value.Location.Line);
+        await Assert.That(value.Location.EffectiveEndColumn)
+            .IsEqualTo(value.Location.Column + value.Location.Length);
+    }
+
+    [Test]
+    public async Task LetStatement_SpansFromKeywordToEndOfValueAsync()
+    {
+        // Consistent with assignments: a `let` used to be located on its keyword alone,
+        // which made its LSP range three characters wide regardless of the statement.
+        var ast = Parse("let a = 1 + 2\nsettings { A = a }");
         var let = ast.Statements.OfType<LetNode>().Single();
 
-        await Assert.That(let.Location.EndLine).IsNull();
-        await Assert.That(let.Location.EffectiveEndLine).IsEqualTo(let.Location.Line);
-        await Assert.That(let.Location.EffectiveEndColumn)
-            .IsEqualTo(let.Location.Column + let.Location.Length);
+        await Assert.That(let.Location.Line).IsEqualTo(1);
+        await Assert.That(let.Location.EffectiveEndColumn).IsGreaterThanOrEqualTo(14);
+    }
+
+    [Test]
+    public async Task IncludeStatement_SpansToTheQuotedPathAsync()
+    {
+        var ast = Parse("include \"./common.settex\"\nsettings { A = 1 }");
+        var include = ast.Statements.OfType<IncludeNode>().Single();
+
+        await Assert.That(include.Location.Line).IsEqualTo(1);
+        await Assert.That(include.Location.EffectiveEndColumn).IsGreaterThanOrEqualTo(26);
     }
 
     [Test]
