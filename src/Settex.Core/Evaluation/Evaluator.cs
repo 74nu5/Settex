@@ -17,10 +17,18 @@ public class Evaluator
     /// <summary>
     ///     Evaluates a FileNode and returns a SettingsModel.
     /// </summary>
-    public SettingsModel Evaluate(FileNode fileNode)
+    /// <param name="fileNode">Root of the (include-flattened) AST to evaluate.</param>
+    /// <param name="requireSettingsBlock">
+    ///     Whether the file must contain at least one <c>settings</c> block. True when
+    ///     compiling, because a compilation root that produces no configuration is a
+    ///     mistake. False when analysing a file that is only <i>a</i> file — an include
+    ///     fragment contributing <c>let</c> variables has no <c>settings</c> block by
+    ///     design, and flagging it would be wrong.
+    /// </param>
+    public SettingsModel Evaluate(FileNode fileNode, bool requireSettingsBlock = true)
     {
         // Validate structure
-        this.ValidateStructure(fileNode);
+        this.ValidateStructure(fileNode, requireSettingsBlock);
 
         // Create global scope and evaluate global let statements
         var globalScope = new VariableScope();
@@ -171,18 +179,19 @@ public class Evaluator
 
     /// <summary>
     ///     Validates the structure of the file:
-    ///     - At least one settings block at top level
+    ///     - At least one settings block at top level, when
+    ///       <paramref name="requireSettingsBlock" /> says so
     ///     - No duplicate let variable names at same scope level
     ///     Multiple settings blocks and multiple env blocks with the same name
     ///     are allowed: they are deep-merged in document order, which is what
     ///     lets an included file contribute a settings block.
     /// </summary>
-    private void ValidateStructure(FileNode fileNode)
+    private void ValidateStructure(FileNode fileNode, bool requireSettingsBlock)
     {
         var settingsBlocks = fileNode.Statements.OfType<SettingsBlockNode>().ToList();
 
         // Must have at least one settings block (across the file and its includes)
-        if (settingsBlocks.Count == 0)
+        if (requireSettingsBlock && settingsBlocks.Count == 0)
         {
             throw new EvaluatorException(
                 "File must contain at least one 'settings' block",

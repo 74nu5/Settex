@@ -503,7 +503,7 @@ public class SettexCompletionHandler : CompletionHandlerBase
             }
 
             var evaluator = new Evaluator();
-            var model = evaluator.Evaluate(ast);
+            var model = evaluator.Evaluate(ast, requireSettingsBlock: false);
 
             if (this.logger.IsEnabled(LogLevel.Trace))
             {

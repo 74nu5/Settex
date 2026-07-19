@@ -83,8 +83,8 @@
       <span><b>Date</b> 19 juillet 2026</span>
       <span><b>Révision</b> 884f705</span>
       <span><b>Stack</b> .NET 10 (LTS) · C#</span>
-      <span><b>Tests</b> 320 · 0 échec</span>
-      <span><b>Mise à jour</b> CI · lexer · positions inter-fichiers</span>
+      <span><b>Tests</b> 326 · 0 échec</span>
+      <span><b>Mise à jour</b> CI · lexer · positions · fragments</span>
     </div>
   </div>
 </header>
@@ -94,18 +94,19 @@
 <h2><span class="num">01</span>Verdict</h2>
 
 <div class="score-band">
-  <div class="score"><div class="big">8,2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-ok">+0,8</span></div></div>
-  <div class="score"><div class="big">320</div><div class="lbl">tests, tous verts</div></div>
-  <div class="score"><div class="big">2</div><div class="lbl">défauts élevés restants <span class="badge b-ok">3 corrigés</span></div></div>
+  <div class="score"><div class="big">8,5<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-ok">+1,1</span></div></div>
+  <div class="score"><div class="big">326</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">1</div><div class="lbl">défaut élevé restant <span class="badge b-ok">4 corrigés</span></div></div>
   <div class="score"><div class="big">3</div><div class="lbl">jobs de CI · Linux, Windows, extension</div></div>
 </div>
 
 <div class="callout ok">
   <div class="t">Mise à jour — depuis la publication de cette revue</div>
-  <p style="margin:0 0 8px">Trois défauts élevés et un moyen sont corrigés, et le rapport est annoté en conséquence&nbsp;:</p>
+  <p style="margin:0 0 8px">Quatre défauts élevés et un moyen sont corrigés, et le rapport est annoté en conséquence&nbsp;:</p>
   <ul class="tight" style="margin:0">
     <li><strong>H1 — CI de build et de test</strong>&nbsp;: en place, sur Ubuntu et Windows, plus la compilation de l'extension VS&nbsp;Code. <span class="badge b-ok">fait</span></li>
     <li><strong>H2 — confusion de positions entre fichiers dans le LSP</strong>&nbsp;: corrigé, survol, définition et références répondent désormais depuis le bon fichier. <span class="badge b-ok">fait</span></li>
+    <li><strong>H3 — erreur permanente sur les fragments d'include</strong>&nbsp;: corrigée, y compris sur l'exemple livré dans le dépôt. <span class="badge b-ok">fait</span></li>
     <li><strong>H5 — débordement de pile du lexer</strong>&nbsp;: corrigé, 200&nbsp;000 lignes vides passent désormais. <span class="badge b-ok">fait</span></li>
     <li><strong>M6 — CI contredisant l'épinglage GA</strong>&nbsp;: désamorcé avant qu'il ne se déclenche. <span class="badge b-ok">fait</span></li>
     <li><strong>Nouveau — validation des noms d'environnement dépendante de l'OS</strong>&nbsp;: trouvé <em>par la CI elle-même</em>, à sa toute première exécution, puis corrigé. <span class="badge b-ok">fait</span></li>
@@ -130,7 +131,7 @@
 <tbody>
 <tr><td>SDK résolu dans le dépôt</td><td><code>10.0.302</code> (GA) — hors dépôt&nbsp;: <code>10.0.400-preview</code>, le pin agit <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Build solution (Release)</td><td>0 avertissement, 0 erreur <span class="badge b-ok">OK</span></td></tr>
-<tr><td>Tests</td><td>305 → <strong>320</strong>, tous verts <span class="badge b-ok">OK</span></td></tr>
+<tr><td>Tests</td><td>305 → <strong>326</strong>, tous verts <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Site de documentation</td><td>build propre <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Codes retour CLI</td><td>erreur → 1 · succès avec avertissement → 0 · fichier absent → 1 <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Scénario métier fondateur</td><td>delta + avertissement de dérive, de bout en bout <span class="badge b-ok">OK</span></td></tr>
@@ -172,12 +173,16 @@
   <p>Quatre tests couvrent le correctif&nbsp;: les deux qui reproduisent le défaut, plus deux garde-fous — les scopes d'environnement <em>du document</em> restent atteignables, et les <code>let</code> globaux d'un include restent visibles. Les deux premiers ont été vérifiés en échec sur le code non corrigé&nbsp;; l'un d'eux ne discriminait rien au départ, ses deux clés partageant la ligne mais pas la colonne.</p>
 </div>
 
-<div class="finding">
-  <h3>H3 — Tout fragment d'include affiche une erreur permanente dans l'éditeur <span class="tag">régression</span> <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H3 — Tout fragment d'include affiche une erreur permanente dans l'éditeur</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">SettexDocument.cs:161 → Evaluator.cs:185</p>
   <p>Le serveur exécute désormais l'évaluateur sur chaque tampon ouvert, et <code>ValidateStructure</code> exige au moins un bloc <code>settings</code>. Un fragment destiné à être inclus n'en a pas, par construction.</p>
   <p>Le dépôt <strong>livre exactement un tel fichier</strong>&nbsp;: <code>samples/common.settex</code> déclenche <code>STX401 — File must contain at least one 'settings' block</code>. Le README présente ce motif comme la façon normale de construire une configuration modulaire. Un nouveau fichier vide et tout tampon non enregistré dont le bloc <code>settings</code> vient d'un include sont touchés aussi.</p>
-  <p>La cause de fond&nbsp;: le CLI ne compile qu'un fichier racine, le LSP traite <em>chaque tampon comme une racine</em>. L'hypothèse est fausse.</p>
+  <p>La cause de fond&nbsp;: le CLI ne compile qu'un fichier racine, le LSP traitait <em>chaque tampon comme une racine</em>. L'hypothèse était fausse.</p>
+  <p><em>Correctif&nbsp;:</em> la règle devient explicite plutôt que contournée. <code>Evaluate</code> prend un paramètre <code>requireSettingsBlock</code>, vrai à la compilation — une racine qui ne produit aucune configuration reste une erreur — et faux à l'analyse d'un fichier qui n'est <em>qu'un</em> fichier. Les trois consommateurs LSP de l'évaluateur (diagnostics, survol, complétion) l'utilisent, si bien que survol et complétion fonctionnent désormais aussi dans un fragment.</p>
+  <p>Corollaire traité au passage&nbsp;: l'analyse de dérive ne tourne plus que sur les fichiers portant un bloc <code>settings</code>. Comparer les environnements d'un fragment inventerait des écarts, puisque l'environnement absent est probablement déclaré par le fichier qui l'inclut.</p>
+  <p>Six tests, dont <strong>cinq vérifiés en échec sur le code non corrigé</strong>. Deux garde-fous comptent particulièrement&nbsp;: une erreur sémantique réelle dans un fragment (variable indéfinie) reste signalée — supprimer l'évaluation aurait été le correctif paresseux — et une vraie racine conserve son avertissement de dérive, sans quoi le correctif aurait désactivé la fonctionnalité phare. Un test lit <code>samples/common.settex</code> depuis le dépôt, pour que l'exemple livré et le serveur ne puissent plus diverger.</p>
+  <p>Le CLI, lui, refuse toujours de compiler un fragment&nbsp;: vérifié après correctif.</p>
 </div>
 
 <div class="finding">
@@ -317,7 +322,7 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 <tr><td>1</td><td><s>Mettre en place une CI build + test</s> <span class="badge b-ok">fait</span></td><td>Prérequis de tout le reste — et déjà rentable&nbsp;: un défaut de portabilité inédit trouvé dès la première exécution.</td></tr>
 <tr><td>2</td><td><s>Retirer <code>dotnet-quality: 'preview'</code> du workflow</s> <span class="badge b-ok">fait</span></td><td>Rupture latente désamorcée avant déclenchement.</td></tr>
 <tr><td>3</td><td><s>Comparer le fichier, pas seulement ligne/colonne, dans le LSP</s> <span class="badge b-ok">fait</span></td><td>Les trois recherches de position sont épinglées au bon fichier, sans toucher à la visibilité des variables.</td></tr>
-<tr><td>4</td><td>Ne pas exiger de bloc <code>settings</code> côté serveur</td><td>Erreur rouge permanente sur un fichier livré en exemple.</td></tr>
+<tr><td>4</td><td><s>Ne pas exiger de bloc <code>settings</code> côté serveur</s> <span class="badge b-ok">fait</span></td><td>La règle est devenue explicite : exigée à la compilation, relâchée à l'analyse.</td></tr>
 <tr><td>5</td><td><s>Boucler <code>ScanNewline</code> au lieu de récurser</s> <span class="badge b-ok">fait</span></td><td>200 000 lignes vides compilent, contre un plantage à 6 000.</td></tr>
 <tr><td>6</td><td>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</td><td>Aligne les trois analyseurs sur la sémantique réelle de la configuration .NET.</td></tr>
 <tr><td>7</td><td>Étendre l'analyse de superposition aux tableaux d'objets</td><td>La classe de fuite la plus courante échappe aujourd'hui à l'outil censé la couvrir.</td></tr>

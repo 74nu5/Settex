@@ -162,16 +162,27 @@ public class SettexDocument
             {
                 try
                 {
-                    var model = new Core.Evaluation.Evaluator().Evaluate(ast);
+                    // The CLI only ever compiles a root file; the editor opens whatever
+                    // the user opens. An include fragment — the recommended way to share
+                    // configuration — has no 'settings' block by design, so requiring one
+                    // here would put a permanent red squiggle on a perfectly valid file.
+                    var model = new Core.Evaluation.Evaluator().Evaluate(ast, requireSettingsBlock: false);
 
-                    foreach (var coverage in Settex.Compilation.CoverageAnalyzer.Analyze(model))
+                    // Drift analysis needs the whole picture. A fragment only holds part
+                    // of it — the environments it says nothing about may well be declared
+                    // by the file that includes it — so comparing environments here would
+                    // report drift that does not exist.
+                    if (HasSettingsBlock(ast))
                     {
-                        diagnostics.Add(ToLspDiagnostic(coverage));
-                    }
+                        foreach (var coverage in Settex.Compilation.CoverageAnalyzer.Analyze(model))
+                        {
+                            diagnostics.Add(ToLspDiagnostic(coverage));
+                        }
 
-                    foreach (var layering in Settex.Compilation.ArrayLayeringAnalyzer.Analyze(model))
-                    {
-                        diagnostics.Add(ToLspDiagnostic(layering));
+                        foreach (var layering in Settex.Compilation.ArrayLayeringAnalyzer.Analyze(model))
+                        {
+                            diagnostics.Add(ToLspDiagnostic(layering));
+                        }
                     }
                 }
                 catch (Core.Evaluation.EvaluatorException ex)
@@ -226,6 +237,14 @@ public class SettexDocument
 
         return new Snapshot(text, tokens, ast, diagnostics, filePath, includes);
     }
+
+    /// <summary>
+    /// Indique si le fichier produit effectivement de la configuration, c'est-à-dire
+    /// s'il ressemble à une racine de compilation plutôt qu'à un fragment destiné à
+    /// être inclus.
+    /// </summary>
+    private static bool HasSettingsBlock(FileNode ast)
+        => ast.Statements.OfType<SettingsBlockNode>().Any();
 
     /// <summary>
     /// Indique si un symbole à la localisation donnée appartient <strong>à ce
