@@ -10,6 +10,31 @@ using Settex.Core.Evaluation;
 ///     to prevent — a key added to one environment's config and forgotten in the
 ///     rest. A key present in the base settings is inherited by every environment and
 ///     is therefore never flagged.
+///
+///     <para>
+///     <strong>Deliberate decision — a key set in <em>every</em> environment but not
+///     in the base is not flagged.</strong> Three reasons, in order of weight:
+///     </para>
+///     <list type="number">
+///       <item>
+///         The configuration is <em>correct as it stands</em>: every environment has
+///         the key. A linter should report what is wrong now, not what might become
+///         wrong.
+///       </item>
+///       <item>
+///         The obvious "fix" — hoist it into the base — can be actively harmful.
+///         Values that must be decided per environment (connection strings, endpoints,
+///         secret placeholders) are safer with <em>no</em> base default than with a
+///         plausible-looking wrong one that applies silently.
+///       </item>
+///       <item>
+///         The deferred risk is already covered. The hazard is "someone adds a new
+///         environment and forgets the key" — and at that moment the key is in some
+///         environments but not all, so the rule above fires. The safety net closes
+///         exactly when the risk becomes real, which is why no warning is needed
+///         before then. This is locked by a regression test.
+///       </item>
+///     </list>
 /// </summary>
 public static class CoverageAnalyzer
 {

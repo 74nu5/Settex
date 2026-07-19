@@ -92,19 +92,19 @@
 
   <div class="score-band">
     <div class="score"><div class="big">8.0<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">304</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">305</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
     <div class="t">Pourquoi la note remonte (5,8 → 8,0)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>304 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>305 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste relève du <strong>choix ou de l'externe</strong> : le comportement de couverture sur une clé présente dans tous les environnements sauf la base reste à trancher, le scanner d'accolades d'interpolation ignore les chaînes internes, les liens symboliques peuvent contourner la dédup d'includes, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste relève de l'<strong>edge case ou de l'externe</strong> : le scanner d'accolades d'interpolation ignore les chaînes internes, les liens symboliques peuvent contourner la dédup d'includes, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
   </div>
 
   <div class="callout">
@@ -207,7 +207,7 @@
 
   <h3>🟡 Faibles</h3>
   <ul class="tight">
-    <li><strong>Couverture — clé présente dans <em>tous</em> les env mais pas la base</strong> : jamais signalée <span class="tag">reproduit</span>. Défendable comme choix, mais c'est précisément la dérive qui mord quand on <em>ajoute</em> un nouvel environnement. À trancher explicitement.</li>
+    <li><strong>✅ Tranché — Couverture : clé présente dans <em>tous</em> les env mais pas la base</strong> → <strong>volontairement non signalée</strong>. La config est correcte telle quelle, et le « correctif » évident (inventer une valeur de base) est souvent <em>pire</em> pour ce qui doit être décidé par environnement — une valeur plausible mais fausse s'appliquerait silencieusement. Surtout, la crainte du « on ajoute un env plus tard et la clé y manque » est infondée : <strong>vérifié</strong> qu'ajouter un environnement sans la clé déclenche <em>immédiatement</em> l'avertissement existant — le filet se referme au moment exact où le risque devient réel. Décision documentée dans le code et pour l'utilisateur, verrouillée par un test de non-régression.</li>
     <li><strong>Couverture — conflit objet/feuille</strong> : <code class="sx">Shape = 1</code> (Dev) vs <code class="sx">Shape { Inner = 2 }</code> (Prod) produit deux avertissements contradictoires (« Shape absent de Prod », « Shape.Inner absent de Dev ») sans jamais nommer le vrai problème (un conflit de type) <span class="tag">reproduit</span>.</li>
     <li><strong>Scanner d'accolades d'interpolation</strong> ignore les chaînes internes : <code class="sx">"${ y == \"}\" }"</code> s'arrête sur le <code>}</code> dans la chaîne interne <span class="tag">raisonné</span>.</li>
     <li><strong>Dédup/cycle d'includes</strong> comparent des chemins <code>GetFullPath</code> : liens symboliques/durs et noms courts 8.3 peuvent les contourner (borné par <code>MaxIncludeDepth</code>, donc pas de blocage) <span class="tag">raisonné</span>.</li>
