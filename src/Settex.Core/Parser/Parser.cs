@@ -38,9 +38,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
             }
         }
 
-        this.Expect(TokenType.Eof, "Expected end of file");
+        var eofToken = this.Expect(TokenType.Eof, "Expected end of file");
 
-        return new(statements, startLocation);
+        return new(statements, SpanTo(startLocation, eofToken));
     }
 
     /// <summary>
@@ -49,6 +49,28 @@ public class Parser(List<Token> tokens, string? filePath = null)
     public FileNode ParseFile() => this.Parse();
 
     private Token Peek(int offset = 1) => this.position + offset < this.tokens.Count ? this.tokens[this.position + offset] : this.tokens[^1];
+
+    /// <summary>
+    ///     Extends a start location so it spans up to and including <paramref name="endToken" />
+    ///     (typically the block's closing brace). Gives multi-line nodes a real end,
+    ///     which editors need for symbol ranges and scope resolution.
+    /// </summary>
+    private static SourceLocation SpanTo(SourceLocation start, Token endToken)
+        => start with
+        {
+            EndLine = endToken.Location.Line,
+            EndColumn = endToken.Location.Column + endToken.Location.Length,
+        };
+
+    /// <summary>
+    ///     Extends a start location so it spans up to the end of <paramref name="end" />.
+    /// </summary>
+    private static SourceLocation SpanTo(SourceLocation start, SourceLocation end)
+        => start with
+        {
+            EndLine = end.EffectiveEndLine,
+            EndColumn = end.EffectiveEndColumn,
+        };
 
     /// <summary>
     ///     Parses a top-level statement: settingsBlock | envBlock | includeStmt | letStmt | ";"
@@ -339,7 +361,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         var settingsToken = this.Expect(TokenType.Settings, "Expected 'settings'");
         var block = this.ParseBlock();
 
-        return new(block, settingsToken.Location);
+        return new(block, SpanTo(settingsToken.Location, block.Location));
     }
 
     /// <summary>
@@ -376,7 +398,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         // Parse settings block
         var settingsBlock = this.ParseSettingsBlock();
 
-        this.Expect(TokenType.RightBrace, "Expected '}' to close env block");
+        var envCloseToken = this.Expect(TokenType.RightBrace, "Expected '}' to close env block");
 
         // For now, we store let statements in the EnvBlockNode's SettingsBlock
         // This is a simplification - we'll refactor when we implement proper scoping
@@ -391,7 +413,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
             settingsBlock = new SettingsBlockNode(newBlock, settingsBlock.Location);
         }
 
-        return new(envName, settingsBlock, envToken.Location);
+        return new(envName, settingsBlock, SpanTo(envToken.Location, envCloseToken));
     }
 
     /// <summary>
@@ -418,9 +440,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
             }
         }
 
-        this.Expect(TokenType.RightBrace, "Expected '}'");
+        var closeToken = this.Expect(TokenType.RightBrace, "Expected '}'");
 
-        return new(statements, startToken.Location);
+        return new(statements, SpanTo(startToken.Location, closeToken));
     }
 
     /// <summary>
@@ -518,7 +540,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         var identToken = this.Expect(TokenType.Identifier, "Expected identifier");
         var block = this.ParseBlock();
 
-        return new(identToken.Text, block, identToken.Location);
+        return new(identToken.Text, block, SpanTo(identToken.Location, block.Location));
     }
 
     /// <summary>
@@ -702,8 +724,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
         // Empty array
         if (this.Check(TokenType.RightBracket))
         {
+            var emptyCloseToken = this.Current;
             this.Advance();
-            return new(elements, startToken.Location);
+            return new(elements, SpanTo(startToken.Location, emptyCloseToken));
         }
 
         // Parse array items with comma or newline separators
@@ -736,9 +759,9 @@ public class Parser(List<Token> tokens, string? filePath = null)
             }
         }
 
-        this.Expect(TokenType.RightBracket, "Expected ']' to close array");
+        var arrayCloseToken = this.Expect(TokenType.RightBracket, "Expected ']' to close array");
 
-        return new(elements, startToken.Location);
+        return new(elements, SpanTo(startToken.Location, arrayCloseToken));
     }
 
     /// <summary>
@@ -780,7 +803,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         
         var body = this.ParseBlock();
         
-        return new(iteratorToken.Text, collection, body, startToken.Location);
+        return new(iteratorToken.Text, collection, body, SpanTo(startToken.Location, body.Location));
     }
 
     /// <summary>
@@ -791,7 +814,7 @@ public class Parser(List<Token> tokens, string? filePath = null)
         var identToken = this.Expect(TokenType.Identifier, "Expected identifier");
         var block = this.ParseBlock();
 
-        return new(identToken.Text, block, identToken.Location);
+        return new(identToken.Text, block, SpanTo(identToken.Location, block.Location));
     }
 
     // Helper methods

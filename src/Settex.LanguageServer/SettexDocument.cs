@@ -273,16 +273,23 @@ public class SettexDocument
         => new(new Position(0, 0), new Position(0, 0));
 
     /// <summary>
-    /// Convertit une SourceLocation en LSP Range.
+    /// Convertit une SourceLocation en LSP Range. Les nœuds multi-lignes (blocs,
+    /// tableaux, fichier) portent désormais une vraie fin (<c>EndLine</c>/<c>EndColumn</c>),
+    /// ce qui donne des ranges de symboles corrects et respecte l'inclusion
+    /// parent/enfant exigée par LSP. Les positions sont bornées à zéro : le protocole
+    /// n'accepte pas de coordonnées négatives.
     /// </summary>
     public static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range LocationToRange(SourceLocation location)
     {
-        // LSP uses 0-based line/column
-        var line = location.Line - 1;
-        var column = location.Column - 1;
+        // LSP uses 0-based line/column; SourceLocation is 1-based.
+        var startLine = Math.Max(0, location.Line - 1);
+        var startColumn = Math.Max(0, location.Column - 1);
+        var endLine = Math.Max(startLine, location.EffectiveEndLine - 1);
+        var endColumn = Math.Max(0, location.EffectiveEndColumn - 1);
+
         return new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-            new Position(line, column),
-            new Position(line, column + location.Length)
+            new Position(startLine, startColumn),
+            new Position(endLine, endColumn)
         );
     }
 

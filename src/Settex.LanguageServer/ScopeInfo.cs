@@ -42,7 +42,11 @@ public class ScopeInfo
         this.Name = name;
         this.Variables = new List<LetNode>();
         this.Children = new List<ScopeInfo>();
-        this.EndLine = location.Line;
+
+        // Block-bearing nodes now carry a real end (the closing brace), so a scope
+        // covers its whole body — including blank lines and the closing brace. Falls
+        // back to the start line for nodes without an end span.
+        this.EndLine = location.EffectiveEndLine;
     }
 
     /// <summary>

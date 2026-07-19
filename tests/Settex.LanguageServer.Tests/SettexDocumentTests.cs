@@ -159,6 +159,46 @@ public sealed class SettexDocumentTests
     }
 
     [Test]
+    public async Task LocationToRange_MultiLineSpan_CoversWholeNodeAsync()
+    {
+        // A block node's range must span to its closing brace so LSP's parent/child
+        // containment holds (breadcrumbs, outline, expand-selection).
+        var location = new SourceLocation { Line = 2, Column = 1, Length = 8, EndLine = 10, EndColumn = 2 };
+
+        var range = SettexDocument.LocationToRange(location);
+
+        await Assert.That(range.Start.Line).IsEqualTo(1);
+        await Assert.That(range.Start.Character).IsEqualTo(0);
+        await Assert.That(range.End.Line).IsEqualTo(9);
+        await Assert.That(range.End.Character).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task LocationToRange_SingleLineSpan_KeepsLegacyBehaviourAsync()
+    {
+        var location = new SourceLocation { Line = 3, Column = 5, Length = 4 };
+
+        var range = SettexDocument.LocationToRange(location);
+
+        await Assert.That(range.Start.Line).IsEqualTo(2);
+        await Assert.That(range.End.Line).IsEqualTo(2);
+        await Assert.That(range.Start.Character).IsEqualTo(4);
+        await Assert.That(range.End.Character).IsEqualTo(8);
+    }
+
+    [Test]
+    public async Task LocationToRange_ZeroColumn_ClampsToNonNegativeAsync()
+    {
+        // LSP rejects negative positions; a 0-column location must not underflow.
+        var location = new SourceLocation { Line = 1, Column = 0, Length = 0 };
+
+        var range = SettexDocument.LocationToRange(location);
+
+        await Assert.That(range.Start.Character).IsGreaterThanOrEqualTo(0);
+        await Assert.That(range.Start.Line).IsGreaterThanOrEqualTo(0);
+    }
+
+    [Test]
     public async Task ToLspLocation_WithoutFilePath_FallsBackToCurrentUriAsync()
     {
         // An unsaved document produces locations without a FilePath; those must

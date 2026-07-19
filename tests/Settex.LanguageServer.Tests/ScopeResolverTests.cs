@@ -333,6 +333,67 @@ public sealed class ScopeResolverTests
         await Assert.That(scope.Name).IsEqualTo("Dev");
     }
 
+    [Test]
+    public async Task FindScopeAt_BlankLineBeforeClosingBrace_ReturnsEnvAsync()
+    {
+        // Regression: the scope used to end at its last content line, so blank lines
+        // and the closing brace fell through to the parent scope. Block nodes now
+        // carry a real end span, so the whole body belongs to the env.
+        // 1: env "Dev" {      2: let   3: settings {   4: Z = d   5: }
+        // 6: (blank)          7: }     8: (blank)      9: let after   10: settings
+        var source = """
+            env "Dev" {
+                let d = 1
+                settings {
+                    Z = d
+                }
+
+            }
+
+            let after = 2
+            settings { X = after }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+
+        // Line 6 (0-based 5) is blank, past the env's last content line but inside it.
+        var onBlank = resolver.FindScopeAt(globalScope, new Position(5, 0));
+        await Assert.That(onBlank).IsNotNull();
+        await Assert.That(onBlank!.Type).IsEqualTo(ScopeType.Env);
+
+        // Line 7 (0-based 6) is the env's closing brace.
+        var onBrace = resolver.FindScopeAt(globalScope, new Position(6, 0));
+        await Assert.That(onBrace).IsNotNull();
+        await Assert.That(onBrace!.Type).IsEqualTo(ScopeType.Env);
+
+        // And content after the env still belongs to the global scope.
+        var after = resolver.FindScopeAt(globalScope, new Position(8, 4));
+        await Assert.That(after).IsNotNull();
+        await Assert.That(after!.Type).IsEqualTo(ScopeType.Global);
+    }
+
+    [Test]
+    public async Task FindScopeAt_EmptyEnvBody_ReturnsEnvAsync()
+    {
+        // An env whose body declares nothing used to cover only its first line.
+        var source = """
+            env "Empty" {
+                settings {
+                }
+            }
+            """;
+        var ast = this.Parse(source);
+        var resolver = new ScopeResolver();
+        var globalScope = resolver.BuildScopeHierarchy(ast);
+
+        var scope = resolver.FindScopeAt(globalScope, new Position(1, 4));
+
+        await Assert.That(scope).IsNotNull();
+        await Assert.That(scope!.Type).IsEqualTo(ScopeType.Env);
+        await Assert.That(scope.Name).IsEqualTo("Empty");
+    }
+
     // Helpers
 
     private FileNode Parse(string source)
