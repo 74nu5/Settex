@@ -197,6 +197,47 @@ public sealed class JsonWriterTests
         }
     }
 
+    /// <summary>
+    ///     Every one of these is illegal in a Windows filename but perfectly legal on
+    ///     Unix. Rejection must not depend on the host OS: the generated files are
+    ///     committed and shared, so a name accepted by a Linux build would produce
+    ///     artefacts a Windows checkout cannot even create.
+    /// </summary>
+    [Test]
+    [Arguments('<')]
+    [Arguments('>')]
+    [Arguments(':')]
+    [Arguments('"')]
+    [Arguments('|')]
+    [Arguments('?')]
+    [Arguments('*')]
+    [Arguments('\\')]
+    [Arguments('/')]
+    public async Task WriteSettings_EnvironmentNameInvalidOnAnyPlatform_ThrowsRegardlessOfHostOs(char invalid)
+    {
+        var writer = new JsonWriter();
+        var model = new SettingsModel([],
+            new()
+            {
+                [$"Dev{invalid}ment"] = [],
+            });
+
+        var outputDir = this.GetTempDirectory();
+
+        try
+        {
+            await Assert.ThrowsAsync<JsonWriterException>(async () =>
+            {
+                writer.WriteSettings(model, outputDir);
+                await Task.CompletedTask;
+            });
+        }
+        finally
+        {
+            this.CleanupDirectory(outputDir);
+        }
+    }
+
     [Test]
     public async Task WriteSettings_InvalidEnvironmentName_ThrowsException()
     {

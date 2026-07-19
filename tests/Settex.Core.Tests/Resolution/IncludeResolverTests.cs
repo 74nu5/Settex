@@ -14,28 +14,36 @@ using TUnit.Core;
 /// </summary>
 public class IncludeResolverTests
 {
+    /// <summary>
+    ///     An absolute directory to anchor path resolution on. Built from the platform's
+    ///     own separators rather than hard-coded, so these tests assert on resolution
+    ///     behaviour instead of on Windows drive-letter syntax. Nothing is created on
+    ///     disk: <see cref="IncludeResolver.ResolveIncludePath" /> is a pure path operation.
+    /// </summary>
+    private static readonly string ProjectRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "settex-project"));
+
     [Test]
     public async Task ResolveIncludePath_WithRelativePath_ReturnsAbsolutePath()
     {
         var resolver = new IncludeResolver();
-        var currentFile = @"D:\project\main.settex";
+        var currentFile = Path.Combine(ProjectRoot, "main.settex");
         var includePath = "./common.settex";
 
         var result = resolver.ResolveIncludePath(includePath, currentFile);
 
-        await Assert.That(result).IsEqualTo(@"D:\project\common.settex");
+        await Assert.That(result).IsEqualTo(Path.Combine(ProjectRoot, "common.settex"));
     }
 
     [Test]
     public async Task ResolveIncludePath_WithNestedRelativePath_ReturnsAbsolutePath()
     {
         var resolver = new IncludeResolver();
-        var currentFile = @"D:\project\src\main.settex";
+        var currentFile = Path.Combine(ProjectRoot, "src", "main.settex");
         var includePath = "../config/common.settex";
 
         var result = resolver.ResolveIncludePath(includePath, currentFile);
 
-        await Assert.That(result).IsEqualTo(@"D:\project\config\common.settex");
+        await Assert.That(result).IsEqualTo(Path.Combine(ProjectRoot, "config", "common.settex"));
     }
 
     [Test]
