@@ -429,3 +429,9 @@ FodyWeavers.xsd
 # before delta output became the default.
 /tests/IntegrationTests/SampleProject/appsettings*.json
 /tests/IntegrationTests/SampleProject/cli-output/
+
+# Compiler output for the samples. The .settex sources are the artefacts worth
+# committing; their generated JSON went stale silently — still merged content from
+# before delta output became the default, and missing files for environments added
+# since.
+/samples/**/appsettings*.json
