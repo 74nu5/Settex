@@ -409,13 +409,27 @@ public class Evaluator
         var childObject = this.EvaluateBlock(nestedBlock.Block, childScope, baseNestedObject);
 
         // A block whose assignments were all skipped — every condition false — evaluates
-        // to an empty object. Writing it would be untruthful: .NET flattens JSON into
-        // key/value pairs, and an empty object yields none, so it contributes nothing at
-        // runtime. It was not harmless either: it made the overlay look like an object
-        // and collide with a primitive of the same name in the base, failing the build
-        // over a configuration that overrides nothing at all.
-        if (childObject.Count == 0)
+        // to an empty object. Writing it made the overlay look like an object and
+        // collide with a primitive of the same name in the base, failing the build over
+        // a configuration that overrides nothing at all.
+        //
+        // The distinction that matters is intent, and the AST carries it: a block the
+        // author wrote empty has no statements, while one emptied by its conditions had
+        // statements that were all skipped. Only the latter is dropped. An empty object
+        // is *not* invisible at runtime — .NET surfaces it as a key with a null value,
+        // so dropping an explicitly empty block would change observable configuration.
+        if (childObject.Count == 0 && nestedBlock.Block.Statements.Count > 0)
         {
+            return;
+        }
+
+        // Two blocks of the same name in one scope deep-merge, like everything else in
+        // the language: `Db { Host = … }` followed by `Db { Port = … }` used to keep
+        // only the second, silently losing Host. Includes make that shape easy to reach
+        // without noticing.
+        if (TryGetPropertyIgnoreCase(target, nestedBlock.Name, out var existing) && existing is JsonObject existingObject)
+        {
+            target[nestedBlock.Name] = SafeMerge(new Merger(), existingObject, childObject, nestedBlock.Location);
             return;
         }
 
