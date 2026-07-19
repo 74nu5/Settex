@@ -2,6 +2,7 @@ namespace Settex.Core.Evaluation;
 
 using System.Text.Json.Nodes;
 
+using Settex.Core.Diagnostics;
 using Settex.Core.Merging;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Runtime;
@@ -46,7 +47,7 @@ public class Evaluator
         {
             var context = baseSettings.Count > 0 ? baseSettings : null;
             var evaluated = this.EvaluateBlock(settingsBlock.Block, globalScope, context);
-            baseSettings = merger.Merge(baseSettings, evaluated);
+            baseSettings = SafeMerge(merger, baseSettings, evaluated, settingsBlock.Location);
         }
 
         // Evaluate environment overlays, deep-merging blocks that target the
@@ -64,17 +65,36 @@ public class Evaluator
             // Context for ':=' / nested merges: the base plus any overlay already
             // accumulated for this same environment.
             var context = environmentOverlays.TryGetValue(envBlock.EnvironmentName, out var prior)
-                ? merger.Merge(baseSettings, prior)
+                ? SafeMerge(merger, baseSettings, prior, envBlock.Location)
                 : baseSettings;
 
             var envSettings = this.EvaluateBlock(envBlock.SettingsBlock.Block, envScope, context);
 
             environmentOverlays[envBlock.EnvironmentName] = prior is null
                 ? envSettings
-                : merger.Merge(prior, envSettings);
+                : SafeMerge(merger, prior, envSettings, envBlock.Location);
         }
 
         return new(baseSettings, environmentOverlays);
+    }
+
+    /// <summary>
+    ///     Merges two settings objects, converting a <see cref="MergerException" />
+    ///     (e.g. a type conflict between blocks — common when includes contribute a
+    ///     block) into a located <see cref="EvaluatorException" />, so the compiler
+    ///     reports it as a normal diagnostic with a source location rather than an
+    ///     unlocated "Unexpected error".
+    /// </summary>
+    private static JsonObject SafeMerge(Merger merger, JsonObject baseObject, JsonObject overlay, SourceLocation location)
+    {
+        try
+        {
+            return merger.Merge(baseObject, overlay);
+        }
+        catch (MergerException ex)
+        {
+            throw new EvaluatorException(ex.Message, ex.Location ?? location);
+        }
     }
 
     /// <summary>

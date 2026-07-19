@@ -665,6 +665,38 @@ settings {
     }
 
     [Test]
+    public async Task Compile_TypeMismatchBetweenBlocks_ReportsLocatedError()
+    {
+        var tempDir = this.GetTempDirectory();
+        try
+        {
+            // Two base blocks disagree on the shape of 'Foo' (common via includes).
+            const string source = """
+                settings { Foo = 1 }
+                settings { Foo { Bar = 2 } }
+                """;
+
+            var sourceFile = Path.Combine(tempDir, "appsettings.settex");
+            var outputDir = Path.Combine(tempDir, "output");
+            await File.WriteAllTextAsync(sourceFile, source);
+
+            var result = new SettexCompiler().Compile(sourceFile, outputDir);
+
+            await Assert.That(result.Success).IsFalse();
+
+            var error = result.Errors.FirstOrDefault(e => e.Message.Contains("Type mismatch"));
+            await Assert.That(error).IsNotNull();
+            // A located diagnostic, not an unlocated "Unexpected error".
+            await Assert.That(error!.Location).IsNotNull();
+            await Assert.That(error.Message).DoesNotContain("Unexpected error");
+        }
+        finally
+        {
+            this.CleanupDirectory(tempDir);
+        }
+    }
+
+    [Test]
     public async Task Compile_EnvOverlay_DeepMergesBaseAndOverlay()
     {
         var tempDir = this.GetTempDirectory();

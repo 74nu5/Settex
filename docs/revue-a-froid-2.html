@@ -91,10 +91,10 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">7.2<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">262</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">7.5<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">267</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
-    <div class="score"><div class="big">3</div><div class="lbl">défauts <span style="color:var(--bad)">élevés</span> restants (nouveaux, à froid)</div></div>
+    <div class="score"><div class="big">1</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (2 corrigés ✅)</div></div>
   </div>
 
   <div class="callout ok">
@@ -104,7 +104,7 @@
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Une passe à froid trouve encore des défauts <strong>réels</strong>, surtout en périphérie : le serveur de langage <strong>ne montre aucune erreur sémantique ni la dérive de couverture</strong> dans l'éditeur (la valeur phare est invisible là où on la regarde), le piège d'indexation des tableaux de .NET casse silencieusement la sémantique « les tableaux se remplacent », et une conflit de type peut encore remonter en « Unexpected error » sans localisation. Plusieurs de ces défauts sont des <strong>angles morts des correctifs de cette session</strong> — c'est noté explicitement.
+    Les deux plus gros trous ont été fermés dans la foulée de cette revue (diagnostics sémantiques &amp; couverture en éditeur ; conflit de type localisé — voir §03). Il reste des défauts <strong>réels</strong> : le piège d'indexation des tableaux de .NET casse silencieusement la sémantique « les tableaux se remplacent » (les deux modes), le mode delta ne valide pas les types base ↔ overlay, et la couche éditeur garde des ranges mono-ligne et une étendue de scope imparfaite. Plusieurs de ces défauts sont des <strong>angles morts des correctifs récents</strong> — c'est noté explicitement.
   </div>
 
   <div class="callout">
@@ -155,10 +155,10 @@
 
   <h3>🔴 Élevés</h3>
 
-  <div class="callout bad">
-    <div class="t">Le serveur de langage ne montre ni erreurs sémantiques ni dérive de couverture <span class="tag">reproduit</span></div>
-    <code>SettexDocument.Parse</code> s'arrête après la résolution des includes : il ne lance <strong>jamais</strong> l'<code>Evaluator</code> ni le <code>CoverageAnalyzer</code>. Conséquence : une variable indéfinie, un débordement, un conflit de type — <strong>et surtout la dérive inter-environnements</strong> — ne produisent <strong>aucun souligné dans l'éditeur</strong>. La fonctionnalité phare (« tu as oublié cette clé en prod ») n'apparaît qu'au CLI/build, jamais là où l'utilisateur écrit sa config. C'est le plus gros écart valeur ↔ UX.
-    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (Parse) — correctif : évaluer + analyser la couverture et publier ces diagnostics (dont les warnings)</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — le serveur de langage montre désormais erreurs sémantiques &amp; dérive de couverture</div>
+    <code>SettexDocument.Parse</code> s'arrêtait après la résolution des includes, sans lancer l'<code>Evaluator</code> ni le <code>CoverageAnalyzer</code> : variable indéfinie, conflit de type, <strong>et surtout la dérive inter-environnements</strong> n'apparaissaient qu'au CLI/build, jamais dans l'éditeur. <strong>Corrigé</strong> : une phase d'évaluation + couverture est ajoutée à <code>Parse</code> (ignorée si une phase antérieure a déjà échoué), et ses diagnostics — <strong>erreurs sémantiques (STX401) et warnings de couverture (STX501)</strong> — sont publiés dans l'éditeur. Vérifié : variable indéfinie → erreur, dérive → warning nommant la clé, conflit de type → erreur ; 4 tests de non-régression.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (Parse, ToLspDiagnostic) · reste : la couverture n'a pas de localisation source → ancrée en tête de fichier</div>
   </div>
 
   <div class="callout bad">
@@ -167,10 +167,10 @@
     <div class="fp">src/Settex.Core/Writing/JsonWriter.cs · Merger.cs — au minimum : documenter le piège ; idéalement, avertir quand un env raccourcit un tableau présent en base</div>
   </div>
 
-  <div class="callout bad">
-    <div class="t">Un conflit de type remonte en « Unexpected error » sans localisation <span class="tag">reproduit</span></div>
-    <code>MergerException</code> n'hérite pas d'<code>EvaluatorException</code>, donc le try/catch de la phase 3 ne l'attrape pas et il tombe dans le catch-all. Sur <code class="sx">settings { Foo = 1 } settings { Foo { Bar = 2 } }</code> (cas fréquent via includes), l'erreur devient « Unexpected error during compilation: Type mismatch… » <strong>sans ligne/colonne</strong> — exactement le motif corrigé pour l'overflow, mais oublié ici.
-    <div class="fp">src/Settex.Core/Compilation/SettexCompiler.cs:116-129 · Merger.cs — attraper <code>MergerException</code> comme diagnostic localisé</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — le conflit de type est désormais un diagnostic localisé</div>
+    <code>MergerException</code> n'héritant pas d'<code>EvaluatorException</code>, sur <code class="sx">settings { Foo = 1 } settings { Foo { Bar = 2 } }</code> l'erreur tombait dans le catch-all → « Unexpected error… » <strong>sans ligne/colonne</strong>. <strong>Corrigé</strong> : l'<code>Evaluator</code> enveloppe ses appels de merge (<code>SafeMerge</code>) et convertit la <code>MergerException</code> en <code>EvaluatorException</code> <strong>avec la localisation du bloc fautif</strong> ; le compilateur a aussi un filet de sécurité en phase 3. Vérifié : erreur à <code>(2,1)</code>, plus « Type mismatch for key 'Foo' » ; test de non-régression ajouté.
+    <div class="fp">src/Settex.Core/Evaluation/Evaluator.cs (SafeMerge) · SettexCompiler.cs</div>
   </div>
 
   <h3>🟠 Moyens</h3>
@@ -222,7 +222,7 @@
   <div style="margin:8px 0 20px">
     <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">deltas + couverture solides ; piège des tableaux &amp; validation delta manquante</span><div class="bar"><i style="width:70%"></i></div></div>
-    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 6/10 <span style="color:var(--muted);font-size:.85rem">plomberie assainie, mais aucun diagnostic sémantique/couverture en éditeur</span><div class="bar"><i style="width:60%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">diagnostics sémantiques &amp; couverture désormais en éditeur ; reste ranges mono-ligne &amp; scope</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Site de documentation</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">coloration, i18n, SEO de base ; i18n dupliqué &amp; pas de pré-rendu</span><div class="bar"><i style="width:75%"></i></div></div>
@@ -238,8 +238,8 @@
   <table>
     <thead><tr><th>#</th><th>Action</th><th>Effort</th><th>Impact</th></tr></thead>
     <tbody>
-      <tr><td>1</td><td>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
-      <tr><td>2</td><td>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3) ; valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>1</td><td><s>Brancher l'évaluation + le <code>CoverageAnalyzer</code> dans le pipeline LSP et publier leurs diagnostics (erreurs sémantiques <strong>et</strong> warnings de couverture)</s> — <strong>fait ✅</strong></td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
+      <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> — <strong>fait ✅</strong>. Reste : valider la compatibilité de type base ↔ overlay aussi en mode delta</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>5</td><td>Échappement pour <code>${…}</code> littéral (<code>\$</code> / <code>$${</code>) ; réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>

@@ -1,4 +1,5 @@
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Settex.Core.Diagnostics;
 using Settex.Core.Parser.Ast;
 
@@ -6,6 +7,47 @@ namespace Settex.LanguageServer.Tests;
 
 public sealed class SettexDocumentTests
 {
+    [Test]
+    public async Task Diagnostics_UndefinedVariable_ReportsErrorAsync()
+    {
+        // Semantic (evaluation) errors must now show up in the editor, not only at
+        // the CLI/build.
+        var doc = new SettexDocument("untitled:Untitled-1", "settings { Port = undefinedVar }");
+
+        await Assert.That(doc.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error
+            && d.Message.Contains("undefinedVar"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Diagnostics_TypeMismatch_ReportsErrorAsync()
+    {
+        var doc = new SettexDocument("untitled:Untitled-1", "settings { Foo = 1 }\nsettings { Foo { Bar = 2 } }");
+
+        await Assert.That(doc.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error
+            && d.Message.Contains("Foo"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Diagnostics_CrossEnvironmentDrift_ReportsWarningAsync()
+    {
+        // The coverage check — the point of Settex — surfaces as an editor warning.
+        var doc = new SettexDocument("untitled:Untitled-1",
+            "settings { App = \"x\" }\n"
+            + "env \"Development\" { settings { DevOnly.Flag = true } }\n"
+            + "env \"Production\" { settings { Logging.Level = \"Warn\" } }");
+
+        await Assert.That(doc.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Warning
+            && d.Message.Contains("DevOnly.Flag"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Diagnostics_ValidFile_HasNoErrorsAsync()
+    {
+        var doc = new SettexDocument("untitled:Untitled-1", "settings { App = \"x\" }");
+
+        await Assert.That(doc.Diagnostics.Any(d => d.Severity == DiagnosticSeverity.Error)).IsFalse();
+    }
+
     [Test]
     public async Task IncludedSymbol_ResolvesToTheIncludedFile_NotTheCurrentDocumentAsync()
     {

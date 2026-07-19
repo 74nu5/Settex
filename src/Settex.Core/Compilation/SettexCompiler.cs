@@ -2,6 +2,7 @@ namespace Settex.Compilation;
 
 using Settex.Core.Evaluation;
 using Settex.Core.Lexer;
+using Settex.Core.Merging;
 using Settex.Core.Parser;
 using Settex.Core.Parser.Ast;
 using Settex.Core.Resolution;
@@ -120,6 +121,17 @@ public sealed class SettexCompiler
             }
             catch (EvaluatorException ex)
             {
+                diagnostics.Add(new(
+                    DiagnosticSeverity.Error,
+                    ex.Message,
+                    ex.Location));
+
+                return new(false, diagnostics);
+            }
+            catch (MergerException ex)
+            {
+                // Safety net: a type conflict between blocks surfaces as a normal
+                // located diagnostic rather than an unlocated "Unexpected error".
                 diagnostics.Add(new(
                     DiagnosticSeverity.Error,
                     ex.Message,

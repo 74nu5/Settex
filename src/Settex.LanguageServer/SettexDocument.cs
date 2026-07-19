@@ -120,6 +120,31 @@ public class SettexDocument
                 // File not on disk (unsaved), use original AST without includes
                 ast = parsedAst;
             }
+
+            // Phase 3: evaluate to surface semantic errors, and run the coverage
+            // check so cross-environment drift shows up in the editor — not only at
+            // the CLI/build. Skipped when earlier phases already reported an error
+            // (evaluating a half-resolved file would produce spurious diagnostics).
+            if (ast != null && diagnostics.Count == 0)
+            {
+                try
+                {
+                    var model = new Core.Evaluation.Evaluator().Evaluate(ast);
+
+                    foreach (var coverage in Settex.Compilation.CoverageAnalyzer.Analyze(model))
+                    {
+                        diagnostics.Add(ToLspDiagnostic(coverage));
+                    }
+                }
+                catch (Core.Evaluation.EvaluatorException ex)
+                {
+                    diagnostics.Add(SemanticError(ex.Message, ex.Location));
+                }
+                catch (Core.Merging.MergerException ex)
+                {
+                    diagnostics.Add(SemanticError(ex.Message, ex.Location));
+                }
+            }
         }
         catch (LexerException ex)
         {
@@ -206,6 +231,41 @@ public class SettexDocument
             Range = LocationToRange(location),
         };
     }
+
+    /// <summary>
+    /// Builds an error diagnostic for a semantic (evaluation/merge) failure, at the
+    /// given location or the file start when none is available.
+    /// </summary>
+    private static Diagnostic SemanticError(string message, SourceLocation? location) => new()
+    {
+        Range = location != null ? LocationToRange(location) : ZeroRange(),
+        Severity = DiagnosticSeverity.Error,
+        Code = "STX401",
+        Source = "settex",
+        Message = message,
+    };
+
+    /// <summary>
+    /// Converts a compiler <see cref="Settex.Compilation.Diagnostic"/> (e.g. a
+    /// cross-environment coverage warning) into an LSP diagnostic. Coverage
+    /// diagnostics carry no source location, so they anchor at the file start.
+    /// </summary>
+    private static Diagnostic ToLspDiagnostic(Settex.Compilation.Diagnostic diagnostic) => new()
+    {
+        Range = diagnostic.Location != null ? LocationToRange(diagnostic.Location) : ZeroRange(),
+        Severity = diagnostic.Severity switch
+        {
+            Settex.Compilation.DiagnosticSeverity.Error => DiagnosticSeverity.Error,
+            Settex.Compilation.DiagnosticSeverity.Warning => DiagnosticSeverity.Warning,
+            _ => DiagnosticSeverity.Information,
+        },
+        Code = diagnostic.Severity == Settex.Compilation.DiagnosticSeverity.Warning ? "STX501" : "STX401",
+        Source = "settex",
+        Message = diagnostic.Message,
+    };
+
+    private static OmniSharp.Extensions.LanguageServer.Protocol.Models.Range ZeroRange()
+        => new(new Position(0, 0), new Position(0, 0));
 
     /// <summary>
     /// Convertit une SourceLocation en LSP Range.
