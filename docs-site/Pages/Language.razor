@@ -133,6 +133,11 @@ else
         : "To write a literal ${ — a shell template, a regex, a placeholder meant for another tool — escape it with $${ : ")
 </p>
 <CodeBlock Code="@EscapedInterpolation" />
+<div class="callout callout-note">
+    @(Fr
+        ? "Un $ littéral juste avant une interpolation. $$ n'est spécial que suivi d'une accolade, donc \"$${price}\" est lu comme l'échappement et produit le littéral ${price} — pas un $ suivi de la valeur de price. Il n'existe pas d'échappement pour cette combinaison : concaténez, \"$\" + \"${price}\". Le cas est étroit (un symbole monétaire collé à un emplacement) mais silencieux."
+        : "A literal $ directly before an interpolation. $$ is only special when a brace follows, so \"$${price}\" is read as the escape and produces the literal ${price} — not $ followed by the value of price. There is no escape for that combination: concatenate instead, \"$\" + \"${price}\". The case is narrow (a currency symbol against a placeholder) but silent.")
+</div>
 
 <h2 id="conditionals">@(Fr ? "Affectations conditionnelles" : "Conditional assignments")</h2>
 <p>@(Fr ? "Affecte une valeur seulement si une condition booléenne est vraie. Écrivez le repli d'abord, la surcharge conditionnelle après." : "Assign a value only when a boolean condition holds. Write the fallback first, the conditional override after.")</p>

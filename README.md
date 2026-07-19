@@ -502,6 +502,12 @@ settings {
 }
 ```
 
+> **A literal `$` directly before an interpolation.** `$$` is only special when a `{`
+> follows it, so `"$${price}"` is read as the escape and produces the literal
+> `${price}` — not `$` followed by the value of `price`. There is no escape for that
+> combination; concatenate instead: `"$" + "${price}"`. The case is narrow (a currency
+> symbol immediately before a placeholder) but silent, so it is worth knowing.
+
 **Note**: Interpolating `null` throws an error. Use null coalescing: `"${value ?? "default"}"`.
 
 > `${...}` is resolved **at compile time** from Settex variables and expressions — it is not a placeholder for runtime environment variables. A name like `${DB_CONNECTION_STRING}` is looked up as a Settex variable and fails if undefined. Inject secrets at deployment time through .NET's environment-variable or user-secrets configuration providers rather than through `.settex`.
