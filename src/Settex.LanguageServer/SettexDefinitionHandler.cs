@@ -84,7 +84,7 @@ public class SettexDefinitionHandler : DefinitionHandlerBase
         var rootScope = this.scopeResolver.BuildScopeHierarchy(snapshot.Ast);
 
         // Trouver le scope actif à la position du curseur
-        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position);
+        var activeScope = this.scopeResolver.FindScopeAt(rootScope, request.Position, snapshot.FilePath);
 
         if (activeScope != null)
         {

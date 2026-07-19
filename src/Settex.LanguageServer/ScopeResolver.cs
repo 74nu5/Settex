@@ -40,9 +40,17 @@ public class ScopeResolver
     /// Trouve le scope actif à une position donnée (ligne, colonne).
     /// Retourne le scope le plus spécifique (le plus profond dans la hiérarchie).
     /// </summary>
-    public ScopeInfo? FindScopeAt(ScopeInfo rootScope, Position position)
+    /// <param name="rootScope">Racine de la hiérarchie de scopes.</param>
+    /// <param name="position">Position LSP (0-based) dans le document courant.</param>
+    /// <param name="documentFilePath">
+    /// Chemin du document interrogé. Indispensable : l'AST est aplati par la résolution
+    /// des includes, donc la hiérarchie contient aussi les scopes des fichiers inclus,
+    /// dont les numéros de ligne n'ont aucun sens ici. Voir
+    /// <see cref="FindScopeAtRecursive"/>.
+    /// </param>
+    public ScopeInfo? FindScopeAt(ScopeInfo rootScope, Position position, string? documentFilePath = null)
     {
-        return this.FindScopeAtRecursive(rootScope, position.Line + 1, position.Character + 1);
+        return this.FindScopeAtRecursive(rootScope, position.Line + 1, position.Character + 1, documentFilePath);
     }
 
     /// <summary>
@@ -53,7 +61,7 @@ public class ScopeResolver
         return scope.FindVariable(name);
     }
 
-    private ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column)
+    private ScopeInfo? FindScopeAtRecursive(ScopeInfo scope, int line, int column, string? documentFilePath)
     {
         // Vérifier si la position est dans ce scope
         if (!scope.ContainsPosition(line, column))
@@ -65,7 +73,19 @@ public class ScopeResolver
         for (var i = scope.Children.Count - 1; i >= 0; i--)
         {
             var child = scope.Children[i];
-            var childResult = this.FindScopeAtRecursive(child, line, column);
+
+            // Un scope issu d'un fichier inclus se superposerait aux mêmes lignes du
+            // document courant : les lignes 5 à 10 d'un include masqueraient les lignes
+            // 5 à 10 du fichier ouvert. On ne descend donc que dans les scopes du
+            // document. La visibilité des variables n'est pas affectée : les let
+            // globaux d'un fichier inclus restent portés par le scope global, qui est
+            // celui du document.
+            if (!SettexDocument.IsFromSameFile(child.Location, documentFilePath))
+            {
+                continue;
+            }
+
+            var childResult = this.FindScopeAtRecursive(child, line, column, documentFilePath);
             if (childResult != null)
             {
                 return childResult;
