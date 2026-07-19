@@ -83,7 +83,8 @@
       <span><b>Date</b> 19 juillet 2026</span>
       <span><b>Révision</b> 884f705</span>
       <span><b>Stack</b> .NET 10 (LTS) · C#</span>
-      <span><b>Tests</b> 305 · 0 échec</span>
+      <span><b>Tests</b> 316 · 0 échec</span>
+      <span><b>Mise à jour</b> CI en place · lexer corrigé</span>
     </div>
   </div>
 </header>
@@ -93,17 +94,28 @@
 <h2><span class="num">01</span>Verdict</h2>
 
 <div class="score-band">
-  <div class="score"><div class="big">7,4<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-warn">−0,6</span></div></div>
-  <div class="score"><div class="big">305</div><div class="lbl">tests, tous verts</div></div>
-  <div class="score"><div class="big">5</div><div class="lbl">défauts élevés <span class="badge b-bad">nouveau</span></div></div>
-  <div class="score"><div class="big">0</div><div class="lbl">avertissement de build</div></div>
+  <div class="score"><div class="big">7,9<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-ok">+0,5</span></div></div>
+  <div class="score"><div class="big">316</div><div class="lbl">tests, tous verts</div></div>
+  <div class="score"><div class="big">3</div><div class="lbl">défauts élevés restants <span class="badge b-ok">2 corrigés</span></div></div>
+  <div class="score"><div class="big">3</div><div class="lbl">jobs de CI · Linux, Windows, extension</div></div>
+</div>
+
+<div class="callout ok">
+  <div class="t">Mise à jour — depuis la publication de cette revue</div>
+  <p style="margin:0 0 8px">Deux défauts élevés et un moyen sont corrigés, et le rapport est annoté en conséquence&nbsp;:</p>
+  <ul class="tight" style="margin:0">
+    <li><strong>H1 — CI de build et de test</strong>&nbsp;: en place, sur Ubuntu et Windows, plus la compilation de l'extension VS&nbsp;Code. <span class="badge b-ok">fait</span></li>
+    <li><strong>H5 — débordement de pile du lexer</strong>&nbsp;: corrigé, 200&nbsp;000 lignes vides passent désormais. <span class="badge b-ok">fait</span></li>
+    <li><strong>M6 — CI contredisant l'épinglage GA</strong>&nbsp;: désamorcé avant qu'il ne se déclenche. <span class="badge b-ok">fait</span></li>
+    <li><strong>Nouveau — validation des noms d'environnement dépendante de l'OS</strong>&nbsp;: trouvé <em>par la CI elle-même</em>, à sa toute première exécution, puis corrigé. <span class="badge b-ok">fait</span></li>
+  </ul>
 </div>
 
 <p class="lead">La troisième revue concluait « 0 défaut élevé restant ». Cette relecture en trouve cinq. Ce n'est pas un retour en arrière du produit&nbsp;: les fonctionnalités livrées entre-temps — sortie delta, lint de couverture, diagnostics sémantiques dans l'éditeur, navigation inter-fichiers — fonctionnent et répondent au besoin d'origine. Le problème est ailleurs.</p>
 
 <div class="callout bad">
   <div class="t">Le fait marquant de cette revue</div>
-  <p style="margin:0"><strong>Trois des cinq défauts élevés sont des régressions introduites par la campagne de correctifs elle-même</strong>, et aucune n'a été détectée&nbsp;: les 305 tests sont restés verts du début à la fin. La cause commune est structurelle — il n'existe <strong>aucune intégration continue de build ou de test</strong>. Chaque correctif a été validé localement, à la main, par la personne qui l'écrivait.</p>
+  <p style="margin:0"><strong>Trois des cinq défauts élevés sont des régressions introduites par la campagne de correctifs elle-même</strong>, et aucune n'a été détectée&nbsp;: les 305 tests sont restés verts du début à la fin. La cause commune était structurelle — il n'existait <strong>aucune intégration continue de build ou de test</strong>. Chaque correctif a été validé localement, à la main, par la personne qui l'écrivait. <em>C'est le premier point corrigé depuis&nbsp;; voir l'encadré ci-dessus.</em></p>
 </div>
 
 <p>Autrement dit&nbsp;: la qualité du code livré est réelle, mais le <em>filet</em> qui devrait la préserver n'existe pas. C'est le vrai sujet de cette revue, et c'est ce qui justifie la note en baisse malgré des fonctionnalités en hausse.</p>
@@ -122,7 +134,7 @@
 <tr><td>Codes retour CLI</td><td>erreur → 1 · succès avec avertissement → 0 · fichier absent → 1 <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Scénario métier fondateur</td><td>delta + avertissement de dérive, de bout en bout <span class="badge b-ok">OK</span></td></tr>
 <tr><td>Volumétrie</td><td>Core 4 033 lignes / 49 fichiers · LSP 3 526 / 12</td></tr>
-<tr><td>Intégration continue build/test</td><td><strong>inexistante</strong> <span class="badge b-bad">✗</span></td></tr>
+<tr><td>Intégration continue build/test</td><td><s>inexistante</s> → Ubuntu + Windows + extension, sans filtre de chemins <span class="badge b-ok">corrigé</span></td></tr>
 <tr><td>Outillage de couverture de code</td><td><strong>inexistant</strong> <span class="badge b-bad">✗</span></td></tr>
 </tbody>
 </table>
@@ -131,10 +143,21 @@
 
 <h2><span class="num">03</span>Défauts élevés</h2>
 
-<div class="finding">
-  <h3>H1 — Aucune intégration continue de build ou de test <span class="tag">structurel</span></h3>
-  <p><code>.github/workflows/</code> ne contient qu'un déploiement du site de documentation, <strong>filtré sur <code>docs-site/**</code></strong>. Les 305 tests ne s'exécutent sur aucun push ni aucune pull request.</p>
-  <p>Conséquence concrète&nbsp;: la quinzaine de PR de la campagne de correctifs a été fusionnée sans la moindre vérification automatique. Un contributeur peut casser le compilateur sans qu'aucun signal ne se déclenche. Les trois régressions ci-dessous en sont la démonstration directe.</p>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H1 — Aucune intégration continue de build ou de test</s> <span class="badge b-ok">corrigé</span></h3>
+  <p><em>Constat initial&nbsp;:</em> <code>.github/workflows/</code> ne contenait qu'un déploiement du site de documentation, <strong>filtré sur <code>docs-site/**</code></strong>. Les 305 tests ne s'exécutaient sur aucun push ni aucune pull request. La quinzaine de PR de la campagne de correctifs a été fusionnée sans la moindre vérification automatique&nbsp;; les régressions ci-dessous en sont la démonstration directe.</p>
+  <p><em>Correctif&nbsp;:</em> build et tests de la solution sur <strong>Ubuntu et Windows</strong>, plus la compilation du TypeScript de l'extension VS&nbsp;Code — à chaque push sur <code>main</code> et chaque pull request. Trois choix structurants&nbsp;:</p>
+  <ul class="tight">
+    <li>Le SDK vient de <code>global-json-file</code> et non d'une version inscrite dans le workflow&nbsp;: la CI et le poste de développement ne peuvent plus diverger.</li>
+    <li><strong>Aucun filtre de chemins</strong>, puisque c'est précisément ce filtrage qui avait laissé passer M6.</li>
+    <li>Deux systèmes d'exploitation, parce que <code>IncludeResolver</code> compare les chemins différemment selon la plateforme — ce n'était pas du remplissage, voir ci-dessous.</li>
+  </ul>
+</div>
+
+<div class="callout ok">
+  <div class="t">La CI a payé à sa première exécution</div>
+  <p>Le job Ubuntu, qui n'avait jamais tourné, a échoué immédiatement sur trois tests. Deux étaient des tests non portables. Le troisième était un <strong>défaut produit</strong> que ni la revue ni les relecteurs n'avaient vu&nbsp;: <code>JsonWriter</code> validait les noms d'environnement avec <code>Path.GetInvalidFileNameChars()</code>, dont le contenu <em>dépend de la plateforme</em> — une quarantaine de caractères sur Windows, uniquement NUL et <code>/</code> sur Unix.</p>
+  <p style="margin-bottom:0">Un <code>env "Dev&lt;&gt;ment"</code> était donc refusé sur Windows et accepté sur Linux. Le nom devenant une partie du fichier <code>appsettings.{Environment}.json</code>, un build Linux produisait des fichiers qu'un checkout Windows ne peut même pas créer. La validation utilise désormais le jeu le plus strict partout, avec un test paramétré épinglant chaque caractère concerné.</p>
 </div>
 
 <div class="finding">
@@ -164,16 +187,17 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
   <p><strong>(b) Comparaison sensible à la casse.</strong> <code>Cased</code> et <code>cased</code> sont deux clés distinctes pour l'analyseur, une seule à l'exécution. Le point est <em>systémique</em>&nbsp;: <code>CoverageAnalyzer</code> et <code>ValidateOverlayAgainstBase</code> comparent également en <code>Ordinal</code> alors que la configuration .NET est <code>OrdinalIgnoreCase</code>. Ainsi <code>Foo = 1</code> en base avec <code>foo { Bar = 2 }</code> en Dev passe sans erreur, alors que primitif-contre-objet est précisément le conflit que la nouvelle validation doit détecter — et l'avertissement de couverture émis est trompeur, annonçant une clé absente là où le vrai problème est une divergence de casse.</p>
 </div>
 
-<div class="finding">
-  <h3>H5 — Débordement de pile non rattrapable dans le lexer <span class="tag">reproduit</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>H5 — Débordement de pile non rattrapable dans le lexer</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">Lexer.cs:189 — <code>return this.NextToken();</code></p>
-  <p>Hors crochets, <code>ScanNewline</code> se rappelle dans <code>NextToken</code> au lieu de boucler. Environ 6 000 lignes vides tuent le processus&nbsp;:</p>
+  <p>Hors crochets, <code>ScanNewline</code> se rappelait dans <code>NextToken</code> au lieu de boucler. Environ 6 000 lignes vides tuaient le processus&nbsp;:</p>
 <pre><code>Stack overflow.
    at Settex.Core.Lexer.Lexer.SkipWhitespace()
    at Settex.Core.Lexer.Lexer.NextToken()
    at Settex.Core.Lexer.Lexer.ScanNewline(Int32, Int32)
    ...   → exit 127, aucun diagnostic</code></pre>
-  <p>Un <code>StackOverflowException</code> n'étant pas rattrapable en .NET, le <code>catch</code> global du compilateur est contourné. Le lexer tournant à chaque frappe, le serveur de langage meurt aussi. Le déclencheur est improbable à la main, trivial pour un <code>.settex</code> généré ou concaténé.</p>
+  <p>Un <code>StackOverflowException</code> n'étant pas rattrapable en .NET, le <code>catch</code> global du compilateur était contourné. Le lexer tournant à chaque frappe, le serveur de langage mourait aussi. Le déclencheur est improbable à la main, trivial pour un <code>.settex</code> généré ou concaténé.</p>
+  <p><em>Correctif&nbsp;:</em> <code>ScanNewline</code> renvoie désormais <code>null</code> quand le saut de ligne n'est pas significatif, et <code>NextToken</code> boucle au lieu de récurser. La pile ne croît plus avec le nombre de lignes vides&nbsp;: <strong>200 000 lignes vides compilent</strong>, contre un plantage à 6 000. Deux tests verrouillent le comportement — l'absence de débordement, et le fait que les sauts de ligne restent bien émis à l'intérieur d'un tableau, où ils sont significatifs.</p>
 </div>
 
 <h2><span class="num">04</span>Défauts moyens</h2>
@@ -205,10 +229,11 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 </div>
 
 <h3>Cohérence et robustesse</h3>
-<div class="finding med">
-  <h3>M6 — La CI contredit l'épinglage GA tout juste posé <span class="tag">latent</span></h3>
+<div class="finding" style="border-left-color:var(--ok)">
+  <h3><s>M6 — La CI contredit l'épinglage GA tout juste posé</s> <span class="badge b-ok">corrigé</span></h3>
   <p class="fp">.github/workflows/azure-static-web-apps.yml:39</p>
-  <p>Le workflow demande explicitement <code>dotnet-quality: 'preview'</code>, et son en-tête justifie encore «&nbsp;it targets a preview .NET SDK&nbsp;». Or <code>global.json</code> porte désormais <code>allowPrerelease: false</code>&nbsp;: un runner ne disposant que d'un SDK 10.0 preview ne satisfait plus le pin — mécanisme déjà observé localement. Le filtre de chemins ayant exclu le commit <code>global.json</code>, rien n'a cassé à la fusion&nbsp;: la rupture se déclenchera au prochain changement dans <code>docs-site/</code>.</p>
+  <p>Le workflow demandait explicitement <code>dotnet-quality: 'preview'</code>, et son en-tête justifiait encore «&nbsp;it targets a preview .NET SDK&nbsp;». Or <code>global.json</code> porte désormais <code>allowPrerelease: false</code>&nbsp;: un runner ne disposant que d'un SDK 10.0 preview ne satisfaisait plus le pin. Le filtre de chemins ayant exclu le commit <code>global.json</code>, rien n'avait cassé à la fusion&nbsp;: la rupture se serait déclenchée au prochain changement dans <code>docs-site/</code>.</p>
+  <p><em>Correctif&nbsp;:</em> le workflow lit maintenant <code>global-json-file</code>, comme la CI. L'en-tête périmé est corrigé au passage — .NET 10 est GA&nbsp;; la vraie raison du pré-build est qu'Oryx ne porte ni le SDK 10 ni le workload <code>wasm-tools</code>.</p>
 </div>
 <div class="finding med">
   <h3>M7 — <code>Refresh()</code> est un lire-modifier-écrire qui annule une écriture concurrente <span class="tag">reproduit</span></h3>
@@ -285,11 +310,11 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 <table>
 <thead><tr><th>#</th><th>Action</th><th>Pourquoi maintenant</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><strong>Mettre en place une CI build + test</strong></td><td>Prérequis de tout le reste. Sans elle, chaque correctif ci-dessous peut en réintroduire un autre sans bruit.</td></tr>
-<tr><td>2</td><td>Retirer <code>dotnet-quality: 'preview'</code> du workflow</td><td>Rupture latente déjà armée&nbsp;; correctif d'une ligne.</td></tr>
-<tr><td>3</td><td>Comparer le fichier, pas seulement ligne/colonne, dans le LSP</td><td>Survol, définition et références donnent des réponses fausses dès qu'un include est présent — soit le cas d'usage recommandé.</td></tr>
+<tr><td>1</td><td><s>Mettre en place une CI build + test</s> <span class="badge b-ok">fait</span></td><td>Prérequis de tout le reste — et déjà rentable&nbsp;: un défaut de portabilité inédit trouvé dès la première exécution.</td></tr>
+<tr><td>2</td><td><s>Retirer <code>dotnet-quality: 'preview'</code> du workflow</s> <span class="badge b-ok">fait</span></td><td>Rupture latente désamorcée avant déclenchement.</td></tr>
+<tr><td>3</td><td>Comparer le fichier, pas seulement ligne/colonne, dans le LSP</td><td>Survol, définition et références donnent des réponses fausses dès qu'un include est présent — soit le cas d'usage recommandé. <strong>Priorité en tête désormais.</strong></td></tr>
 <tr><td>4</td><td>Ne pas exiger de bloc <code>settings</code> côté serveur</td><td>Erreur rouge permanente sur un fichier livré en exemple.</td></tr>
-<tr><td>5</td><td>Boucler <code>ScanNewline</code> au lieu de récurser</td><td>Mort du processus, non rattrapable&nbsp;; correctif trivial.</td></tr>
+<tr><td>5</td><td><s>Boucler <code>ScanNewline</code> au lieu de récurser</s> <span class="badge b-ok">fait</span></td><td>200 000 lignes vides compilent, contre un plantage à 6 000.</td></tr>
 <tr><td>6</td><td>Comparer les clés en <code>OrdinalIgnoreCase</code> partout</td><td>Aligne les trois analyseurs sur la sémantique réelle de la configuration .NET.</td></tr>
 <tr><td>7</td><td>Étendre l'analyse de superposition aux tableaux d'objets</td><td>La classe de fuite la plus courante échappe aujourd'hui à l'outil censé la couvrir.</td></tr>
 <tr><td>8</td><td>Porter les positions source jusqu'aux analyseurs</td><td>Rend exploitable l'avertissement qui justifie le produit.</td></tr>
@@ -300,14 +325,19 @@ Dev  : "Svcs": [ { "Name": "b" } ]      → aucun avertissement</code></pre>
 
 <h2><span class="num">08</span>Conclusion</h2>
 
-<p class="verdict">Le produit fait ce qu'il promet&nbsp;; le processus qui devrait le garantir n'existe pas encore.</p>
+<p class="verdict">Le produit fait ce qu'il promet&nbsp;; le processus qui devrait le garantir vient d'être posé.</p>
 
 <p>Settex résout le problème qui l'a fait naître, et le résout bien&nbsp;: une source unique, un lint qui détecte la dérive entre environnements, une sortie en delta qui respecte le mécanisme <code>appsettings</code> de .NET plutôt que de le remplacer. Rien dans cette revue ne remet cela en cause.</p>
 
-<p>Ce qu'elle établit, en revanche, c'est que la campagne de correctifs a atteint la limite de ce qu'une vérification manuelle peut tenir. Trois régressions élevées sont passées entre les mailles de 305 tests verts, dans le composant le moins couvert — le serveur de langage, où les défauts sont invisibles depuis une ligne de commande. La première priorité n'est donc aucun des défauts de cette liste&nbsp;: c'est le filet qui les aurait attrapés.</p>
+<p>Ce qu'elle établit, en revanche, c'est que la campagne de correctifs a atteint la limite de ce qu'une vérification manuelle peut tenir. Trois régressions élevées sont passées entre les mailles de 305 tests verts, dans le composant le moins couvert — le serveur de langage, où les défauts sont invisibles depuis une ligne de commande. La première priorité n'était donc aucun des défauts de cette liste&nbsp;: c'était le filet qui les aurait attrapés.</p>
+
+<p>Ce filet est désormais posé, et il a justifié son existence avant même d'être fusionné&nbsp;: sa première exécution a mis au jour un défaut de portabilité que ni cette revue ni ses deux relecteurs n'avaient vu. C'est la meilleure démonstration possible de ce que trois mois de vérification manuelle ne peuvent pas remplacer.</p>
+
+<p>Restent trois défauts élevés, tous du côté produit et tous concentrés là où le diagnostic est le plus coûteux&nbsp;: la confusion de positions entre fichiers dans le serveur de langage, l'erreur permanente sur les fragments d'include, et les angles morts de l'analyse de superposition. Ils peuvent maintenant être corrigés sans avoir à parier qu'aucun autre ne réapparaît en silence.</p>
 
 <footer>
   <p>Quatrième revue à froid — 19 juillet 2026, révision <code>884f705</code>. Deux relecteurs indépendants (cœur compilateur&nbsp;; serveur de langage et extensions) plus une passe d'usage bout-en-bout. Les constats marqués «&nbsp;reproduit&nbsp;» l'ont été sur du code exécuté, la plupart contre un vrai <code>ConfigurationBuilder</code> ou un serveur de langage instrumenté.</p>
+  <p>Document vivant&nbsp;: annoté au fil des correctifs. Les constats barrés portant le badge <span class="badge b-ok">corrigé</span> ont été traités et vérifiés après publication. Dernière mise à jour&nbsp;: CI de build et de test, correctif du lexer.</p>
   <p>Revues précédentes&nbsp;: <a href="etat-des-lieux.html">état des lieux</a> · <a href="revue-technique.html">revue technique</a> · <a href="revue-a-froid-2.html">troisième revue</a>.</p>
 </footer>
 
