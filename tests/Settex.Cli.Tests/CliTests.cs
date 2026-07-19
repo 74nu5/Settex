@@ -136,6 +136,41 @@ public class CliTests
     /// overwriting the Console writer, which the test framework forbids); those
     /// cases are asserted on the exit code only.
     /// </summary>
+    [Test]
+    public async Task Import_RealShapedFamily_WritesAVerifiedSettexAsync()
+    {
+        using var workspace = new TempWorkspace();
+        var directory = workspace.OutputDirectory;
+        Directory.CreateDirectory(directory);
+
+        var basePath = Path.Combine(directory, "appsettings.json");
+
+        // Deliberately awkward: a keyword key, an array of objects, a ${ in a value.
+        await File.WriteAllTextAsync(basePath, """
+            {
+              "env": "keyword-key",
+              "Price": "cost: ${price}",
+              "Rules": [ { "Endpoint": "post:*", "Limit": 60 } ]
+            }
+            """);
+        await File.WriteAllTextAsync(Path.Combine(directory, "appsettings.Production.json"), """
+            { "Price": "expensive" }
+            """);
+
+        var (exitCode, output) = await RunAsync("import", basePath);
+
+        await Assert.That(exitCode).IsEqualTo(0);
+        await Assert.That(output).Contains("verified exact");
+
+        // And the written file must itself compile.
+        var settexPath = Path.Combine(directory, "appsettings.settex");
+        await Assert.That(File.Exists(settexPath)).IsTrue();
+
+        var (buildExit, _) = await RunAsync("build", settexPath, "-o", Path.Combine(directory, "out"));
+
+        await Assert.That(buildExit).IsEqualTo(0);
+    }
+
     private static async Task<(int ExitCode, string Output)> RunAsync(params string[] args)
     {
         var writer = new StringWriter();

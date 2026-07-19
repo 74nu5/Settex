@@ -347,6 +347,28 @@ It's **advisory** (a warning, never a build failure) and on by default. Turn it 
 
 **What is *not* flagged, on purpose:** a key set in **every** environment but absent from the base. That configuration is correct as it stands, and the obvious "fix" — inventing a base default — is often worse for values that must be decided per environment (connection strings, endpoints, secret placeholders): a plausible-looking wrong default would apply silently. The deferred risk ("someone adds a new environment and forgets the key") is already covered: the moment that environment exists without the key, the key is in some environments but not all, and the warning above fires.
 
+### Importing an existing configuration
+
+Nobody rewrites a working production configuration by hand. `settex import` takes the
+family you already have and produces the `.settex`, **proven equivalent** before it is
+written:
+
+```bash
+settex import path/to/appsettings.json
+#   + environment Development from appsettings.Development.json
+#   + environment Production from appsettings.Production.json
+# ✓ Imported 2 environment(s); round-trip verified exact.
+```
+
+Sibling `appsettings.{Environment}.json` files become `env` blocks automatically.
+Before writing anything, the command compiles the generated text through the real
+pipeline and compares every flattened key — the way .NET's configuration provider
+sees them — against the originals. If a single key differs, nothing is written and
+the differences are listed: a migration that is merely *probably* right is worse
+than none, because a missed key surfaces at runtime in the environment where it was
+missed. Keyword keys (`env`), dotted keys (`"Microsoft.AspNetCore"`) and literal
+`${` in values are quoted and escaped as needed.
+
 ## 🆕 V2 Features
 
 ### File Includes

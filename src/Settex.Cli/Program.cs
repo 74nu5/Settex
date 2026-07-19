@@ -52,7 +52,105 @@ internal static class Program
 
         rootCommand.AddCommand(buildCommand);
 
+        var importCommand = new Command(
+            "import",
+            "Turn an existing appsettings.json family into a .settex file, verified equivalent");
+
+        var importBaseArgument = new Argument<FileInfo>(
+            "file",
+            "Path to the base appsettings.json; sibling appsettings.{Environment}.json files are picked up automatically")
+        {
+            Arity = ArgumentArity.ExactlyOne,
+        };
+
+        importCommand.AddArgument(importBaseArgument);
+
+        var importOutputOption = new Option<FileInfo?>(
+            ["-o", "--output"],
+            description: "Output .settex file (default: appsettings.settex next to the base file)");
+
+        importCommand.AddOption(importOutputOption);
+
+        importCommand.SetHandler(ExecuteImportAsync, importBaseArgument, importOutputOption);
+
+        rootCommand.AddCommand(importCommand);
+
         return await rootCommand.InvokeAsync(args);
+    }
+
+    private static async Task<int> ExecuteImportAsync(FileInfo baseFile, FileInfo? output)
+        => await Task.Run(() => ExecuteImport(baseFile, output));
+
+    private static int ExecuteImport(FileInfo baseFile, FileInfo? output)
+    {
+        if (!baseFile.Exists)
+        {
+            AnsiConsole.MarkupLine("[red]Error:[/] File not found: {0}", baseFile.FullName);
+            return 1;
+        }
+
+        try
+        {
+            var directory = baseFile.DirectoryName ?? ".";
+            var baseName = Path.GetFileNameWithoutExtension(baseFile.Name);
+
+            var baseSettings = ReadJsonObject(baseFile.FullName);
+
+            // Sibling appsettings.{Environment}.json files become env blocks, named
+            // after the segment between the base name and the extension.
+            var environments = new Dictionary<string, System.Text.Json.Nodes.JsonObject>();
+
+            foreach (var sibling in Directory.GetFiles(directory, baseName + ".*.json"))
+            {
+                var envName = Path.GetFileNameWithoutExtension(sibling)[(baseName.Length + 1)..];
+                environments[envName] = ReadJsonObject(sibling);
+                AnsiConsole.MarkupLine("  [dim]+[/] environment [cyan]{0}[/] from {1}", envName, Path.GetFileName(sibling));
+            }
+
+            var settex = Core.Importing.JsonImporter.GenerateSettex(baseSettings, environments);
+
+            // The point of importing over rewriting: the result is proven equivalent
+            // before anyone commits to it. A migration that is probably right is worse
+            // than none — a missed key surfaces at runtime, in the environment where
+            // it was missed.
+            var differences = Core.Importing.JsonImporter.VerifyRoundTrip(settex, baseSettings, environments);
+
+            if (differences.Count > 0)
+            {
+                AnsiConsole.MarkupLine("[red]✗ Import verification failed; no file was written.[/]");
+
+                foreach (var difference in differences.Take(10))
+                {
+                    AnsiConsole.MarkupLine("  [red]-[/] {0}", Markup.Escape(difference));
+                }
+
+                return 1;
+            }
+
+            var outputPath = output?.FullName ?? Path.Combine(directory, baseName + ".settex");
+            File.WriteAllText(outputPath, settex);
+
+            AnsiConsole.MarkupLine(
+                "[green]✓ Imported {0} environment(s); round-trip verified exact.[/]",
+                environments.Count);
+            AnsiConsole.MarkupLine("  [dim]→[/] [cyan]{0}[/]", outputPath);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine("[red]Error:[/] {0}", Markup.Escape(ex.Message));
+            return 1;
+        }
+    }
+
+    private static System.Text.Json.Nodes.JsonObject ReadJsonObject(string path)
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(path),
+            documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip, AllowTrailingCommas = true });
+
+        return node as System.Text.Json.Nodes.JsonObject
+            ?? throw new InvalidOperationException($"{path} does not contain a JSON object.");
     }
 
     private static async Task<int> ExecuteBuildAsync(
