@@ -60,8 +60,14 @@ public class Evaluator
 
         // Evaluate environment overlays, deep-merging blocks that target the
         // same environment (again, so an include can contribute to an env).
-        var environmentOverlays = new Dictionary<string, JsonObject>();
-        var environmentLocations = new Dictionary<string, SourceLocation>();
+        // Case-insensitive, because .NET's own environment model is: IsDevelopment and
+        // IsEnvironment compare with OrdinalIgnoreCase, so env "Dev" and env "dev" are
+        // one environment there. Comparing ordinally here made them two overlays that
+        // then raced for a single appsettings.Dev.json on Windows — one silently
+        // overwrote the other, under a success message listing both files. They now
+        // deep-merge, exactly as two blocks spelled identically already did.
+        var environmentOverlays = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
+        var environmentLocations = new Dictionary<string, SourceLocation>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var envBlock in envBlocks)
         {
@@ -356,7 +362,11 @@ public class Evaluator
         {
             var segment = path[i];
 
-            if (!current.ContainsKey(segment))
+            // Case-insensitive, like every configuration key comparison. Comparing
+            // ordinally here meant ':=' could not see a base value spelled differently
+            // and assigned anyway — the one operator whose entire contract is not to
+            // override was the one overriding.
+            if (!TryGetPropertyIgnoreCase(current, segment, out var next))
             {
                 return false;
             }
@@ -366,9 +376,6 @@ public class Evaluator
             {
                 return true;
             }
-
-            // Otherwise, continue navigating
-            var next = current[segment];
 
             if (next is not JsonObject nextObj)
             {
@@ -390,7 +397,7 @@ public class Evaluator
         // For nested blocks, we need to find the corresponding nested object in base settings (if any)
         JsonObject? baseNestedObject = null;
         
-        if (baseSettings != null && baseSettings.TryGetPropertyValue(nestedBlock.Name, out var baseValue))
+        if (baseSettings != null && TryGetPropertyIgnoreCase(baseSettings, nestedBlock.Name, out var baseValue))
         {
             baseNestedObject = baseValue as JsonObject;
         }
