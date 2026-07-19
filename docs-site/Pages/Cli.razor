@@ -9,7 +9,7 @@
 <p>@(Fr ? "Installez l'outil global :" : "Install the global tool:")</p>
 <CodeBlock Lang="bash" Code="dotnet tool install --global Settex.Cli" />
 
-<p>@(Fr ? "Compilez un fichier — la sortie est placée à côté par défaut, ou dans un dossier avec " : "Compile a file — output goes next to it by default, or into a directory with ")<code>-o</code> :</p>
+<p>@(Fr ? "Compilez un fichier — la sortie va dans le répertoire courant par défaut, ou dans un dossier avec " : "Compile a file — output goes into the current directory by default, or into a directory with ")<code>-o</code> :</p>
 <CodeBlock Lang="bash" Code="@CliUsage" />
 
 <p>@(Fr ? "La CLI produit des diagnostics précis et cliquables avec fichier, ligne et colonne :" : "The CLI reports precise, clickable diagnostics with file, line and column:")</p>

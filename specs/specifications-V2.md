@@ -51,7 +51,7 @@ V2 inclut tout V1 + :
 
 ### 3.1 Structure attendue
 
-*   **exactement un** `settings { ... }` global
+*   **au moins un** `settings { ... }` global. Plusieurs blocs sont autorisés et fusionnent en profondeur dans l'ordre du document, ce qui est ce qui permet à un fichier inclus d'en contribuer un.
 *   0..N `env "<Name>" { ... }`
 *   `include` et `let` autorisés au global et dans `env`
 

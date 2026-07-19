@@ -38,6 +38,38 @@ public sealed class CompletionHandlerTests
         await Assert.That(items.Any(i => i.Label == "Other")).IsFalse();
     }
 
+    /// <summary>
+    /// The editor re-requests completion on every keystroke. Requiring the line to end
+    /// with a dot meant the property list appeared after "Server." and vanished the
+    /// moment the user typed "P" — exactly when it becomes useful. This is the case the
+    /// previous round could not characterise; the answer was that it did not work.
+    /// </summary>
+    [Test]
+    public async Task Completion_AfterADotWithAPartialWord_StillOffersAndFiltersAsync()
+    {
+        const string source = """
+            settings {
+                Server {
+                    Host = "localhost"
+                    Port = 8080
+                }
+            }
+            env "Dev" {
+                settings {
+                    Server.Port = 1
+                }
+            }
+            """;
+
+        // Cursor after "Server.Po" (0-based line 8, column 17).
+        var items = await CompleteAsync(source, 8, 17);
+
+        await Assert.That(items.Any(i => i.Label == "Port")).IsTrue();
+
+        // And the list is narrowed to what matches.
+        await Assert.That(items.Any(i => i.Label == "Host")).IsFalse();
+    }
+
     [Test]
     public async Task Completion_AtTopLevel_OffersTheLanguageKeywordsAsync()
     {
