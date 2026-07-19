@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settex — Sixième revue (à froid, autres méthodes)</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0;
+    --radius:12px; --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  }
+  :root[data-theme="dark"]{ --bg:#171614; --surface:#201f1c; --surface-2:#282622; --border:#33312c;
+      --text:#ecebe7; --muted:#a09c94; --accent:#e0714f; --accent-soft:#3a251d;
+      --ok:#5cba7d; --warn:#e0b34d; --bad:#e8705f; --info:#5b9bd5; }
+  :root[data-theme="light"]{ --bg:#f7f7f5; --surface:#ffffff; --surface-2:#f0efec; --border:#e2e0da;
+    --text:#1c1b19; --muted:#6b6862; --accent:#b5462b; --accent-soft:#f3e0d9;
+    --ok:#2f7d4f; --warn:#b8860b; --bad:#c0392b; --info:#2b6cb0; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;font-size:16px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 96px}
+  header.hero{padding:60px 24px 36px;border-bottom:1px solid var(--border);
+    background:radial-gradient(120% 100% at 100% 0%, var(--accent-soft) 0%, transparent 55%);}
+  .hero-inner{max-width:940px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{font-size:2.5rem;line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}
+  .subtitle{font-size:1.12rem;color:var(--muted);margin:0 0 22px;max-width:720px}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.85rem;color:var(--muted);font-family:var(--mono)}
+  .meta b{color:var(--text);font-weight:600}
+  h2{font-size:1.55rem;margin:52px 0 8px;letter-spacing:-.01em}
+  h2 .num{color:var(--accent);font-family:var(--mono);font-size:1.05rem;margin-right:10px}
+  h3{font-size:1.12rem;margin:26px 0 6px}
+  p{margin:12px 0}.lead{font-size:1.05rem}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface-2);padding:.12em .4em;border-radius:5px}
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.5;margin:12px 0}
+  pre code{background:none;padding:0;font-size:1em}
+  a{color:var(--accent)}
+  .grid{display:grid;gap:16px}
+  @media(min-width:680px){.grid.cols-2{grid-template-columns:1fr 1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card h3{margin-top:0}
+  .score-band{display:flex;flex-wrap:wrap;gap:14px;margin:28px 0 8px}
+  .score{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .score .big{font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .score .lbl{font-size:.82rem;color:var(--muted);margin-top:6px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;padding:.18em .6em;border-radius:999px;letter-spacing:.03em;vertical-align:middle}
+  .b-ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+  .b-warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .b-bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.92rem;display:block;overflow-x:auto}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  ul.tight{margin:12px 0;padding-left:22px}ul.tight li{margin:6px 0}
+  .callout{border-left:3px solid var(--accent);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:18px 0}
+  .callout.bad{border-left-color:var(--bad)}.callout.ok{border-left-color:var(--ok)}
+  .callout .t{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .fp{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+  .finding{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--bad);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:18px 0}
+  .finding.crit{border-left-width:6px}
+  .finding.med{border-left-color:var(--warn)}
+  .finding h3{margin:0 0 4px;font-size:1.05rem}
+  footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+  .verdict{font-size:1.12rem;font-weight:600}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="kicker">Sixième revue · à froid</p>
+    <h1>Settex — changer de prise</h1>
+    <p class="subtitle">Cinq revues ont lu le code. Celle-ci ne le lit pas : elle compare la sortie de Settex à ce qu'un vrai <code>ConfigurationBuilder</code> en fait, et elle mute le code de production pour voir si les 381 tests s'en aperçoivent.</p>
+    <div class="meta">
+      <span><b>Date</b> 19 juillet 2026</span>
+      <span><b>Tests</b> 381 · 0 échec</span>
+      <span><b>Build</b> 0 avertissement</span>
+      <span><b>PR fusionnées</b> 60</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<h2><span class="num">01</span>Verdict</h2>
+
+<div class="score-band">
+  <div class="score"><div class="big">7,0<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span class="badge b-bad">−1,2</span></div></div>
+  <div class="score"><div class="big">1</div><div class="lbl">défaut critique <span class="badge b-bad">l'app ne démarre pas</span></div></div>
+  <div class="score"><div class="big">34<span style="font-size:1rem;color:var(--muted)">/44</span></div><div class="lbl">mutations tuées par les tests</div></div>
+  <div class="score"><div class="big">0</div><div class="lbl">avertissement de build</div></div>
+</div>
+
+<p class="lead">La cinquième revue concluait qu'une liste vide mesure l'épuisement d'une méthode, pas l'absence de défauts. Cette sixième le vérifie en changeant de méthode — et trouve immédiatement un défaut qu'aucune des cinq précédentes ne pouvait voir : <strong>Settex peut produire, sans le moindre avertissement, un <code>appsettings.json</code> que .NET refuse de charger</strong>.</p>
+
+<div class="callout bad">
+  <div class="t">Pourquoi cette revue n'a pas relu le code</div>
+  <p style="margin:0 0 8px">Les revues 4 et 5 ont trouvé <strong>chacune exactement cinq défauts élevés</strong>, la quatrième s'étant pourtant fermée « liste vide ». Le taux de découverte n'a pas décliné. Refaire une sixième lecture adverse aurait probablement produit cinq constats de plus, sans rien apprendre de neuf sur la méthode.</p>
+  <p style="margin:0">Deux prises différentes ont donc été employées&nbsp;: un <strong>test différentiel</strong> — compiler des dizaines de configurations et comparer ce que le mode fusionné annonce, ce qu'un vrai <code>ConfigurationBuilder</code> produit, et ce que Settex a averti — et un <strong>test par mutation</strong> du code de production, pour mesurer ce que les 381 tests protègent réellement. Les deux ont trouvé des choses structurellement invisibles à la lecture.</p>
+</div>
+
+<h2><span class="num">02</span>Le défaut critique</h2>
+
+<div class="finding crit">
+  <h3>C1 — Deux clés frères ne différant que par la casse produisent un fichier illisible par .NET <span class="badge b-bad">critique</span></h3>
+  <p class="fp">reproduit · vérifié contre un vrai ConfigurationBuilder</p>
+<pre><code>settings {
+    Foo = "one"
+    foo = "two"
+}
+
+Settex : ✓ Successfully compiled   0 avertissement
+sortie : {"Foo":"one","foo":"two"}
+
+.NET   : System.FormatException: A duplicate key 'foo' was found.
+         → l'application ne démarre pas</code></pre>
+  <p>Le compilateur annonce un succès et émet un fichier que le système de configuration <em>refuse en bloc</em>. Ce n'est pas une valeur fausse&nbsp;: c'est l'absence totale de configuration, au démarrage, en production.</p>
+  <p><strong>Settex est incohérent avec lui-même sur ce point.</strong> <code>:=</code> résout la casse sans y être sensible, le contrôle de dérive est insensible à la casse, la validation de conflit de type l'est aussi — trois campagnes de correctifs y ont veillé. Mais l'affectation simple <code>=</code> construit un magasin de clés sensible à la casse, si bien que seul l'écrivain JSON voit deux clés.</p>
+  <p><strong>Le déclencheur réaliste n'est pas une faute de frappe&nbsp;: ce sont deux includes.</strong> Un fichier définit <code>List</code>, un autre <code>list</code>, un troisième inclut les deux. Settex émet deux avertissements sans rapport et aucun indice du défaut fatal.</p>
+</div>
+
+<h2><span class="num">03</span>Défauts élevés</h2>
+
+<div class="finding">
+  <h3>H1 — Le mode fusionné produit lui aussi un fichier illisible <span class="fp">reproduit</span></h3>
+  <p>Base <code>Server.Port</code> et env <code>server.port</code>&nbsp;: en mode delta la superposition fonctionne (.NET est insensible à la casse). En mode <code>--merged</code>, les deux orthographes sont écrites dans le même fichier, qui lève <code>A duplicate key 'server:port'</code>. La configuration effective annoncée par ce mode n'est donc pas seulement fausse — elle n'existe pas.</p>
+</div>
+
+<div class="finding">
+  <h3>H2 — Une clé contenant un point ne peut pas être exprimée, et l'exemple ASP.NET Core du README produit une configuration inopérante <span class="fp">reproduit</span></h3>
+<pre><code>Logging { LogLevel { Microsoft.AspNetCore = "Warning" } }
+
+produit : {"Logging":{"LogLevel":{"Microsoft":{"AspNetCore":"Warning"}}}}
+attendu : {"Logging":{"LogLevel":{"Microsoft.AspNetCore":"Warning"}}}</code></pre>
+  <p>Le point est toujours un séparateur de chemin, jamais un caractère. Lié via <code>LoggerFilterOptions</code>, la règle produite porte la catégorie <code>Microsoft:AspNetCore</code>, qui ne correspond à rien&nbsp;: <strong>le filtre de journalisation demandé est silencieusement ignoré</strong>.</p>
+  <p>Il n'existe <strong>aucun contournement</strong>&nbsp;: les clés entre guillemets sont refusées par le parser, dans les deux positions. <code>Logging:LogLevel:&lt;Catégorie&gt;</code> étant le réglage ASP.NET Core le plus courant, Settex ne peut pas exprimer l'<code>appsettings.json</code> que <code>dotnet new webapi</code> génère — et échoue en silence plutôt que bruyamment. L'exemple du README et <code>samples/SampleWebApi</code> embarquent tous deux le défaut.</p>
+</div>
+
+<div class="finding">
+  <h3>H3 — Deux environnements ne différant que par la casse fusionnent sans avertir <span class="fp">régression de correctif</span></h3>
+  <p>La campagne précédente a corrigé une perte de données ici — les deux écrivaient dans le même fichier et l'un écrasait l'autre — en les faisant fusionner, au motif que le modèle de .NET les considère comme un seul environnement. Le raisonnement tient pour <code>IsDevelopment()</code>, mais <strong>pas pour le nom de fichier</strong>&nbsp;: sur Linux, <code>ASPNETCORE_ENVIRONMENT=dev</code> ne charge aucun fichier, puisque seul <code>appsettings.Dev.json</code> existe. Les deux overlays disparaissent.</p>
+  <p>Le correctif a donc échangé un mode de défaillance contre un autre, sans avertissement dans aucun des deux cas. Ce qui manque n'est pas la fusion — c'est le diagnostic.</p>
+</div>
+
+<div class="finding">
+  <h3>H4 — Trois invariants de valeur ne sont protégés par aucun test <span class="fp">mutations survivantes</span></h3>
+  <p>Mutées une par une, ces trois lignes ne font échouer <strong>aucun</strong> des 381 tests&nbsp;:</p>
+  <ul class="tight">
+    <li><code>InvariantCulture</code> → <code>CurrentCulture</code> dans l'interpolation et la concaténation. Sur cette machine <code>fr-FR</code>, la sortie devient <code>"rate=1,5"</code>. Aucun test n'interpole un nombre fractionnaire — vérifié indépendamment.</li>
+    <li>L'encodeur JSON relâché → <code>Default</code>&nbsp;: <code>&amp;</code>, <code>&lt;</code> et tout caractère non-ASCII deviennent <code>&</code>… dans <em>tous</em> les fichiers générés.</li>
+    <li>L'égalité de chaînes → insensible à la casse&nbsp;: change quelles affectations conditionnelles se déclenchent, dans chaque configuration de chaque utilisateur.</li>
+  </ul>
+</div>
+
+<div class="finding">
+  <h3>H5 — Deux tests de régression ne peuvent pas échouer, dont un écrit pendant cette campagne <span class="fp">reproduit</span></h3>
+  <p><code>Hover_OnTheColumnJustPastAnAssignment_DoesNotReturnTheOverlay</code> passe dans les deux sens&nbsp;: une garde de nullité protège la seule assertion, et la source choisie fait que <em>n'importe quel</em> overlay contient le mot cherché — y compris exactement le débordement d'une colonne que le test existe pour interdire.</p>
+  <p><code>DetectCycle_WithoutCycle_ReturnsFalse</code> est une tautologie&nbsp;: sur un résolveur neuf la pile est vide, la méthode renvoie <code>false</code> quel que soit son argument.</p>
+  <p>Le motif est constant, et il s'est manifesté trois fois dans cette campagne&nbsp;: <strong>une garde de nullité ou une sortie anticipée transforme un test de régression en test toujours vert</strong>. Quatre autres tests portent un nom qui promet plus que leur corps ne vérifie.</p>
+</div>
+
+<div class="finding">
+  <h3>H6 — L'exemple phare de la page d'accueil est faux, et l'exemple d'application ne compile pas <span class="fp">reproduit</span></h3>
+  <p>Le bloc étiqueté «&nbsp;<code>appsettings.Production.json</code> (généré)&nbsp;» montre une clé que la sortie delta ne contient pas — contredisant, sur la même page, la fonctionnalité mise en avant. Et <code>samples/SampleWebApi</code>, vers lequel le README pointe, échoue à la compilation tout en illustrant l'anti-patron que le README déconseille.</p>
+</div>
+
+<h2><span class="num">04</span>Défauts moyens</h2>
+<ul class="tight">
+  <li><strong><code>--no-coverage-check</code> désactive aussi l'avertissement de superposition de tableaux</strong>, présenté comme inconditionnel par le README. Deux dangers distincts derrière un seul drapeau — un défaut de conception, pas seulement de documentation.</li>
+  <li><strong>~1 320 lignes de gestionnaires du serveur de langage n'ont aucun test</strong>, dont <code>SettexCompletionHandler</code> (699 lignes), la fonctionnalité la plus visible des deux extensions.</li>
+  <li><strong>Sept mutations de plus survivent</strong>&nbsp;: portée de l'itérateur <code>for</code> — dont le test qui porte ce nom ne vérifie pas la chose —, détection des <code>let</code> dupliqués, garde de division par zéro (qui survit <em>à cause</em> d'une assertion non typée), court-circuit de <code>and</code>/<code>ou</code>, normalisation des fins de ligne en sortie.</li>
+  <li><strong>Sept <code>Assert.ThrowsAsync</code> non typés</strong> acceptent n'importe quelle exception, y compris un plantage. Le style typé est utilisé ailleurs dans les mêmes fichiers.</li>
+  <li><strong>Dérive documentaire</strong>&nbsp;: emplacement de sortie par défaut, «&nbsp;les virgules sont optionnelles&nbsp;» (vrai seulement à travers un saut de ligne), sorties d'exemples périmées, spécification annonçant «&nbsp;un seul bloc <code>settings</code>&nbsp;» alors que plusieurs fusionnent.</li>
+</ul>
+
+<h2><span class="num">05</span>Ce qui a tenu</h2>
+
+<p>Il faut le dire aussi nettement que le reste, car c'est un résultat solide et il est le produit direct des campagnes précédentes.</p>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Détection des fuites de tableaux</h3>
+    <p>Aucun faux négatif trouvé, sur une quinzaine de formes&nbsp;: overrides plus courts, égaux, plus longs, tableaux d'objets, tableaux imbriqués dans un élément, tableaux de tableaux, tableaux issus d'une boucle, apportés par un include, ou dont la clé diffère par la casse. Chaque désaccord entre mode fusionné et superposition réelle était averti.</p>
+  </div>
+  <div class="card">
+    <h3>Les invariants centraux, sous mutation</h3>
+    <p>34 mutations sur 44 tuées, dont toutes celles qu'on attendrait en trou&nbsp;: dérive, fuites de superposition, delta contre fusionné, cycles et losanges d'includes, validation de conflit de type, insensibilité à la casse des analyseurs et de <code>:=</code>. Plusieurs tuées par 3 à 10 tests.</p>
+  </div>
+  <div class="card">
+    <h3>Valeurs et types</h3>
+    <p><code>null</code> en base, en overlay, dans un élément de tableau&nbsp;; échappements, unicode et paires de substitution&nbsp;; <code>long.MaxValue</code>, flottants, division&nbsp;; entiers hors plage et échappements invalides en erreur dure. Delta et superposition réelle concordent partout.</p>
+  </div>
+  <div class="card">
+    <h3>Documentation vérifiée</h3>
+    <p>Une part substantielle tient exactement, compilateur à l'appui&nbsp;: tous les opérateurs et leur précédence, la section d'échappement entière y compris le piège <code>$${</code>, l'exemple d'include au caractère près, la détection de cycles, la sémantique de <code>let</code>, <code>:=</code>, <code>if</code> et <code>for</code>, le texte de l'avertissement de dérive, et tous les drapeaux du CLI.</p>
+  </div>
+</div>
+
+<h2><span class="num">06</span>Priorités</h2>
+
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Refuser — ou au minimum avertir — deux clés frères ne différant que par la casse</td><td>C1&nbsp;: le seul défaut de toute la série qui empêche une application de démarrer.</td></tr>
+<tr><td>2</td><td>Permettre un point littéral dans une clé, ou refuser explicitement</td><td>H2&nbsp;: le réglage ASP.NET Core le plus courant est inexprimable, et l'échec est silencieux.</td></tr>
+<tr><td>3</td><td>Avertir quand deux <code>env</code> ne diffèrent que par la casse</td><td>H3&nbsp;: la fusion est défendable, son silence ne l'est pas.</td></tr>
+<tr><td>4</td><td>Rendre le mode fusionné cohérent avec la casse</td><td>H1&nbsp;: il annonce une configuration effective qui ne peut pas se charger.</td></tr>
+<tr><td>5</td><td>Verrouiller culture, encodeur JSON et égalité de chaînes par un test chacun</td><td>H4&nbsp;: trois régressions d'un caractère passeraient inaperçues.</td></tr>
+<tr><td>6</td><td>Corriger les deux tests qui ne peuvent pas échouer, typer les sept assertions</td><td>H5&nbsp;: un test toujours vert est pire qu'un test absent — il donne une garantie fausse.</td></tr>
+<tr><td>7</td><td>Corriger l'exemple d'accueil et <code>samples/SampleWebApi</code></td><td>H6&nbsp;: les deux premières choses qu'un nouvel utilisateur lit.</td></tr>
+<tr><td>8</td><td>Séparer le drapeau de couverture de celui de superposition</td><td>Deux dangers distincts ne devraient pas partager un interrupteur.</td></tr>
+</tbody>
+</table>
+
+<h2><span class="num">07</span>Conclusion</h2>
+
+<p class="verdict">Changer de méthode a trouvé en une passe ce que cinq lectures n'avaient pas atteint.</p>
+
+<p>Le résultat le plus utile de cette revue n'est pas la liste — c'est la démonstration de sa thèse. Cinq revues successives ont lu le code de plus en plus finement, en fermant chaque fois la liste précédente. Aucune n'a trouvé qu'un fichier généré pouvait être <em>illisible</em>, parce qu'aucune ne le donnait à lire à .NET. Aucune n'a trouvé que trois invariants de valeur n'étaient protégés par rien, parce qu'aucune ne mutait le code pour interroger les tests.</p>
+
+<p>La contrepartie mérite d'être dite avec la même netteté&nbsp;: <strong>là où les campagnes précédentes ont travaillé, le travail tient</strong>. La détection des fuites de tableaux n'a pas produit un seul faux négatif sur quinze formes, et les invariants centraux ont survécu à 34 mutations sur 44. Ce n'est pas un logiciel fragile&nbsp;; c'est un logiciel dont les zones vérifiées sont solides et dont les zones jamais interrogées ne l'avaient jamais été.</p>
+
+<p>Enfin, un constat qui vaut pour la suite&nbsp;: <strong>H3 est une régression d'un correctif de la campagne précédente</strong>, et H5 concerne un test écrit pendant cette même campagne. Corriger sous pression produit des correctifs qui échangent un mode de défaillance contre un autre, et des tests qui rassurent sans vérifier. La réponse n'est pas de corriger plus vite.</p>
+
+<footer>
+  <p>Sixième revue à froid — 19 juillet 2026. Méthodes&nbsp;: test différentiel contre <code>Microsoft.Extensions.Configuration</code> 10.0.0 (~35 configurations), test par mutation (44 mutations, chacune construite, exécutée et annulée), audit statique des 39 fichiers de test, vérification des affirmations documentaires par exécution du compilateur. Tous les constats sont reproduits sauf mention contraire.</p>
+  <p>Revues précédentes&nbsp;: <a href="etat-des-lieux.html">état des lieux</a> · <a href="revue-technique.html">revue technique</a> · <a href="revue-a-froid-2.html">troisième</a> · <a href="revue-a-froid-3.html">quatrième</a> · <a href="revue-a-froid-4.html">cinquième</a>.</p>
+</footer>
+
+</div>
+</body>
+</html>
