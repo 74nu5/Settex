@@ -91,20 +91,20 @@
 <div class="wrap">
 
   <div class="score-band">
-    <div class="score"><div class="big">7.9<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
-    <div class="score"><div class="big">297</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
+    <div class="score"><div class="big">8.0<span style="font-size:1rem;color:var(--muted)">/10</span></div><div class="lbl">Note globale <span style="color:var(--muted)">— 2<sup>e</sup> revue : 5,8 · 1<sup>re</sup> : 7,6</span></div></div>
+    <div class="score"><div class="big">304</div><div class="lbl">Tests · 100 % au vert · 0 warning</div></div>
     <div class="score"><div class="big">10 / 10</div><div class="lbl">recommandations de la 2<sup>e</sup> revue traitées</div></div>
     <div class="score"><div class="big">0</div><div class="lbl">défaut <span style="color:var(--bad)">élevé</span> restant (3 adressés ✅)</div></div>
   </div>
 
   <div class="callout ok">
-    <div class="t">Pourquoi la note remonte (5,8 → 7,9)</div>
-    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>297 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
+    <div class="t">Pourquoi la note remonte (5,8 → 8,0)</div>
+    La consolidation est <strong>réelle et vérifiée</strong> : tous les bugs de langage de la 2<sup>e</sup> revue sont corrigés et couverts par des tests, l'extension VS Code s'installe et s'active, le client LSP VS ne laisse plus de process orphelin, la navigation cross-fichier et l'outline sont justes, la sortie est passée en <em>deltas</em> alignés sur le layering .NET, et un <em>lint de couverture</em> répond au besoin d'origine. Les défauts relevés par cette revue elle-même ont ensuite été traités (voir §03). <strong>304 tests</strong> (contre 228), 0 avertissement. Le socle est désormais bon.
   </div>
 
   <div class="callout warn">
     <div class="t">Pourquoi pas plus haut</div>
-    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste est de la <strong>dette faible</strong> : le hover overlay est insensible aux colonnes et ne descend pas dans les blocs imbriqués, le go-to-def in-file reconstruit son URI au lieu de réutiliser celle de la requête, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
+    Tous les défauts <strong>élevés et moyens</strong> relevés par cette revue ont depuis été traités (voir §03) — y compris ceux qui étaient des angles morts des correctifs du cycle précédent, signalés comme tels. Ce qui subsiste relève du <strong>choix ou de l'externe</strong> : le comportement de couverture sur une clé présente dans tous les environnements sauf la base reste à trancher, le scanner d'accolades d'interpolation ignore les chaînes internes, les liens symboliques peuvent contourner la dédup d'includes, et les extensions ne sont pas publiées sur les marketplaces. La dépendance au SDK .NET 10 <em>preview</em> reste le principal frein à un 1.0.
   </div>
 
   <div class="callout">
@@ -193,10 +193,10 @@
     <div class="fp">src/Settex.LanguageServer/ScopeInfo.cs (EffectiveEndLine) — le défaut miroir de l'ancienne heuristique <code>+1000</code> est fermé</div>
   </div>
 
-  <div class="callout warn">
-    <div class="t">Go-to-definition in-file sur doc enregistré : URI reconstruite, casse possiblement altérée <span class="tag">raisonné</span> <span class="tag">issu du dernier cycle</span></div>
-    <code>ToLspLocation</code> reconstruit l'URI depuis le chemin FS (<code>FromFileSystemPath</code>) dès que <code>FilePath</code> est non nul — donc même pour un saut dans le fichier courant enregistré, l'URI fait un aller-retour qui peut changer la casse de la lettre de lecteur sur Windows. Le client (VS Code envoie souvent une lettre minuscule) peut alors ouvrir un nouvel onglet au lieu de révéler. Les docs non enregistrés (<code>FilePath == null</code>) retombent correctement sur l'URI de la requête.
-    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (ToLspLocation) — réutiliser l'URI de la requête pour le fichier courant</div>
+  <div class="callout ok">
+    <div class="t">✅ Corrigé — le go-to-definition in-file réutilise l'URI de la requête</div>
+    <code>ToLspLocation</code> reconstruisait l'URI depuis le chemin FS dès que <code>FilePath</code> était non nul : même pour un saut dans le fichier courant, l'aller-retour pouvait changer la casse de la lettre de lecteur sur Windows, et un client comparant les URI ouvrait un nouvel onglet au lieu de révéler la position. <strong>Corrigé</strong> : quand la cible est le document courant (comparaison de chemins selon la casse du système de fichiers), l'URI de la requête est <strong>réutilisée telle quelle</strong> ; sinon seulement, elle est construite depuis le chemin. Vérifié : chemin de casse différente → URI de requête conservée ; autre fichier → URI de ce fichier.
+    <div class="fp">src/Settex.LanguageServer/SettexDocument.cs (ResolveTargetUri)</div>
   </div>
 
   <div class="callout ok">
@@ -214,15 +214,16 @@
     <li><strong>✅ Corrigé — LSP : includes lus du disque</strong>, ignorant les buffers non sauvegardés, sans re-parse quand un fichier inclus changeait. L'<code>IncludeResolver</code> accepte désormais un fournisseur de contenu (les buffers ouverts gagnent sur le disque) et expose les fichiers résolus ; le workspace suit ces dépendances et <strong>ré-analyse les documents dépendants</strong> à l'ouverture, la modification et la fermeture d'un fichier inclus. Vérifié : buffer non sauvegardé pris en compte, dépendants rafraîchis, retour au disque à la fermeture, documents non concernés épargnés.</li>
     <li><strong>✅ Corrigé — LSP : itérateurs de <code>for</code> non modélisés comme variables de scope</strong> (go-to-def sautait vers une variable homonyme externe). L'itérateur est désormais enregistré comme un <code>LetNode</code> synthétique pointant sur la boucle, donc il <strong>masque</strong> correctement les homonymes externes ; le hover l'affiche explicitement comme itérateur avec la collection parcourue, plutôt que de laisser croire que sa valeur <em>est</em> la collection.</li>
     <li><strong>✅ Corrigé — LSP : handlers sans try/catch</strong> (un helper qui lève faisait <em>échouer</em> la requête au lieu de dégrader). Les cinq handlers (hover, definition, references, symbols, complétion) enveloppent désormais leur corps : l'échec est journalisé et la requête retourne un résultat vide, tandis qu'une annulation est relayée telle quelle (ce n'est pas une erreur). Le risque de position négative (<code>Column-1</code>) était déjà fermé par le bornage dans <code>LocationToRange</code>. Vérifié par un smoke test LSP réel : le serveur démarre et annonce bien les cinq providers.</li>
+    <li><strong>✅ Corrigé — LSP : hover overlay insensible aux colonnes et aveugle aux blocs imbriqués</strong>. Il ne parcourait que les statements directs, donc survoler <code class="sx">Port</code> dans <code class="sx">settings { Server { Port = … } }</code> ne déclenchait <em>rien</em> ; et n'importe quelle position sur la ligne d'une assignation la déclenchait. La recherche descend désormais dans les blocs imbriqués en accumulant le <strong>chemin complet</strong> (<code>Server.Port</code>), et les assignations portent une étendue (chemin → fin de valeur) permettant un vrai test de position. Vérifié par des tests de handler : hover imbriqué OK, hover sur un mot d'un commentaire suivant l'assignation ne déclenche plus.</li>
     <li><strong>Highlighter des docs ignore les commentaires <code>#</code></strong> (Settex en supporte deux styles) — latent, aucun exemple actuel ne l'utilise <span class="tag">reproduit</span>.</li>
   </ul>
 
   <!-- 4 -->
   <h2 id="composant"><span class="num">04</span>Évaluation par composant</h2>
   <div style="margin:8px 0 20px">
-    <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés, bien testé ; reste conflit de type non localisé</span><div class="bar"><i style="width:75%"></i></div></div>
+    <div style="margin:12px 0"><b>Compilateur — cœur V1</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">design propre, diagnostics soignés et localisés, bien testé</span><div class="bar"><i style="width:75%"></i></div></div>
     <div style="margin:12px 0"><b>Compilateur — sémantique V2</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">deltas, couverture, piège des tableaux détecté, types base/overlay validés</span><div class="bar"><i style="width:80%"></i></div></div>
-    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 8/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges, portée et includes sur buffers ouverts corrects</span><div class="bar"><i style="width:80%"></i></div></div>
+    <div style="margin:12px 0"><b>Serveur de langage (LSP)</b> — 8.5/10 <span style="color:var(--muted);font-size:.85rem">diagnostics, ranges, portée, includes et hover corrects ; handlers protégés</span><div class="bar"><i style="width:85%"></i></div></div>
     <div style="margin:12px 0"><b>Extension Visual Studio</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">compile-on-save, process géré, runtime détecté</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Extension VS Code</b> — 7/10 <span style="color:var(--muted);font-size:.85rem">VSIX fonctionnel, LSP livré, runtime détecté ; pas encore au marketplace</span><div class="bar"><i style="width:70%"></i></div></div>
     <div style="margin:12px 0"><b>Site de documentation</b> — 7.5/10 <span style="color:var(--muted);font-size:.85rem">coloration, i18n, SEO de base ; i18n dupliqué &amp; pas de pré-rendu</span><div class="bar"><i style="width:75%"></i></div></div>
@@ -242,7 +243,7 @@
       <tr><td>2</td><td><s>Attraper <code>MergerException</code> comme diagnostic localisé (phase 3)</s> · <s>valider la compatibilité de type base ↔ overlay aussi en mode delta</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-bad">Élevé</span></td></tr>
       <tr><td>3</td><td><s>Documenter (et idéalement avertir sur) le piège d'indexation des tableaux à travers les couches .NET</s> — <strong>fait ✅</strong> (<code>ArrayLayeringAnalyzer</code> + doc README/site)</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>4</td><td><s>Ajouter EndLine/EndColumn à <code>SourceLocation</code> → ranges de symboles multi-lignes + étendue de scope jusqu'à l'accolade fermante</s> — <strong>fait ✅</strong> (un seul changement Core ferme les deux findings)</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
-      <tr><td>5</td><td><s>Échappement pour <code>${…}</code> littéral</s> — <strong>fait ✅</strong> (<code>$${</code>). Reste : réutiliser l'URI de requête pour le go-to-def in-file</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
+      <tr><td>5</td><td><s>Échappement pour <code>${…}</code> littéral</s> · <s>réutiliser l'URI de requête pour le go-to-def in-file</s> — <strong>fait ✅</strong></td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
       <tr><td>6</td><td>Trancher le comportement couverture « clé dans tous les env sauf la base » ; clarifier le message sur conflit objet/feuille</td><td><span class="badge b-ok">Faible</span></td><td><span class="badge b-info">Modéré</span></td></tr>
       <tr><td>7</td><td>Publication marketplace (VS + VS Code) ; dépendance SDK .NET 10 <em>preview</em> à retirer à la sortie stable</td><td><span class="badge b-warn">Moyen</span></td><td><span class="badge b-warn">Moyen</span></td></tr>
     </tbody>

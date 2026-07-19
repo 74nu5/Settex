@@ -529,7 +529,10 @@ public class Parser(List<Token> tokens, string? filePath = null)
             condition = this.ParseExpression();
         }
 
-        return new(path, op, value, condition, path.Location);
+        // Span the assignment from its path to the end of its value (or condition,
+        // which comes last), so editors can test whether a position is really on
+        // this assignment rather than merely on the same line.
+        return new(path, op, value, condition, SpanTo(path.Location, (condition ?? value).Location));
     }
 
     /// <summary>

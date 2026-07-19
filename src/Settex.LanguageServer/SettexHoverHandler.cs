@@ -99,25 +99,26 @@ public class SettexHoverHandler : HoverHandlerBase
             var assignmentInfo = FindAssignmentAtPosition(snapshot.Ast, request.Position);
             if (assignmentInfo != null)
             {
-                var (assignment, envName) = assignmentInfo.Value;
-                
+                // Le chemin complet inclut les blocs imbriqués traversés, donc
+                // survoler "Port" dans `Server { Port = … }` cible bien "Server.Port".
+                var (_, pathSegments, envName) = assignmentInfo.Value;
+
                 // Vérifier que le mot sous le curseur est bien le path (ou une partie du path)
-                var pathSegments = assignment.Path.Segments;
                 var isOnPath = pathSegments.Any(segment => segment == word);
-                
+
                 if (isOnPath)
                 {
-                    var path = string.Join(".", assignment.Path.Segments);
-                    
+                    var path = string.Join(".", pathSegments);
+
                     // Détecter si le mot survolé est un segment d'objet (pas le dernier segment)
-                    var wordIndex = assignment.Path.Segments.IndexOf(word);
-                    var isObjectSegment = wordIndex >= 0 && wordIndex < assignment.Path.Segments.Count - 1;
-                    
+                    var wordIndex = pathSegments.IndexOf(word);
+                    var isObjectSegment = wordIndex >= 0 && wordIndex < pathSegments.Count - 1;
+
                     if (isObjectSegment)
                     {
                         // Le mot survolé est un objet (ex: "Server" dans "Server.Port")
                         // Construire le path de l'objet (tous les segments jusqu'au mot inclus)
-                        var objectPath = string.Join(".", assignment.Path.Segments.Take(wordIndex + 1));
+                        var objectPath = string.Join(".", pathSegments.Take(wordIndex + 1));
                         this.logger.LogTrace("[HOVER-OVERLAY] Formatting OBJECT for path='{ObjectPath}', envName='{EnvName}', word='{Word}'", objectPath, envName ?? "(base)", word);
                         
                         var objectHover = HoverOverlayFormatter.FormatObjectWithOverlay(snapshot.Ast, objectPath, envName, this.logger);
@@ -529,7 +530,7 @@ public class SettexHoverHandler : HoverHandlerBase
     /// <summary>
     /// Trouve une assignation à la position donnée et retourne l'assignation + l'environnement (null si dans base).
     /// </summary>
-    private static (Core.Parser.Ast.AssignmentNode Assignment, string? EnvName)? FindAssignmentAtPosition(
+    private static (Core.Parser.Ast.AssignmentNode Assignment, List<string> Path, string? EnvName)? FindAssignmentAtPosition(
         Core.Parser.Ast.FileNode ast,
         Position position)
     {
@@ -542,18 +543,18 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             if (stmt is Core.Parser.Ast.SettingsBlockNode settings)
             {
-                var assignment = FindAssignmentInStatements(settings.Block.Statements, line, column);
-                if (assignment != null)
+                var found = FindAssignmentInStatements(settings.Block.Statements, new List<string>(), line, column);
+                if (found != null)
                 {
-                    return (assignment, null); // Base, pas d'environnement
+                    return (found.Value.Assignment, found.Value.Path, null); // Base, pas d'environnement
                 }
             }
             else if (stmt is Core.Parser.Ast.EnvBlockNode env)
             {
-                var assignment = FindAssignmentInStatements(env.SettingsBlock.Block.Statements, line, column);
-                if (assignment != null)
+                var found = FindAssignmentInStatements(env.SettingsBlock.Block.Statements, new List<string>(), line, column);
+                if (found != null)
                 {
-                    return (assignment, env.EnvironmentName); // Dans un environnement
+                    return (found.Value.Assignment, found.Value.Path, env.EnvironmentName); // Dans un environnement
                 }
             }
         }
@@ -562,10 +563,15 @@ public class SettexHoverHandler : HoverHandlerBase
     }
 
     /// <summary>
-    /// Cherche récursivement une assignation à une position donnée dans une liste de statements.
+    /// Cherche récursivement une assignation à une position donnée, en descendant
+    /// dans les blocs imbriqués. Le préfixe accumule les noms de blocs traversés,
+    /// afin que l'assignation soit rapportée avec son <strong>chemin complet</strong>
+    /// (<c>Server.Port</c> et non <c>Port</c>) — c'est ce chemin que l'overlay
+    /// recherche dans la configuration évaluée.
     /// </summary>
-    private static Core.Parser.Ast.AssignmentNode? FindAssignmentInStatements(
-        System.Collections.Generic.List<Core.Parser.Ast.IStatement> statements,
+    private static (Core.Parser.Ast.AssignmentNode Assignment, List<string> Path)? FindAssignmentInStatements(
+        IReadOnlyList<Core.Parser.Ast.IStatement> statements,
+        List<string> prefix,
         int line,
         int column)
     {
@@ -573,24 +579,51 @@ public class SettexHoverHandler : HoverHandlerBase
         {
             if (stmt is Core.Parser.Ast.AssignmentNode assignment)
             {
-                // Vérifier si la position est dans l'assignation
                 if (IsPositionInLocation(assignment.Location, line, column))
                 {
-                    return assignment;
+                    var fullPath = new List<string>(prefix);
+                    fullPath.AddRange(assignment.Path.Segments);
+                    return (assignment, fullPath);
                 }
             }
-            // Note: ForNode est un IArrayElement, pas un IStatement, donc pas de récursion ici
+            else if (stmt is Core.Parser.Ast.NestedBlockNode nested)
+            {
+                var nestedPrefix = new List<string>(prefix) { nested.Name };
+                var found = FindAssignmentInStatements(nested.Block.Statements, nestedPrefix, line, column);
+
+                if (found != null)
+                {
+                    return found;
+                }
+            }
         }
 
         return null;
     }
 
     /// <summary>
-    /// Vérifie si une position est dans une SourceLocation.
+    /// Vérifie si une position (1-based) est réellement dans l'étendue d'un nœud.
+    /// Les assignations portent désormais une étendue allant du chemin à la fin de
+    /// leur valeur, donc survoler ailleurs sur la même ligne ne déclenche plus
+    /// l'overlay.
     /// </summary>
     private static bool IsPositionInLocation(Core.Diagnostics.SourceLocation location, int line, int column)
     {
-        // Vérifier si la ligne correspond
-        return location.Line == line;
+        if (line < location.Line || line > location.EffectiveEndLine)
+        {
+            return false;
+        }
+
+        if (line == location.Line && column < location.Column)
+        {
+            return false;
+        }
+
+        if (line == location.EffectiveEndLine && column > location.EffectiveEndColumn)
+        {
+            return false;
+        }
+
+        return true;
     }
 }

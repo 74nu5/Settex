@@ -59,17 +59,46 @@ public class SourceLocationSpanTests
     }
 
     [Test]
-    public async Task SingleLineNode_FallsBackToItsOwnLineAsync()
+    public async Task TokenBasedNode_FallsBackToItsOwnLineAsync()
     {
-        // An assignment is single-line: no end span, and the effective end is its line.
-        var ast = Parse("settings {\n    A = 1\n}");
+        // A `let` is located on its keyword token: no end span, so the effective end
+        // derives from Line and Column + Length.
+        var ast = Parse("let a = 1\n\nsettings { A = a }");
+        var let = ast.Statements.OfType<LetNode>().Single();
+
+        await Assert.That(let.Location.EndLine).IsNull();
+        await Assert.That(let.Location.EffectiveEndLine).IsEqualTo(let.Location.Line);
+        await Assert.That(let.Location.EffectiveEndColumn)
+            .IsEqualTo(let.Location.Column + let.Location.Length);
+    }
+
+    [Test]
+    public async Task Assignment_SpansFromPathToEndOfValueAsync()
+    {
+        // Assignments carry a span so an editor can tell whether a position is really
+        // on the assignment rather than merely on the same line.
+        var ast = Parse("settings {\n    Server.Port = 8080\n}");
         var settings = ast.Statements.OfType<SettingsBlockNode>().Single();
         var assignment = settings.Block.Statements.OfType<AssignmentNode>().Single();
 
-        await Assert.That(assignment.Location.EndLine).IsNull();
-        await Assert.That(assignment.Location.EffectiveEndLine).IsEqualTo(assignment.Location.Line);
+        await Assert.That(assignment.Location.Line).IsEqualTo(2);
+        await Assert.That(assignment.Location.EndLine).IsEqualTo(2);
+
+        // The span must reach past the path, over the value.
         await Assert.That(assignment.Location.EffectiveEndColumn)
-            .IsEqualTo(assignment.Location.Column + assignment.Location.Length);
+            .IsGreaterThan(assignment.Location.Column + "Server.Port".Length);
+    }
+
+    [Test]
+    public async Task Assignment_WithMultiLineArray_SpansToClosingBracketAsync()
+    {
+        // 1: settings {   2: Ports = [   3: 1   4: 2   5: ]   6: }
+        var ast = Parse("settings {\n    Ports = [\n        1\n        2\n    ]\n}");
+        var settings = ast.Statements.OfType<SettingsBlockNode>().Single();
+        var assignment = settings.Block.Statements.OfType<AssignmentNode>().Single();
+
+        await Assert.That(assignment.Location.Line).IsEqualTo(2);
+        await Assert.That(assignment.Location.EndLine).IsEqualTo(5);
     }
 
     [Test]
